@@ -53,9 +53,12 @@ local state = {
 
 local overlayEntries = {}
 local overlayConnections = {}
+local cachedTargets = {}
 local aimHolding = false
 local fovCircle = Drawing.new("Circle")
 local CORNER_LINE_COUNT = 8
+local TARGET_REFRESH_INTERVAL = 0.3
+local lastTargetRefresh = 0
 
 local function round(value)
 	return math.floor(value + 0.5)
@@ -214,7 +217,17 @@ local function shouldProcessEsp()
 	return state.espEnabled and #state.flags > 0
 end
 
-local function iterTargets()
+local function shouldTrackTargets()
+	return state.aimEnabled or shouldProcessEsp()
+end
+
+local function refreshTargetCache(force)
+	local now = os.clock()
+
+	if not force and (now - lastTargetRefresh) < TARGET_REFRESH_INTERVAL then
+		return cachedTargets
+	end
+
 	local targets = {}
 
 	for _, player in ipairs(Players:GetPlayers()) do
@@ -223,7 +236,17 @@ local function iterTargets()
 		end
 	end
 
-	return targets
+	cachedTargets = targets
+	lastTargetRefresh = now
+	return cachedTargets
+end
+
+local function getTrackedTargets()
+	if not shouldTrackTargets() then
+		return cachedTargets
+	end
+
+	return refreshTargetCache(false)
 end
 
 local function getCharacterBounds(model, camera)
@@ -423,7 +446,7 @@ local function getBestAimTarget(camera, mousePosition)
 	local bestDelta
 	local bestPosition
 
-	for target in pairs(iterTargets()) do
+	for target in pairs(getTrackedTargets()) do
 		local humanoid = target:FindFirstChildOfClass("Humanoid")
 		local aimPart = getAimPart(target)
 
@@ -507,12 +530,13 @@ table.insert(overlayConnections, RunService.RenderStepped:Connect(function()
 	local camera = Workspace.CurrentCamera
 	local mousePosition = UserInputService:GetMouseLocation()
 	local seenTargets = {}
+	local targets = getTrackedTargets()
 
 	updateFovCircle(mousePosition)
 
 	if camera ~= nil then
 		if shouldProcessEsp() then
-			for target, displayName in pairs(iterTargets()) do
+			for target, displayName in pairs(targets) do
 				seenTargets[target] = true
 				updateOverlayEntry(target, displayName, camera)
 			end
