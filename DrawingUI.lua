@@ -6,32 +6,32 @@ local HttpService = game:GetService("HttpService")
 
 local DrawingUI = {}
 DrawingUI.__index = DrawingUI
-local VERSION = "0.10.8"
+local VERSION = "0.11.0"
 
 local DEFAULT_THEME = {
-	WindowBackground = Color3.fromRGB(19, 22, 28),
-	HeaderBackground = Color3.fromRGB(27, 32, 40),
-	Border = Color3.fromRGB(70, 76, 89),
-	Accent = Color3.fromRGB(63, 161, 255),
-	Muted = Color3.fromRGB(123, 130, 145),
+	WindowBackground = Color3.fromRGB(18, 21, 27),
+	HeaderBackground = Color3.fromRGB(24, 29, 37),
+	Border = Color3.fromRGB(72, 79, 94),
+	Accent = Color3.fromRGB(78, 176, 255),
+	Muted = Color3.fromRGB(126, 134, 149),
 	Text = Color3.fromRGB(240, 242, 245),
-	SubText = Color3.fromRGB(176, 182, 192),
-	Button = Color3.fromRGB(31, 36, 45),
-	ButtonHover = Color3.fromRGB(39, 46, 58),
-	Input = Color3.fromRGB(24, 28, 35),
-	InputHover = Color3.fromRGB(31, 36, 45),
-	InputFocused = Color3.fromRGB(35, 42, 53),
-	Tab = Color3.fromRGB(24, 29, 38),
-	TabHover = Color3.fromRGB(33, 39, 50),
-	TabActive = Color3.fromRGB(36, 44, 56),
-	Toggle = Color3.fromRGB(48, 54, 67),
-	ToggleEnabled = Color3.fromRGB(63, 161, 255),
-	SliderTrack = Color3.fromRGB(45, 50, 62),
-	SliderFill = Color3.fromRGB(63, 161, 255),
-	SectionLine = Color3.fromRGB(53, 59, 72),
-	Font = 1,
-	TitleSize = 16,
-	TextSize = 14,
+	SubText = Color3.fromRGB(178, 184, 195),
+	Button = Color3.fromRGB(29, 34, 42),
+	ButtonHover = Color3.fromRGB(37, 43, 53),
+	Input = Color3.fromRGB(22, 26, 33),
+	InputHover = Color3.fromRGB(29, 34, 43),
+	InputFocused = Color3.fromRGB(34, 40, 50),
+	Tab = Color3.fromRGB(22, 27, 35),
+	TabHover = Color3.fromRGB(30, 36, 45),
+	TabActive = Color3.fromRGB(34, 41, 52),
+	Toggle = Color3.fromRGB(46, 53, 66),
+	ToggleEnabled = Color3.fromRGB(78, 176, 255),
+	SliderTrack = Color3.fromRGB(43, 49, 61),
+	SliderFill = Color3.fromRGB(78, 176, 255),
+	SectionLine = Color3.fromRGB(52, 58, 71),
+	Font = 2,
+	TitleSize = 17,
+	TextSize = 15,
 	SmallTextSize = 13,
 }
 
@@ -45,27 +45,34 @@ local DEFAULT_WINDOW = {
 	Theme = {},
 }
 
-local FONT = 1
-local HEADER_HEIGHT = 34
-local TAB_HEIGHT = 26
+local FONT = 2
+local HEADER_HEIGHT = 38
+local TAB_HEIGHT = 28
 local TAB_GAP = 6
-local PADDING = 14
-local CONTENT_GAP = 12
+local PADDING = 16
+local CONTENT_GAP = 14
 local ROW_HEIGHT = 24
-local ROW_GAP = 10
-local BUTTON_HEIGHT = 30
+local ROW_GAP = 12
+local BUTTON_HEIGHT = 32
 local TOGGLE_HEIGHT = 24
 local SECTION_HEIGHT = 20
 local SLIDER_HEIGHT = 40
-local INPUT_HEIGHT = 28
-local DROPDOWN_OPTION_HEIGHT = 24
-local LABELED_INPUT_HEIGHT = 44
-local SEARCH_DROPDOWN_CLOSED_HEIGHT = 44
+local INPUT_HEIGHT = 30
+local DROPDOWN_OPTION_HEIGHT = 26
+local LABELED_INPUT_HEIGHT = 46
+local SEARCH_DROPDOWN_CLOSED_HEIGHT = 46
 local WINDOW_MARGIN = 8
+local WINDOW_HEIGHT_ANIMATION = 0.26
+local SECTION_EXPAND_ANIMATION = 0.22
+local TOGGLE_ANIMATION = 0.32
+local DROPDOWN_ANIMATION = 0.32
+local SLIDER_DRAG_ANIMATION = 0.58
+local SLIDER_IDLE_ANIMATION = 0.2
 
 local windows = {}
 local frameConnection
 local inputBeganConnection
+local inputChangedConnection
 local inputEndedConnection
 local activeTextbox
 local listeningKeybind
@@ -96,6 +103,10 @@ local function colorLerp(a, b, alpha)
 		lerp(a.G, b.G, alpha),
 		lerp(a.B, b.B, alpha)
 	)
+end
+
+local function blendAccent(theme, color, amount)
+	return colorLerp(color, theme.Accent, amount)
 end
 
 local function mergeTheme(overrides)
@@ -248,7 +259,7 @@ local function bindingMatchesInput(binding, input)
 	return false
 end
 
-local function getCharacterForInput(input)
+local function getCharacterForInput(input, allowShiftUppercase)
 	if input.KeyCode == Enum.KeyCode.Space then
 		return " "
 	end
@@ -259,7 +270,7 @@ local function getCharacterForInput(input)
 		return nil
 	end
 
-	if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift) then
+	if allowShiftUppercase ~= false and (UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)) then
 		return string.upper(character)
 	end
 
@@ -314,6 +325,9 @@ local function makeBaseControl(window, tab, kind, height)
 		kind = kind,
 		height = height,
 		visible = true,
+		isDropdown = false,
+		acceptsTextInput = false,
+		capturesBindings = false,
 		drawings = {},
 		position = Vector2.zero,
 		size = Vector2.zero,
@@ -359,7 +373,7 @@ local function isGroupAncestor(group, control)
 end
 
 local function getTabWidth(name)
-	return clamp(30 + (#name * 7), 72, 150)
+	return clamp(34 + (#name * 8), 82, 164)
 end
 
 local function bringWindowToFront(window)
@@ -532,6 +546,27 @@ local function ensureLoop()
 		window:HandleMouseDown(mousePosition)
 	end)
 
+	inputChangedConnection = UserInputService.InputChanged:Connect(function(input, processed)
+		if input.UserInputType ~= Enum.UserInputType.MouseWheel then
+			return
+		end
+
+		local mousePosition = getMousePosition()
+		local overWindow = topWindowAt(mousePosition) ~= nil
+
+		if processed and not shouldBlockGameInput() and not overWindow then
+			return
+		end
+
+		local window = topWindowAt(mousePosition)
+
+		if window == nil then
+			return
+		end
+
+		window:HandleMouseWheel(mousePosition, input.Position.Z)
+	end)
+
 	inputEndedConnection = UserInputService.InputEnded:Connect(function(input)
 		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
 			return
@@ -563,6 +598,11 @@ local function disconnectLoopIfEmpty()
 	if inputEndedConnection ~= nil then
 		inputEndedConnection:Disconnect()
 		inputEndedConnection = nil
+	end
+
+	if inputChangedConnection ~= nil then
+		inputChangedConnection:Disconnect()
+		inputChangedConnection = nil
 	end
 
 	updateInputBlocker()
@@ -677,16 +717,16 @@ function Window:UpdateChrome()
 	local position = self.position
 	local size = self.size
 
-	writeProperty(self.drawings.shadow, "Position", position + Vector2.new(6, 6))
-	writeProperty(self.drawings.shadow, "Size", size)
+	writeProperty(self.drawings.shadow, "Position", position + Vector2.new(10, 12))
+	writeProperty(self.drawings.shadow, "Size", size + Vector2.new(4, 6))
 	writeProperty(self.drawings.frame, "Position", position)
 	writeProperty(self.drawings.frame, "Size", size)
 	writeProperty(self.drawings.header, "Position", position)
 	writeProperty(self.drawings.header, "Size", Vector2.new(size.X, HEADER_HEIGHT))
 	writeProperty(self.drawings.accent, "From", position + Vector2.new(0, HEADER_HEIGHT))
 	writeProperty(self.drawings.accent, "To", position + Vector2.new(size.X, HEADER_HEIGHT))
-	writeProperty(self.drawings.title, "Position", position + Vector2.new(PADDING, 6))
-	writeProperty(self.drawings.subtitle, "Position", position + Vector2.new(size.X - 112, 8))
+	writeProperty(self.drawings.title, "Position", position + Vector2.new(PADDING, 8))
+	writeProperty(self.drawings.subtitle, "Position", position + Vector2.new(size.X - 118, 10))
 	writeProperty(self.drawings.title, "Font", self.theme.Font)
 	writeProperty(self.drawings.subtitle, "Font", self.theme.Font)
 	writeProperty(self.drawings.title, "Size", self.theme.TitleSize)
@@ -707,7 +747,7 @@ function Window:LayoutTabs()
 		writeProperty(tab.drawings.background, "Size", tab.size)
 		writeProperty(tab.drawings.outline, "Position", tab.position)
 		writeProperty(tab.drawings.outline, "Size", tab.size)
-		writeProperty(tab.drawings.text, "Position", tab.position + Vector2.new(12, 5))
+		writeProperty(tab.drawings.text, "Position", tab.position + Vector2.new(14, 6))
 		writeProperty(tab.drawings.background, "Visible", self.visible)
 		writeProperty(tab.drawings.outline, "Visible", self.visible)
 		writeProperty(tab.drawings.text, "Visible", self.visible)
@@ -724,9 +764,9 @@ function Window:UpdateTabVisuals(mousePosition)
 	for _, tab in ipairs(self.tabs) do
 		local hovered = self.visible and pointInRect(mousePosition, tab.position, tab.size)
 		local active = self.activeTab == tab
-		local backgroundColor = active and self.theme.TabActive or hovered and self.theme.TabHover or self.theme.Tab
-		local outlineColor = active and self.theme.Accent or self.theme.Border
-		local textColor = active and self.theme.Text or hovered and self.theme.Text or self.theme.SubText
+		local backgroundColor = active and blendAccent(self.theme, self.theme.TabActive, 0.14) or hovered and blendAccent(self.theme, self.theme.TabHover, 0.06) or self.theme.Tab
+		local outlineColor = active and blendAccent(self.theme, self.theme.Border, 0.72) or hovered and blendAccent(self.theme, self.theme.Border, 0.18) or self.theme.Border
+		local textColor = active and self.theme.Text or hovered and blendAccent(self.theme, self.theme.Text, 0.1) or self.theme.SubText
 
 		writeProperty(tab.drawings.background, "Color", backgroundColor)
 		writeProperty(tab.drawings.outline, "Color", outlineColor)
@@ -823,7 +863,7 @@ end
 
 function Window:CloseDropdowns(exceptControl)
 	for _, control in ipairs(self.controls) do
-		if control.kind == "Dropdown" and control ~= exceptControl then
+		if control.isDropdown and control ~= exceptControl and control.SetOpen then
 			control:SetOpen(false)
 		end
 	end
@@ -1060,15 +1100,15 @@ function Window:HandleMouseDown(point)
 			self.pendingDrag = false
 		end
 
-		if control.kind ~= "Textbox" then
+		if not control.acceptsTextInput then
 			clearTextboxFocus(true)
 		end
 
-		if control.kind ~= "Keybind" then
+		if not control.capturesBindings then
 			clearKeybindListening()
 		end
 
-		if control.kind ~= "Dropdown" then
+		if not control.isDropdown then
 			self:CloseDropdowns(nil)
 		end
 
@@ -1078,6 +1118,20 @@ function Window:HandleMouseDown(point)
 		clearKeybindListening()
 		self:CloseDropdowns(nil)
 	end
+end
+
+function Window:HandleMouseWheel(point, delta)
+	local control = self:GetControlAt(point)
+
+	if control == nil or control.onMouseWheel == nil then
+		return false
+	end
+
+	if control.blocksWindowDrag then
+		self.pendingDrag = false
+	end
+
+	return control:onMouseWheel(delta, point) == true
 end
 
 function Window:HandleMouseUp(point)
@@ -1097,7 +1151,7 @@ function Window:Step(mousePosition)
 	end
 
 	if self.targetHeight ~= nil and math.abs(self.size.Y - self.targetHeight) > 0.5 then
-		self.size = Vector2.new(self.size.X, lerp(self.size.Y, self.targetHeight, 0.22))
+		self.size = Vector2.new(self.size.X, lerp(self.size.Y, self.targetHeight, WINDOW_HEIGHT_ANIMATION))
 		self:UpdateChrome()
 	elseif self.targetHeight ~= nil then
 		self.size = Vector2.new(self.size.X, self.targetHeight)
@@ -1292,7 +1346,7 @@ local function addSection(window, tab, text)
 		Color = window.theme.Text,
 		Size = 14,
 		Font = FONT,
-		Outline = true,
+		Outline = false,
 		Text = text,
 		Position = Vector2.zero,
 	})
@@ -1365,7 +1419,7 @@ local function addSubTab(window, tab, text, expanded)
 		Color = window.theme.Text,
 		Size = window.theme.TextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = text,
 		Position = Vector2.zero,
 	})
@@ -1375,7 +1429,7 @@ local function addSubTab(window, tab, text, expanded)
 		Color = window.theme.SubText,
 		Size = window.theme.SmallTextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = expanded ~= false and "v" or ">",
 		Position = Vector2.zero,
 	})
@@ -1427,7 +1481,7 @@ local function addSubTab(window, tab, text, expanded)
 
 	function group:onStep()
 		local target = self.expanded and 1 or 0
-		local nextAlpha = lerp(self.expandAlpha, target, 0.25)
+		local nextAlpha = lerp(self.expandAlpha, target, SECTION_EXPAND_ANIMATION)
 
 		if math.abs(nextAlpha - self.expandAlpha) > 0.001 then
 			self.expandAlpha = nextAlpha
@@ -1538,8 +1592,8 @@ local function addSubTab(window, tab, text, expanded)
 		return self:addChild(addDropdown(self.window, self.tab, label, options, defaultValue, callback))
 	end
 
-	function group:AddSearchDropdown(label, options, defaultValue, callback)
-		return self:addChild(addSearchDropdown(self.window, self.tab, label, options, defaultValue, callback))
+	function group:AddSearchDropdown(label, options, defaultValue, maxSizeOrCallback, callback)
+		return self:addChild(addSearchDropdown(self.window, self.tab, label, options, defaultValue, maxSizeOrCallback, callback))
 	end
 
 	function group:AddMultiDropdown(label, options, defaultValues, callback)
@@ -1592,7 +1646,7 @@ function addButton(window, tab, text, callback)
 		Color = window.theme.Text,
 		Size = 13,
 		Font = FONT,
-		Outline = true,
+		Outline = false,
 		Text = text,
 		Position = Vector2.zero,
 	})
@@ -1602,7 +1656,7 @@ function addButton(window, tab, text, callback)
 		writeProperty(self.drawings.frame, "Size", self.size)
 		writeProperty(self.drawings.outline, "Position", self.position)
 		writeProperty(self.drawings.outline, "Size", self.size)
-		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(12, 6))
+		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(14, 7))
 	end
 
 	function control:applyTheme()
@@ -1643,7 +1697,8 @@ function addButton(window, tab, text, callback)
 
 	function control:onStep(mousePosition, ownsHover)
 		self.hovered = ownsHover and self:hitTest(mousePosition)
-		writeProperty(self.drawings.frame, "Color", self.hovered and self.window.theme.ButtonHover or self.window.theme.Button)
+		local frameColor = self.hovered and blendAccent(self.window.theme, self.window.theme.ButtonHover, self.pressing and 0.2 or 0.08) or self.window.theme.Button
+		writeProperty(self.drawings.frame, "Color", frameColor)
 	end
 
 	function control:SetText(nextText)
@@ -1727,7 +1782,7 @@ function addButtonRow(window, tab, buttons)
 			writeProperty(drawingSet.frame, "Size", buttonSize)
 			writeProperty(drawingSet.outline, "Position", buttonPosition)
 			writeProperty(drawingSet.outline, "Size", buttonSize)
-			writeProperty(drawingSet.text, "Position", buttonPosition + Vector2.new(12, 6))
+			writeProperty(drawingSet.text, "Position", buttonPosition + Vector2.new(14, 7))
 			writeProperty(drawingSet.text, "Text", definition.text or ("Button " .. index))
 		end
 	end
@@ -1779,7 +1834,9 @@ function addButtonRow(window, tab, buttons)
 		for index, drawingSet in ipairs(self.drawings) do
 			local buttonPosition, buttonSize = self:getButtonRect(index)
 			local hovered = ownsHover and pointInRect(mousePosition, buttonPosition, buttonSize)
-			writeProperty(drawingSet.frame, "Color", hovered and self.window.theme.ButtonHover or self.window.theme.Button)
+			local isPressed = self.pressing and self.hitIndex == index
+			local frameColor = hovered and blendAccent(self.window.theme, self.window.theme.ButtonHover, isPressed and 0.2 or 0.08) or self.window.theme.Button
+			writeProperty(drawingSet.frame, "Color", frameColor)
 		end
 	end
 
@@ -1956,9 +2013,9 @@ function addToggle(window, tab, text, initialValue, callback)
 
 	function control:onStep(mousePosition, ownsHover)
 		self.hovered = ownsHover and self:hitTest(mousePosition)
-		writeProperty(self.drawings.knob, "Color", self.hovered and self.window.theme.Text or Color3.fromRGB(245, 247, 250))
+		writeProperty(self.drawings.knob, "Color", self.hovered and blendAccent(self.window.theme, self.window.theme.Text, 0.08) or Color3.fromRGB(245, 247, 250))
 		local target = self.value and 1 or 0
-		local nextAlpha = lerp(self.toggleAlpha, target, 0.25)
+		local nextAlpha = lerp(self.toggleAlpha, target, TOGGLE_ANIMATION)
 
 		if math.abs(nextAlpha - self.toggleAlpha) > 0.001 then
 			self.toggleAlpha = nextAlpha
@@ -2150,7 +2207,7 @@ function addSlider(window, tab, text, minimum, maximum, initialValue, callback)
 			self:setFromMouse(mousePosition)
 		end
 
-		self.displayValue = lerp(self.displayValue, self.value, self.dragging and 0.45 or 0.25)
+		self.displayValue = lerp(self.displayValue, self.value, self.dragging and SLIDER_DRAG_ANIMATION or SLIDER_IDLE_ANIMATION)
 
 		if math.abs(self.displayValue - self.value) < 0.001 then
 			self.displayValue = self.value
@@ -2159,7 +2216,7 @@ function addSlider(window, tab, text, minimum, maximum, initialValue, callback)
 		self:updateVisuals()
 
 		local hovered = ownsHover and self:hitTest(mousePosition)
-		writeProperty(self.drawings.knob, "Color", (hovered or self.dragging) and self.window.theme.Accent or self.window.theme.Text)
+		writeProperty(self.drawings.knob, "Color", (hovered or self.dragging) and colorLerp(self.window.theme.Accent, self.window.theme.Text, 0.08) or self.window.theme.Text)
 	end
 
 	function control:SetValue(nextValue)
@@ -2200,6 +2257,7 @@ function addDropdown(window, tab, text, options, defaultValue, callback)
 	control.openAlpha = 0
 	control.hoverIndex = nil
 	control.blocksWindowDrag = true
+	control.isDropdown = true
 
 	control.drawings.label = createDrawing("Text", {
 		Visible = window.visible,
@@ -2309,22 +2367,6 @@ function addDropdown(window, tab, text, options, defaultValue, callback)
 		end
 	end
 
-	function control:SetSearchText(nextText)
-		self.searchText = tostring(nextText or "")
-		self:updateFilter()
-		self.window:UpdateLayout()
-	end
-
-	function control:SetOptions(nextOptions, nextValue)
-		self.options = table.clone(nextOptions or {})
-		self.searchText = ""
-		self:rebuildOptions()
-		self:updateFilter()
-		self:SetValue(nextValue or self.options[1] or "Select")
-		self.window:RefreshZIndex()
-		self.window:UpdateLayout()
-	end
-
 	function control:SetOptions(nextOptions, nextValue)
 		for _, drawingSet in ipairs(self.optionDrawings) do
 			destroyDrawing(drawingSet.frame)
@@ -2367,6 +2409,7 @@ function addDropdown(window, tab, text, options, defaultValue, callback)
 
 		self:SetValue(nextValue or self.options[1] or "Select")
 		self.window:RefreshZIndex()
+		self.window:UpdateLayout()
 	end
 
 	function control:applyTheme()
@@ -2482,7 +2525,7 @@ function addDropdown(window, tab, text, options, defaultValue, callback)
 	function control:onStep(mousePosition, ownsHover)
 		local basePosition, baseSize = self:getBaseRect()
 		local targetAlpha = self.open and 1 or 0
-		local nextAlpha = lerp(self.openAlpha, targetAlpha, 0.25)
+		local nextAlpha = lerp(self.openAlpha, targetAlpha, DROPDOWN_ANIMATION)
 		local needsLayout = false
 
 		if math.abs(nextAlpha - self.openAlpha) > 0.001 then
@@ -2493,13 +2536,13 @@ function addDropdown(window, tab, text, options, defaultValue, callback)
 		end
 
 		self.hovered = ownsHover and pointInRect(mousePosition, basePosition, baseSize)
-		writeProperty(self.drawings.frame, "Color", self.hovered and self.window.theme.InputHover or self.window.theme.Input)
-		writeProperty(self.drawings.outline, "Color", self.open and self.window.theme.Accent or self.window.theme.Border)
+		writeProperty(self.drawings.frame, "Color", self.hovered and blendAccent(self.window.theme, self.window.theme.InputHover, 0.06) or self.window.theme.Input)
+		writeProperty(self.drawings.outline, "Color", self.open and blendAccent(self.window.theme, self.window.theme.Border, 0.72) or self.window.theme.Border)
 
 		for index, drawingSet in ipairs(self.optionDrawings) do
 			local hoveredOption = ownsHover and self:getOptionIndex(mousePosition) == index
 			local selected = self.options[index] == self.value
-			local rowColor = selected and self.window.theme.TabActive or hoveredOption and self.window.theme.InputHover or self.window.theme.Input
+			local rowColor = selected and blendAccent(self.window.theme, self.window.theme.TabActive, 0.14) or hoveredOption and blendAccent(self.window.theme, self.window.theme.InputHover, 0.06) or self.window.theme.Input
 
 			writeProperty(drawingSet.frame, "Color", rowColor)
 		end
@@ -2537,15 +2580,34 @@ function addDropdown(window, tab, text, options, defaultValue, callback)
 	return addControl(window, tab, control)
 end
 
-function addSearchDropdown(window, tab, text, options, defaultValue, callback)
+local function normalizeSearchDropdownMaxSize(maxSize)
+	local numeric = tonumber(maxSize)
+
+	if numeric == nil then
+		return nil
+	end
+
+	return math.max(1, math.floor(numeric))
+end
+
+local function resolveSearchDropdownArguments(defaultValue, maxSizeOrCallback, callback)
+	if typeof(maxSizeOrCallback) == "function" and callback == nil then
+		return defaultValue, nil, maxSizeOrCallback
+	end
+
+	return defaultValue, normalizeSearchDropdownMaxSize(maxSizeOrCallback), callback
+end
+
+function addSearchDropdown(window, tab, text, options, defaultValue, maxSizeOrCallback, callback)
+	local resolvedDefaultValue, resolvedMaxSize, resolvedCallback = resolveSearchDropdownArguments(defaultValue, maxSizeOrCallback, callback)
 	local control = makeBaseControl(window, tab, "SearchDropdown", SEARCH_DROPDOWN_CLOSED_HEIGHT)
 	control.text = text
 	control.configKey = text
 	control.options = table.clone(options or {})
 	control.filteredIndices = {}
-	control.value = defaultValue or control.options[1] or "Select"
+	control.value = resolvedDefaultValue or control.options[1] or "Select"
 	control.searchText = ""
-	control.callback = callback or function() end
+	control.callback = resolvedCallback or function() end
 	control.open = false
 	control.openAlpha = 0
 	control.blocksWindowDrag = true
@@ -2553,6 +2615,10 @@ function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 	control.cursorVisible = false
 	control.lastBlink = os.clock()
 	control.optionDrawings = {}
+	control.maxSize = resolvedMaxSize
+	control.scrollOffset = 0
+	control.isDropdown = true
+	control.acceptsTextInput = true
 
 	control.drawings.label = createDrawing("Text", {
 		Visible = window.visible,
@@ -2630,6 +2696,84 @@ function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 		Position = Vector2.zero,
 	})
 
+	function control:getVisibleOptionLimit()
+		if self.maxSize == nil then
+			return #self.options
+		end
+
+		return self.maxSize
+	end
+
+	function control:getVisibleOptionCount()
+		return math.min(#self.filteredIndices, self:getVisibleOptionLimit())
+	end
+
+	function control:getMaxScrollOffset()
+		return math.max(0, #self.filteredIndices - self:getVisibleOptionCount())
+	end
+
+	function control:clampScrollOffset()
+		self.scrollOffset = clamp(self.scrollOffset, 0, self:getMaxScrollOffset())
+	end
+
+	function control:getFilteredRowIndex(visibleRow)
+		return self.filteredIndices[self.scrollOffset + visibleRow]
+	end
+
+	function control:scrollToTop()
+		self.scrollOffset = 0
+	end
+
+	function control:scrollToValue()
+		local selectedFilteredRow = nil
+
+		for filteredRow, optionIndex in ipairs(self.filteredIndices) do
+			if self.options[optionIndex] == self.value then
+				selectedFilteredRow = filteredRow
+				break
+			end
+		end
+
+		if selectedFilteredRow == nil then
+			self:clampScrollOffset()
+			return
+		end
+
+		local visibleCount = self:getVisibleOptionCount()
+
+		if visibleCount <= 0 then
+			self.scrollOffset = 0
+			return
+		end
+
+		local firstVisibleRow = self.scrollOffset + 1
+		local lastVisibleRow = self.scrollOffset + visibleCount
+
+		if selectedFilteredRow < firstVisibleRow then
+			self.scrollOffset = selectedFilteredRow - 1
+		elseif selectedFilteredRow > lastVisibleRow then
+			self.scrollOffset = selectedFilteredRow - visibleCount
+		end
+
+		self:clampScrollOffset()
+	end
+
+	function control:scrollBy(step)
+		if self:getMaxScrollOffset() <= 0 then
+			return false
+		end
+
+		local nextOffset = clamp(self.scrollOffset + step, 0, self:getMaxScrollOffset())
+
+		if nextOffset == self.scrollOffset then
+			return false
+		end
+
+		self.scrollOffset = nextOffset
+		self.window:UpdateLayout()
+		return true
+	end
+
 	function control:rebuildOptions()
 		for _, drawingSet in ipairs(self.optionDrawings) do
 			destroyDrawing(drawingSet.frame)
@@ -2639,7 +2783,7 @@ function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 
 		self.optionDrawings = {}
 
-		for _ = 1, #self.options do
+		for _ = 1, math.min(#self.options, self:getVisibleOptionLimit()) do
 			table.insert(self.optionDrawings, {
 				frame = createDrawing("Square", {
 					Visible = false,
@@ -2670,7 +2814,7 @@ function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 		end
 	end
 
-	function control:updateFilter()
+	function control:updateFilter(resetScroll)
 		self.filteredIndices = {}
 		local needle = string.lower(self.searchText)
 
@@ -2680,10 +2824,16 @@ function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 				table.insert(self.filteredIndices, index)
 			end
 		end
+
+		if resetScroll ~= false then
+			self:scrollToTop()
+		else
+			self:clampScrollOffset()
+		end
 	end
 
 	function control:GetHeight()
-		local optionHeight = round((#self.filteredIndices * DROPDOWN_OPTION_HEIGHT) * self.openAlpha)
+		local optionHeight = round((self:getVisibleOptionCount() * DROPDOWN_OPTION_HEIGHT) * self.openAlpha)
 		return SEARCH_DROPDOWN_CLOSED_HEIGHT + round(INPUT_HEIGHT * self.openAlpha) + optionHeight
 	end
 
@@ -2692,6 +2842,10 @@ function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 
 		if self.open then
 			self.window:CloseDropdowns(self)
+			self:scrollToValue()
+			if activeTextbox ~= nil and activeTextbox ~= self then
+				activeTextbox:Blur(true)
+			end
 			activeTextbox = self
 			self.focused = true
 			self.cursorVisible = true
@@ -2710,14 +2864,42 @@ function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 	end
 
 	function control:Blur()
-		self.searchText = ""
-		self:updateFilter()
 		self:SetOpen(false)
 	end
 
 	function control:SetValue(nextValue)
 		self.value = nextValue
 		writeProperty(self.drawings.value, "Text", tostring(nextValue))
+	end
+
+	function control:SetSearchText(nextText)
+		self.searchText = tostring(nextText or "")
+		self:updateFilter()
+		self.window:UpdateLayout()
+	end
+
+	function control:SetMaxSize(nextMaxSize)
+		self.maxSize = normalizeSearchDropdownMaxSize(nextMaxSize)
+		self:rebuildOptions()
+		self:applyTheme()
+		self:scrollToValue()
+		self.window:RefreshZIndex()
+		self.window:UpdateLayout()
+	end
+
+	function control:SetOptions(nextOptions, nextValue, nextMaxSize)
+		self.options = table.clone(nextOptions or {})
+		self.searchText = ""
+		if nextMaxSize ~= nil then
+			self.maxSize = normalizeSearchDropdownMaxSize(nextMaxSize)
+		end
+		self:rebuildOptions()
+		self:applyTheme()
+		self:updateFilter()
+		self:SetValue(nextValue or self.options[1] or "Select")
+		self:scrollToValue()
+		self.window:RefreshZIndex()
+		self.window:UpdateLayout()
 	end
 
 	function control:GetConfigValue()
@@ -2728,6 +2910,7 @@ function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 		self.searchText = ""
 		self:updateFilter()
 		self:SetValue(nextValue)
+		self:scrollToValue()
 		self.window:UpdateLayout()
 		if fireCallback ~= false then
 			self.callback(self.value)
@@ -2752,7 +2935,7 @@ function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 			return
 		end
 
-		local character = getCharacterForInput(input)
+		local character = getCharacterForInput(input, false)
 
 		if character == nil then
 			return
@@ -2799,11 +2982,11 @@ function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 	function control:getOptionIndex(point)
 		local optionStart = self.position + Vector2.new(0, 16 + INPUT_HEIGHT + INPUT_HEIGHT)
 
-		for index = 1, #self.filteredIndices do
-			local rowPosition = optionStart + Vector2.new(0, (index - 1) * DROPDOWN_OPTION_HEIGHT)
+		for visibleRow = 1, self:getVisibleOptionCount() do
+			local rowPosition = optionStart + Vector2.new(0, (visibleRow - 1) * DROPDOWN_OPTION_HEIGHT)
 
 			if pointInRect(point, rowPosition, Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT)) then
-				return index
+				return visibleRow
 			end
 		end
 
@@ -2813,7 +2996,8 @@ function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 	function control:layout()
 		local basePosition, baseSize = self:getBaseRect()
 		local searchPosition, searchSize = self:getSearchRect()
-		local visibleCount = round(#self.filteredIndices * self.openAlpha)
+		local visibleOptionCount = self:getVisibleOptionCount()
+		local visibleCount = round(visibleOptionCount * self.openAlpha)
 		local searchDisplay = self.searchText
 
 		if self.focused and self.cursorVisible then
@@ -2845,28 +3029,23 @@ function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 		writeProperty(self.drawings.searchOutline, "Visible", searchVisible)
 		writeProperty(self.drawings.searchText, "Visible", searchVisible)
 
-		for index, optionIndex in ipairs(self.filteredIndices) do
-			local drawingSet = self.optionDrawings[index]
-			local option = self.options[optionIndex]
-			local rowPosition = searchPosition + Vector2.new(0, INPUT_HEIGHT + ((index - 1) * DROPDOWN_OPTION_HEIGHT))
-			local isVisible = self.window:IsControlDisplayed(self) and index <= visibleCount and self.openAlpha > 0.02
+		for visibleRow, drawingSet in ipairs(self.optionDrawings) do
+			local optionIndex = self:getFilteredRowIndex(visibleRow)
+			local isVisible = optionIndex ~= nil and self.window:IsControlDisplayed(self) and visibleRow <= visibleCount and self.openAlpha > 0.02
 
-			writeProperty(drawingSet.frame, "Position", rowPosition)
-			writeProperty(drawingSet.frame, "Size", Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT))
-			writeProperty(drawingSet.outline, "Position", rowPosition)
-			writeProperty(drawingSet.outline, "Size", Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT))
-			writeProperty(drawingSet.text, "Position", rowPosition + Vector2.new(10, 5))
-			writeProperty(drawingSet.text, "Text", tostring(option))
+			if optionIndex ~= nil then
+				local rowPosition = searchPosition + Vector2.new(0, INPUT_HEIGHT + ((visibleRow - 1) * DROPDOWN_OPTION_HEIGHT))
+				writeProperty(drawingSet.frame, "Position", rowPosition)
+				writeProperty(drawingSet.frame, "Size", Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT))
+				writeProperty(drawingSet.outline, "Position", rowPosition)
+				writeProperty(drawingSet.outline, "Size", Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT))
+				writeProperty(drawingSet.text, "Position", rowPosition + Vector2.new(10, 5))
+				writeProperty(drawingSet.text, "Text", tostring(self.options[optionIndex]))
+			end
+
 			writeProperty(drawingSet.frame, "Visible", isVisible)
 			writeProperty(drawingSet.outline, "Visible", isVisible)
 			writeProperty(drawingSet.text, "Visible", isVisible)
-		end
-
-		for index = #self.filteredIndices + 1, #self.optionDrawings do
-			local drawingSet = self.optionDrawings[index]
-			writeProperty(drawingSet.frame, "Visible", false)
-			writeProperty(drawingSet.outline, "Visible", false)
-			writeProperty(drawingSet.text, "Visible", false)
 		end
 	end
 
@@ -2881,7 +3060,7 @@ function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 		writeProperty(self.drawings.searchText, "Visible", searchVisible)
 
 		for index, drawingSet in ipairs(self.optionDrawings) do
-			local rowVisible = shouldShow and self.openAlpha > 0.02 and (index <= round(#self.filteredIndices * self.openAlpha))
+			local rowVisible = shouldShow and self.openAlpha > 0.02 and (index <= round(self:getVisibleOptionCount() * self.openAlpha)) and self:getFilteredRowIndex(index) ~= nil
 			writeProperty(drawingSet.frame, "Visible", rowVisible)
 			writeProperty(drawingSet.outline, "Visible", rowVisible)
 			writeProperty(drawingSet.text, "Visible", rowVisible)
@@ -2913,6 +3092,9 @@ function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 		end
 
 		if self.openAlpha > 0.02 and pointInRect(point, searchPosition, searchSize) then
+			if activeTextbox ~= nil and activeTextbox ~= self then
+				activeTextbox:Blur(true)
+			end
 			activeTextbox = self
 			self.focused = true
 			self.cursorVisible = true
@@ -2922,18 +3104,33 @@ function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 		end
 
 		local optionIndex = self:getOptionIndex(point)
+		local optionValueIndex = optionIndex ~= nil and self:getFilteredRowIndex(optionIndex) or nil
 
-		if optionIndex ~= nil then
-			self:SetValue(self.options[self.filteredIndices[optionIndex]])
+		if optionValueIndex ~= nil then
+			self:SetValue(self.options[optionValueIndex])
 			self.callback(self.value)
 			self:SetOpen(false)
 		end
 	end
 
+	function control:onMouseWheel(delta)
+		if not self.open or self.openAlpha <= 0.02 then
+			return false
+		end
+
+		if delta > 0 then
+			return self:scrollBy(-1)
+		elseif delta < 0 then
+			return self:scrollBy(1)
+		end
+
+		return false
+	end
+
 	function control:onStep(mousePosition, ownsHover)
 		local basePosition, baseSize = self:getBaseRect()
 		local targetAlpha = self.open and 1 or 0
-		local nextAlpha = lerp(self.openAlpha, targetAlpha, 0.25)
+		local nextAlpha = lerp(self.openAlpha, targetAlpha, DROPDOWN_ANIMATION)
 		local needsLayout = false
 
 		if math.abs(nextAlpha - self.openAlpha) > 0.001 then
@@ -2950,15 +3147,16 @@ function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 		end
 
 		self.hovered = ownsHover and pointInRect(mousePosition, basePosition, baseSize)
-		writeProperty(self.drawings.frame, "Color", self.hovered and self.window.theme.InputHover or self.window.theme.Input)
-		writeProperty(self.drawings.outline, "Color", self.open and self.window.theme.Accent or self.window.theme.Border)
-		writeProperty(self.drawings.searchFrame, "Color", self.focused and self.window.theme.InputFocused or self.window.theme.Input)
-		writeProperty(self.drawings.searchOutline, "Color", self.focused and self.window.theme.Accent or self.window.theme.Border)
+		writeProperty(self.drawings.frame, "Color", self.hovered and blendAccent(self.window.theme, self.window.theme.InputHover, 0.06) or self.window.theme.Input)
+		writeProperty(self.drawings.outline, "Color", self.open and blendAccent(self.window.theme, self.window.theme.Border, 0.72) or self.window.theme.Border)
+		writeProperty(self.drawings.searchFrame, "Color", self.focused and blendAccent(self.window.theme, self.window.theme.InputFocused, 0.08) or self.window.theme.Input)
+		writeProperty(self.drawings.searchOutline, "Color", self.focused and blendAccent(self.window.theme, self.window.theme.Border, 0.72) or self.window.theme.Border)
 
-		for index, drawingSet in ipairs(self.optionDrawings) do
-			local hoveredOption = ownsHover and self:getOptionIndex(mousePosition) == index
-			local selected = self.filteredIndices[index] ~= nil and self.options[self.filteredIndices[index]] == self.value
-			local rowColor = selected and self.window.theme.TabActive or hoveredOption and self.window.theme.InputHover or self.window.theme.Input
+		for visibleRow, drawingSet in ipairs(self.optionDrawings) do
+			local optionIndex = self:getFilteredRowIndex(visibleRow)
+			local hoveredOption = ownsHover and self:getOptionIndex(mousePosition) == visibleRow
+			local selected = optionIndex ~= nil and self.options[optionIndex] == self.value
+			local rowColor = selected and blendAccent(self.window.theme, self.window.theme.TabActive, 0.14) or hoveredOption and blendAccent(self.window.theme, self.window.theme.InputHover, 0.06) or self.window.theme.Input
 			writeProperty(drawingSet.frame, "Color", rowColor)
 		end
 
@@ -3007,6 +3205,7 @@ function addTextbox(window, tab, text, placeholder, callback)
 	control.lastBlink = os.clock()
 	control.maxLength = 64
 	control.blocksWindowDrag = true
+	control.acceptsTextInput = true
 
 	control.drawings.label = createDrawing("Text", {
 		Visible = window.visible,
@@ -3159,9 +3358,9 @@ function addTextbox(window, tab, text, placeholder, callback)
 			end
 		end
 
-		local frameColor = self.focused and self.window.theme.InputFocused or self.hovered and self.window.theme.InputHover or self.window.theme.Input
+		local frameColor = self.focused and blendAccent(self.window.theme, self.window.theme.InputFocused, 0.08) or self.hovered and blendAccent(self.window.theme, self.window.theme.InputHover, 0.06) or self.window.theme.Input
 		writeProperty(self.drawings.frame, "Color", frameColor)
-		writeProperty(self.drawings.outline, "Color", self.focused and self.window.theme.Accent or self.window.theme.Border)
+		writeProperty(self.drawings.outline, "Color", self.focused and blendAccent(self.window.theme, self.window.theme.Border, 0.72) or self.window.theme.Border)
 	end
 
 	function control:setZIndex(z)
@@ -3530,6 +3729,7 @@ function addMultiDropdown(window, tab, text, options, defaultValues, callback)
 	control.open = false
 	control.openAlpha = 0
 	control.blocksWindowDrag = true
+	control.isDropdown = true
 
 	for _, value in ipairs(defaultValues or {}) do
 		control.selected[value] = true
@@ -3809,7 +4009,7 @@ function addMultiDropdown(window, tab, text, options, defaultValues, callback)
 	function control:onStep(mousePosition, ownsHover)
 		local basePosition, baseSize = self:getBaseRect()
 		local targetAlpha = self.open and 1 or 0
-		local nextAlpha = lerp(self.openAlpha, targetAlpha, 0.25)
+		local nextAlpha = lerp(self.openAlpha, targetAlpha, DROPDOWN_ANIMATION)
 		local needsLayout = false
 
 		if math.abs(nextAlpha - self.openAlpha) > 0.001 then
@@ -3820,14 +4020,14 @@ function addMultiDropdown(window, tab, text, options, defaultValues, callback)
 		end
 
 		self.hovered = ownsHover and pointInRect(mousePosition, basePosition, baseSize)
-		writeProperty(self.drawings.frame, "Color", self.hovered and self.window.theme.InputHover or self.window.theme.Input)
-		writeProperty(self.drawings.outline, "Color", self.open and self.window.theme.Accent or self.window.theme.Border)
+		writeProperty(self.drawings.frame, "Color", self.hovered and blendAccent(self.window.theme, self.window.theme.InputHover, 0.06) or self.window.theme.Input)
+		writeProperty(self.drawings.outline, "Color", self.open and blendAccent(self.window.theme, self.window.theme.Border, 0.72) or self.window.theme.Border)
 
 		for index, drawingSet in ipairs(self.optionDrawings) do
 			local option = self.options[index]
 			local hoveredOption = ownsHover and self:getOptionIndex(mousePosition) == index
 			local selected = self.selected[option]
-			local rowColor = selected and self.window.theme.TabActive or hoveredOption and self.window.theme.InputHover or self.window.theme.Input
+			local rowColor = selected and blendAccent(self.window.theme, self.window.theme.TabActive, 0.14) or hoveredOption and blendAccent(self.window.theme, self.window.theme.InputHover, 0.06) or self.window.theme.Input
 
 			writeProperty(drawingSet.frame, "Color", rowColor)
 		end
@@ -3880,6 +4080,7 @@ function addKeybind(window, tab, text, defaultKey, callback, changedCallback)
 	control.listening = false
 	control.blocksWindowDrag = true
 	control.allowMouseInputs = false
+	control.capturesBindings = true
 
 	control.drawings.label = createDrawing("Text", {
 		Visible = window.visible,
@@ -4004,9 +4205,9 @@ function addKeybind(window, tab, text, defaultKey, callback, changedCallback)
 
 	function control:onStep(mousePosition, ownsHover)
 		self.hovered = ownsHover and self:hitTest(mousePosition)
-		local frameColor = self.listening and self.window.theme.InputFocused or self.hovered and self.window.theme.InputHover or self.window.theme.Input
+		local frameColor = self.listening and blendAccent(self.window.theme, self.window.theme.InputFocused, 0.08) or self.hovered and blendAccent(self.window.theme, self.window.theme.InputHover, 0.06) or self.window.theme.Input
 		writeProperty(self.drawings.frame, "Color", frameColor)
-		writeProperty(self.drawings.outline, "Color", self.listening and self.window.theme.Accent or self.window.theme.Border)
+		writeProperty(self.drawings.outline, "Color", self.listening and blendAccent(self.window.theme, self.window.theme.Border, 0.72) or self.window.theme.Border)
 	end
 
 	function control:setZIndex(z)
@@ -4062,8 +4263,8 @@ function Tab:AddDropdown(text, options, defaultValue, callback)
 	return addDropdown(self.window, self, text, options, defaultValue, callback)
 end
 
-function Tab:AddSearchDropdown(text, options, defaultValue, callback)
-	return addSearchDropdown(self.window, self, text, options, defaultValue, callback)
+function Tab:AddSearchDropdown(text, options, defaultValue, maxSizeOrCallback, callback)
+	return addSearchDropdown(self.window, self, text, options, defaultValue, maxSizeOrCallback, callback)
 end
 
 function Tab:AddMultiDropdown(text, options, defaultValues, callback)
@@ -4115,7 +4316,7 @@ function Window:AddTab(name)
 				Color = self.theme.SubText,
 				Size = 13,
 				Font = FONT,
-				Outline = true,
+				Outline = false,
 				Text = name,
 				Position = Vector2.zero,
 			}),
@@ -4170,8 +4371,8 @@ function Window:AddDropdown(text, options, defaultValue, callback)
 	return addDropdown(self, nil, text, options, defaultValue, callback)
 end
 
-function Window:AddSearchDropdown(text, options, defaultValue, callback)
-	return addSearchDropdown(self, nil, text, options, defaultValue, callback)
+function Window:AddSearchDropdown(text, options, defaultValue, maxSizeOrCallback, callback)
+	return addSearchDropdown(self, nil, text, options, defaultValue, maxSizeOrCallback, callback)
 end
 
 function Window:AddMultiDropdown(text, options, defaultValues, callback)
@@ -4227,7 +4428,7 @@ function DrawingUI.new(options)
 			Visible = self.visible,
 			Filled = true,
 			Color = Color3.fromRGB(7, 9, 12),
-			Transparency = 0.55,
+			Transparency = 0.68,
 			Thickness = 1,
 			Position = Vector2.zero,
 			Size = Vector2.zero,
@@ -4251,7 +4452,7 @@ function DrawingUI.new(options)
 		accent = createDrawing("Line", {
 			Visible = self.visible,
 			Color = self.theme.Accent,
-			Thickness = 1,
+			Thickness = 2,
 			From = Vector2.zero,
 			To = Vector2.zero,
 		}),
@@ -4260,7 +4461,7 @@ function DrawingUI.new(options)
 			Color = self.theme.Text,
 			Size = 15,
 			Font = FONT,
-			Outline = true,
+			Outline = false,
 			Text = self.title,
 			Position = Vector2.zero,
 		}),
@@ -4269,7 +4470,7 @@ function DrawingUI.new(options)
 			Color = self.theme.Muted,
 			Size = 12,
 			Font = FONT,
-			Outline = true,
+			Outline = false,
 			Text = self.subtitle,
 			Position = Vector2.zero,
 		}),

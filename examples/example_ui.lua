@@ -1,4 +1,4 @@
-local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.10.8"))()
+local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.11.0"))()
 
 local state = {
 	enabled = false,
@@ -84,7 +84,7 @@ local targetDropdown = combatTab:AddDropdown("Target Part", { "Head", "Torso", "
 	window:SetSubtitle("targeting " .. string.lower(value))
 end)
 
-local searchTargetDropdown = combatTab:AddSearchDropdown("Search Target", { "Head", "Torso", "UpperTorso", "LowerTorso", "HumanoidRootPart", "Closest" }, state.searchTarget, function(value)
+local searchTargetDropdown = combatTab:AddSearchDropdown("Search Target", { "Head", "Torso", "UpperTorso", "LowerTorso", "HumanoidRootPart", "Closest" }, state.searchTarget, 4, function(value)
 	state.searchTarget = value
 	window:SetSubtitle("search " .. string.lower(value))
 end)
@@ -150,7 +150,7 @@ local configNameTextbox = storageSubTab:AddTextbox("Config Name", "Type config n
 	state.selectedConfig = value
 end)
 
-local configSelector = storageSubTab:AddSearchDropdown("Stored Configs", window:ListConfigs(), nil, function(value)
+local configSelector = storageSubTab:AddSearchDropdown("Stored Configs", window:ListConfigs(), nil, 6, function(value)
 	state.selectedConfig = value
 	configNameTextbox:SetText(value)
 end)

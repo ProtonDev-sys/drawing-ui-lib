@@ -41,7 +41,7 @@ If your environment does not expose the Drawing API, this library will not run.
 ### Remote loadstring
 
 ```lua
-local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.10.8"))()
+local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.11.0"))()
 ```
 
 ### Local usage
@@ -51,7 +51,7 @@ If you ship the file yourself, load `DrawingUI.lua` however your environment exp
 ## Quick start
 
 ```lua
-local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.10.8"))()
+local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.11.0"))()
 
 local window = DrawingUI.CreateWindow({
 	Title = "Example Hub",
@@ -69,7 +69,7 @@ mainTab:AddToggle("Enabled", false, function(value)
 	statusLabel:SetText("Enabled: " .. tostring(value))
 end)
 
-mainTab:AddSearchDropdown("Target Part", { "Head", "Torso", "Closest" }, "Head", function(value)
+mainTab:AddSearchDropdown("Target Part", { "Head", "Torso", "Closest" }, "Head", 4, function(value)
 	print("Selected:", value)
 end)
 
@@ -128,6 +128,7 @@ Notes:
 - `window:AddSlider(text, min, max, initialValue, callback)`
 - `window:AddDropdown(text, options, defaultValue, callback)`
 - `window:AddSearchDropdown(text, options, defaultValue, callback)`
+- `window:AddSearchDropdown(text, options, defaultValue, maxSize, callback)`
 - `window:AddMultiDropdown(text, options, defaultValues, callback)`
 - `window:AddColorPicker(text, defaultColor, callback)`
 - `window:AddTextbox(text, placeholder, callback)`
@@ -162,6 +163,7 @@ Notes:
 - `tab:AddSlider(text, min, max, initialValue, callback)`
 - `tab:AddDropdown(text, options, defaultValue, callback)`
 - `tab:AddSearchDropdown(text, options, defaultValue, callback)`
+- `tab:AddSearchDropdown(text, options, defaultValue, maxSize, callback)`
 - `tab:AddMultiDropdown(text, options, defaultValues, callback)`
 - `tab:AddColorPicker(text, defaultColor, callback)`
 - `tab:AddTextbox(text, placeholder, callback)`
@@ -191,6 +193,8 @@ For keybinds, `defaultKey` can be:
 
 Pressing `Escape` while rebinding clears the keybind.
 
+For searchable dropdowns, `maxSize` limits how many filtered rows are visible at once. Additional matches stay searchable and can be reached with the mouse wheel.
+
 ## Returned control objects
 
 Most constructor calls return a control object, which is useful if your menu updates dynamically.
@@ -201,7 +205,7 @@ Common mutators exposed by the current implementation include:
 - Buttons and toggles: `control:SetActivationBinding(binding)`
 - Toggles and sliders: `control:SetValue(value)`
 - Dropdowns: `control:SetValue(value)`, `control:SetOptions(options, defaultValue?)`, `control:SetOpen(boolean)`
-- Searchable dropdowns: `control:SetValue(value)`, `control:SetOptions(options, defaultValue?)`, `control:SetSearchText(text)`, `control:SetOpen(boolean)`
+- Searchable dropdowns: `control:SetValue(value)`, `control:SetOptions(options, defaultValue?, maxSize?)`, `control:SetSearchText(text)`, `control:SetMaxSize(maxSize?)`, `control:SetOpen(boolean)`
 - Multi-dropdowns: `control:SetValues(values)`, `control:SetOpen(boolean)`
 - Color pickers: `control:SetColor(color3)`
 - Keybinds: `control:SetListening(boolean)`, `control:SetBinding(binding)`, `control:SetAllowMouseInputs(boolean)`
