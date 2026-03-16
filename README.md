@@ -41,7 +41,7 @@ If your environment does not expose the Drawing API, this library will not run.
 ### Remote loadstring
 
 ```lua
-local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.10.5"))()
+local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.10.6"))()
 ```
 
 ### Local usage
@@ -51,7 +51,7 @@ If you ship the file yourself, load `DrawingUI.lua` however your environment exp
 ## Quick start
 
 ```lua
-local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.10.5"))()
+local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.10.6"))()
 
 local window = DrawingUI.CreateWindow({
 	Title = "Example Hub",

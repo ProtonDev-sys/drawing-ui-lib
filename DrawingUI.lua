@@ -6,7 +6,7 @@ local HttpService = game:GetService("HttpService")
 
 local DrawingUI = {}
 DrawingUI.__index = DrawingUI
-local VERSION = "0.10.5"
+local VERSION = "0.10.6"
 
 local DEFAULT_THEME = {
 	WindowBackground = Color3.fromRGB(19, 22, 28),
@@ -1174,7 +1174,6 @@ local function addLabel(window, tab, text)
 
 	function control:refreshVisibility(shouldShow, alpha)
 		writeProperty(self.drawings.text, "Visible", shouldShow)
-		writeProperty(self.drawings.text, "Transparency", shouldShow and (1 - alpha) or 1)
 	end
 
 	function control:setZIndex(z)
@@ -1244,8 +1243,6 @@ local function addParagraph(window, tab, title, text)
 	function control:refreshVisibility(shouldShow, alpha)
 		writeProperty(self.drawings.title, "Visible", shouldShow)
 		writeProperty(self.drawings.body, "Visible", shouldShow)
-		writeProperty(self.drawings.title, "Transparency", shouldShow and (1 - alpha) or 1)
-		writeProperty(self.drawings.body, "Transparency", shouldShow and (1 - alpha) or 1)
 	end
 
 	function control:setZIndex(z)
@@ -1309,8 +1306,6 @@ local function addSection(window, tab, text)
 	function control:refreshVisibility(shouldShow, alpha)
 		writeProperty(self.drawings.text, "Visible", shouldShow)
 		writeProperty(self.drawings.line, "Visible", shouldShow)
-		writeProperty(self.drawings.text, "Transparency", shouldShow and (1 - alpha) or 1)
-		writeProperty(self.drawings.line, "Transparency", shouldShow and (1 - alpha) or 1)
 	end
 
 	function control:setZIndex(z)
@@ -1428,9 +1423,6 @@ local function addSubTab(window, tab, text, expanded)
 		writeProperty(self.drawings.text, "Visible", shouldShow)
 		writeProperty(self.drawings.arrow, "Visible", shouldShow)
 		writeProperty(self.drawings.line, "Visible", shouldShow)
-		writeProperty(self.drawings.text, "Transparency", shouldShow and 0 or 1)
-		writeProperty(self.drawings.arrow, "Transparency", shouldShow and 0 or 1)
-		writeProperty(self.drawings.line, "Transparency", shouldShow and 0 or 1)
 	end
 
 	function group:setZIndex(z)
