@@ -1252,6 +1252,17 @@ local function addSection(window, tab, text)
 	return addControl(window, tab, control)
 end
 
+local addButton
+local addButtonRow
+local addToggle
+local addSlider
+local addDropdown
+local addSearchDropdown
+local addTextbox
+local addColorPicker
+local addMultiDropdown
+local addKeybind
+
 local function addSubTab(window, tab, text, expanded)
 	local group = makeBaseControl(window, tab, "SubTab", SECTION_HEIGHT + 2)
 	group.text = text
@@ -1398,7 +1409,7 @@ local function addSubTab(window, tab, text, expanded)
 	return addControl(window, tab, group)
 end
 
-local function addButton(window, tab, text, callback)
+function addButton(window, tab, text, callback)
 	local control = makeBaseControl(window, tab, "Button", BUTTON_HEIGHT)
 	control.text = text
 	control.callback = callback or function() end
@@ -1501,7 +1512,7 @@ local function addButton(window, tab, text, callback)
 	return addControl(window, tab, control)
 end
 
-local function addButtonRow(window, tab, buttons)
+function addButtonRow(window, tab, buttons)
 	local control = makeBaseControl(window, tab, "ButtonRow", BUTTON_HEIGHT)
 	control.buttons = buttons or {}
 	control.drawings = {}
@@ -1639,7 +1650,7 @@ local function addButtonRow(window, tab, buttons)
 	return addControl(window, tab, control)
 end
 
-local function addToggle(window, tab, text, initialValue, callback)
+function addToggle(window, tab, text, initialValue, callback)
 	local control = makeBaseControl(window, tab, "Toggle", TOGGLE_HEIGHT)
 	control.text = text
 	control.configKey = text
@@ -1834,7 +1845,7 @@ local function addToggle(window, tab, text, initialValue, callback)
 	return addControl(window, tab, control)
 end
 
-local function addSlider(window, tab, text, minimum, maximum, initialValue, callback)
+function addSlider(window, tab, text, minimum, maximum, initialValue, callback)
 	local control = makeBaseControl(window, tab, "Slider", SLIDER_HEIGHT)
 	control.text = text
 	control.configKey = text
@@ -2025,7 +2036,7 @@ local function addSlider(window, tab, text, minimum, maximum, initialValue, call
 	return addControl(window, tab, control)
 end
 
-local function addDropdown(window, tab, text, options, defaultValue, callback)
+function addDropdown(window, tab, text, options, defaultValue, callback)
 	local control = makeBaseControl(window, tab, "Dropdown", LABELED_INPUT_HEIGHT)
 	control.text = text
 	control.configKey = text
@@ -2373,7 +2384,7 @@ local function addDropdown(window, tab, text, options, defaultValue, callback)
 	return addControl(window, tab, control)
 end
 
-local function addSearchDropdown(window, tab, text, options, defaultValue, callback)
+function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 	local control = makeBaseControl(window, tab, "SearchDropdown", SEARCH_DROPDOWN_CLOSED_HEIGHT)
 	control.text = text
 	control.configKey = text
@@ -2831,7 +2842,7 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 	return addControl(window, tab, control)
 end
 
-local function addTextbox(window, tab, text, placeholder, callback)
+function addTextbox(window, tab, text, placeholder, callback)
 	local control = makeBaseControl(window, tab, "Textbox", LABELED_INPUT_HEIGHT)
 	control.text = ""
 	control.title = text
@@ -3017,7 +3028,7 @@ local function addTextbox(window, tab, text, placeholder, callback)
 	return addControl(window, tab, control)
 end
 
-local function addColorPicker(window, tab, text, defaultColor, callback)
+function addColorPicker(window, tab, text, defaultColor, callback)
 	local control = makeBaseControl(window, tab, "ColorPicker", 148)
 	control.text = text
 	control.configKey = text
@@ -3355,7 +3366,7 @@ local function addColorPicker(window, tab, text, defaultColor, callback)
 	return addControl(window, tab, control)
 end
 
-local function addMultiDropdown(window, tab, text, options, defaultValues, callback)
+function addMultiDropdown(window, tab, text, options, defaultValues, callback)
 	local control = makeBaseControl(window, tab, "MultiDropdown", LABELED_INPUT_HEIGHT)
 	control.text = text
 	control.configKey = text
@@ -3703,7 +3714,7 @@ local function addMultiDropdown(window, tab, text, options, defaultValues, callb
 	return addControl(window, tab, control)
 end
 
-local function addKeybind(window, tab, text, defaultKey, callback, changedCallback)
+function addKeybind(window, tab, text, defaultKey, callback, changedCallback)
 	local control = makeBaseControl(window, tab, "Keybind", LABELED_INPUT_HEIGHT)
 	control.text = text
 	control.configKey = text
