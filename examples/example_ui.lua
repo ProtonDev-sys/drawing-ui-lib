@@ -3,9 +3,21 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
-local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.11.1"))()
+local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=2.0.0"))()
 
 local LocalPlayer = Players.LocalPlayer
+local function formatInputBinding(binding)
+	if binding == nil then
+		return "NONE"
+	end
+
+	if binding.kind == "Keyboard" and binding.code ~= nil then
+		return binding.code.Name
+	end
+
+	return binding.kind or "NONE"
+end
+
 local SKELETON_SEGMENTS = {
 	{ "Head", "UpperTorso" },
 	{ "UpperTorso", "LowerTorso" },
@@ -372,23 +384,21 @@ local function updateSkeleton(entry, targetData, camera, isVisible)
 	for index = 1, #SKELETON_SEGMENTS do
 		local segmentParts = targetData.skeletonParts[index]
 
-		if segmentParts == nil then
-			continue
-		end
+		if segmentParts ~= nil then
+			local fromPart = segmentParts[1]
+			local toPart = segmentParts[2]
 
-		local fromPart = segmentParts[1]
-		local toPart = segmentParts[2]
+			if fromPart ~= nil and toPart ~= nil and fromPart.Parent ~= nil and toPart.Parent ~= nil and lineIndex <= #entry.skeleton then
+				local fromScreen, fromVisible = camera:WorldToViewportPoint(fromPart.Position)
+				local toScreen, toVisible = camera:WorldToViewportPoint(toPart.Position)
 
-		if fromPart ~= nil and toPart ~= nil and fromPart.Parent ~= nil and toPart.Parent ~= nil and lineIndex <= #entry.skeleton then
-			local fromScreen, fromVisible = camera:WorldToViewportPoint(fromPart.Position)
-			local toScreen, toVisible = camera:WorldToViewportPoint(toPart.Position)
-
-			if fromVisible and toVisible and fromScreen.Z > 0 and toScreen.Z > 0 then
-				local line = entry.skeleton[lineIndex]
-				line.From = Vector2.new(fromScreen.X, fromScreen.Y)
-				line.To = Vector2.new(toScreen.X, toScreen.Y)
-				line.Visible = true
-				lineIndex += 1
+				if fromVisible and toVisible and fromScreen.Z > 0 and toScreen.Z > 0 then
+					local line = entry.skeleton[lineIndex]
+					line.From = Vector2.new(fromScreen.X, fromScreen.Y)
+					line.To = Vector2.new(toScreen.X, toScreen.Y)
+					line.Visible = true
+					lineIndex = lineIndex + 1
+				end
 			end
 		end
 	end
@@ -463,7 +473,7 @@ local function updateOverlayEntry(targetData, camera, cameraPosition)
 		entry.name.Text = targetData.displayName
 		entry.name.Position = Vector2.new(centerX, nextTextY)
 		entry.name.Visible = true
-		nextTextY -= 14
+		nextTextY = nextTextY - 14
 	else
 		entry.name.Visible = false
 	end
@@ -472,7 +482,7 @@ local function updateOverlayEntry(targetData, camera, cameraPosition)
 		entry.health.Text = tostring(round(humanoid.Health)) .. " HP"
 		entry.health.Position = Vector2.new(centerX, nextTextY)
 		entry.health.Visible = true
-		nextTextY -= 14
+		nextTextY = nextTextY - 14
 	else
 		entry.health.Visible = false
 	end
@@ -660,67 +670,192 @@ table.insert(overlayConnections, RunService.RenderStepped:Connect(function()
 	end
 end))
 
-local window = DrawingUI.CreateWindow({
+local window = DrawingUI.CreateApp({
 	Title = "DrawingUI Showcase v" .. (DrawingUI.Version or "dev"),
-	Position = Vector2.new(140, 90),
-	Size = Vector2.new(500, 350),
-	ConfigId = "drawingui-showcase",
+	ConfigId = "drawingui-showcase-v2",
 	Theme = DrawingUI.Themes.Circuit,
 })
 
-window:SetSubtitle("basic showcase")
+window:SetHeader({
+	title = "DrawingUI Control Deck",
+	subtitle = "workspace shell showcase",
+	actions = {
+		{
+			text = "Hide",
+			callback = function()
+				window:SetVisible(false)
+			end,
+		},
+		{
+			text = "Unload",
+			callback = function()
+				clearOverlays()
+				DrawingUI.ClearAll()
+			end,
+		},
+	},
+})
 
-local aimTab = window:AddTab("Aim")
-local visualsTab = window:AddTab("Visuals")
-local configTab = window:AddTab("Config")
-local miscTab = window:AddTab("Misc")
+local overviewPage = window:AddPage({
+	id = "overview",
+	label = "Overview",
+	icon = "O",
+	badge = "LIVE",
+})
+
+local aimPage = window:AddPage({
+	id = "aim",
+	label = "Aim",
+	icon = "A",
+})
+
+local visualsPage = window:AddPage({
+	id = "visuals",
+	label = "Visuals",
+	icon = "V",
+})
+
+local configPage = window:AddPage({
+	id = "configs",
+	label = "Configs",
+	icon = "C",
+})
+
+local settingsPage = window:AddPage({
+	id = "settings",
+	label = "Settings",
+	icon = "S",
+})
 
 local applyThemePreset
 local applyAccent
 local refreshConfigList
 
-aimTab:AddSection("Targeting")
+local overviewHero = overviewPage:AddSection({
+	title = "Workspace Summary",
+	description = "Fast launch controls and live configuration state.",
+	columnSpan = 7,
+})
 
-aimTab:AddToggle("Enable Aim", state.aimEnabled, function(value)
-	state.aimEnabled = value
+local quickActions = overviewHero:AddGroup({
+	title = "Quick Actions",
+	defaultOpen = true,
+})
+
+quickActions:AddButtonRow({
+	{
+		text = "Toggle ESP",
+		callback = function()
+			state.espEnabled = not state.espEnabled
+		end,
+	},
+	{
+		text = "Toggle Aim",
+		callback = function()
+			state.aimEnabled = not state.aimEnabled
+		end,
+	},
+	{
+		text = "Hide UI",
+		callback = function()
+			window:SetVisible(false)
+		end,
+	},
+})
+
+local statusGroup = overviewHero:AddGroup({
+	title = "Live Status",
+	defaultOpen = true,
+})
+
+local statusAim = statusGroup:AddLabel("Aim Enabled: " .. tostring(state.aimEnabled))
+local statusEsp = statusGroup:AddLabel("ESP Enabled: " .. tostring(state.espEnabled))
+local statusTarget = statusGroup:AddLabel("Target Part: " .. state.targetPart)
+
+local overviewProfiles = overviewPage:AddSection({
+	title = "Preset Snapshot",
+	description = "Theme, binds, and target settings at a glance.",
+	columnSpan = 5,
+})
+
+overviewProfiles:AddParagraph("Theme", "Preset: " .. state.themePreset)
+overviewProfiles:AddParagraph("Aim Bind", formatInputBinding(state.aimBind))
+overviewProfiles:AddParagraph("Menu Bind", formatInputBinding(state.menuBind))
+
+overviewPage:SetAside(function(aside)
+	local asideSection = aside:AddSection({
+		title = "Telemetry",
+		description = "Right-side utility rail content.",
+	})
+
+	asideSection:AddParagraph("FOV Radius", tostring(state.fov))
+	asideSection:AddParagraph("Smoothness", string.format("%.2f", state.smoothness))
+	asideSection:AddParagraph("ESP Flags", table.concat(state.flags, ", "))
 end)
 
-aimTab:AddToggle("Draw FOV Circle", state.drawFovCircle, function(value)
+local aimMain = aimPage:AddSection({
+	title = "Targeting Controls",
+	description = "Primary aim-assist controls for the current workspace.",
+	columnSpan = 7,
+})
+
+aimMain:AddToggle("Enable Aim", state.aimEnabled, function(value)
+	state.aimEnabled = value
+	statusAim:SetText("Aim Enabled: " .. tostring(value))
+end)
+
+aimMain:AddToggle("Draw FOV Circle", state.drawFovCircle, function(value)
 	state.drawFovCircle = value
 end)
 
-aimTab:AddToggle("Visible Check", state.visibleCheck, function(value)
+aimMain:AddToggle("Visible Check", state.visibleCheck, function(value)
 	state.visibleCheck = value
 end)
 
-aimTab:AddSlider("FOV Radius", 40, 400, state.fov, function(value)
+aimMain:AddSlider("FOV Radius", 40, 400, state.fov, function(value)
 	state.fov = round(value)
 end)
 
-aimTab:AddSlider("Smoothness", 0.05, 1, state.smoothness, function(value)
+aimMain:AddSlider("Smoothness", 0.05, 1, state.smoothness, function(value)
 	state.smoothness = value
 end)
 
-aimTab:AddDropdown("Target Part", { "Head", "UpperTorso", "LowerTorso", "HumanoidRootPart" }, state.targetPart, function(value)
+aimMain:AddDropdown("Target Part", { "Head", "UpperTorso", "LowerTorso", "HumanoidRootPart" }, state.targetPart, function(value)
 	state.targetPart = value
+	statusTarget:SetText("Target Part: " .. value)
 end)
 
-local aimBindControl = aimTab:AddKeybind("Aim Bind", state.aimBind, function() end, function(binding)
+local aimBindControl = aimMain:AddKeybind("Aim Bind", state.aimBind, function() end, function(binding)
 	state.aimBind = binding
 end)
 aimBindControl:SetAllowMouseInputs(true)
 
-visualsTab:AddSection("Overlay")
+local aimPreview = aimPage:AddSection({
+	title = "Assist Preview",
+	description = "Shell-side context for current assist state.",
+	columnSpan = 5,
+})
 
-visualsTab:AddToggle("Enable ESP", state.espEnabled, function(value)
+aimPreview:AddParagraph("Assist Mode", "Hold the configured bind to engage smoothing.")
+aimPreview:AddParagraph("Target Part", state.targetPart)
+aimPreview:AddParagraph("Visible Check", tostring(state.visibleCheck))
+
+local visualsMain = visualsPage:AddSection({
+	title = "Overlay Controls",
+	description = "ESP rendering and highlight settings.",
+	columnSpan = 8,
+})
+
+visualsMain:AddToggle("Enable ESP", state.espEnabled, function(value)
 	state.espEnabled = value
+	statusEsp:SetText("ESP Enabled: " .. tostring(value))
 
 	if not shouldProcessEsp() then
 		hideAllOverlayEntries()
 	end
 end)
 
-visualsTab:AddMultiDropdown("ESP Flags", { "Box", "Corner Box", "Name", "Health", "Distance", "Skeletons" }, state.flags, function(values)
+visualsMain:AddMultiDropdown("ESP Flags", { "Box", "Corner Box", "Name", "Health", "Distance", "Skeletons" }, state.flags, function(values)
 	state.flags = values
 	rebuildFlagLookup(values)
 
@@ -729,7 +864,7 @@ visualsTab:AddMultiDropdown("ESP Flags", { "Box", "Corner Box", "Name", "Health"
 	end
 end)
 
-visualsTab:AddColorPicker("ESP Color", state.espColor, function(color)
+visualsMain:AddColorPicker("ESP Color", state.espColor, function(color)
 	state.espColor = color
 
 	for _, entry in pairs(overlayEntries) do
@@ -737,9 +872,31 @@ visualsTab:AddColorPicker("ESP Color", state.espColor, function(color)
 	end
 end)
 
-configTab:AddSection("Customization")
-local themeSubTab = configTab:AddSubTab("Theme", true)
-local filesSubTab = configTab:AddSubTab("Config Files", true)
+local visualsSide = visualsPage:AddSection({
+	title = "Legend",
+	description = "What each ESP flag surfaces in the overlay.",
+	columnSpan = 4,
+})
+
+visualsSide:AddParagraph("Box", "Full body box around the target.")
+visualsSide:AddParagraph("Corner Box", "Corner-only frame with lighter visual weight.")
+visualsSide:AddParagraph("Skeletons", "Bone chain lines for posture read.")
+
+local configMain = configPage:AddSection({
+	title = "Theme & Persistence",
+	description = "Control deck customization and saved config workflow.",
+	columnSpan = 8,
+})
+
+local themeSubTab = configMain:AddGroup({
+	title = "Theme",
+	defaultOpen = true,
+})
+
+local filesSubTab = configMain:AddGroup({
+	title = "Config Files",
+	defaultOpen = true,
+})
 
 local configStatusLabel = filesSubTab:AddLabel("Config Status: Ready")
 
@@ -835,16 +992,49 @@ filesSubTab:AddButtonRow({
 	},
 })
 
-miscTab:AddSection("Actions")
+configPage:SetAside(function(aside)
+	local asideSection = aside:AddSection({
+		title = "Stored State",
+		description = "Config index and current selection.",
+	})
 
-local unloadButton = miscTab:AddButton("Unload UI", function()
+	asideSection:AddParagraph("Selected", state.selectedConfig ~= "" and state.selectedConfig or "None")
+	asideSection:AddParagraph("Config Folder", window:GetConfigFolder())
+end)
+
+local settingsMain = settingsPage:AddSection({
+	title = "Shell Settings",
+	description = "Density, motion, and system actions for the v2 workspace.",
+	columnSpan = 7,
+})
+
+settingsMain:AddDropdown("Density", { "comfortable", "compact" }, "comfortable", function(value)
+	window:SetDensity(value)
+end)
+
+settingsMain:AddDropdown("Motion Mode", { "full", "reduced", "off" }, "full", function(value)
+	window:SetMotion(value)
+end)
+
+local unloadButton = settingsMain:AddButton("Unload UI", function()
 	clearOverlays()
 	DrawingUI.ClearAll()
 end)
+
 unloadButton:SetActivationBinding({
 	kind = "Keyboard",
 	code = Enum.KeyCode.End,
 })
+
+local settingsDiagnostics = settingsPage:AddSection({
+	title = "Diagnostics",
+	description = "Basic shell and input state.",
+	columnSpan = 5,
+})
+
+settingsDiagnostics:AddParagraph("Menu Bind", formatInputBinding(state.menuBind))
+settingsDiagnostics:AddParagraph("Aim Bind", formatInputBinding(state.aimBind))
+settingsDiagnostics:AddParagraph("Visibility Check", tostring(state.visibleCheck))
 
 applyThemePreset = function(preset)
 	state.themePreset = preset
@@ -873,4 +1063,4 @@ applyAccent = function(color)
 end
 
 refreshConfigList()
-window:SetActiveTab("Aim")
+window:SetActivePage("overview")

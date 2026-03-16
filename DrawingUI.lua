@@ -6,74 +6,158 @@ local HttpService = game:GetService("HttpService")
 
 local DrawingUI = {}
 DrawingUI.__index = DrawingUI
-local VERSION = "0.11.1"
+
+local VERSION = "2.0.0"
 
 local DEFAULT_THEME = {
-	WindowBackground = Color3.fromRGB(18, 21, 27),
-	HeaderBackground = Color3.fromRGB(24, 29, 37),
-	Border = Color3.fromRGB(72, 79, 94),
-	InnerBorder = Color3.fromRGB(42, 47, 57),
-	Accent = Color3.fromRGB(78, 176, 255),
-	Muted = Color3.fromRGB(126, 134, 149),
-	Text = Color3.fromRGB(240, 242, 245),
-	SubText = Color3.fromRGB(178, 184, 195),
-	HighlightText = Color3.fromRGB(255, 212, 104),
-	Button = Color3.fromRGB(29, 34, 42),
-	ButtonHover = Color3.fromRGB(37, 43, 53),
-	Input = Color3.fromRGB(22, 26, 33),
-	InputHover = Color3.fromRGB(29, 34, 43),
-	InputFocused = Color3.fromRGB(34, 40, 50),
-	Tab = Color3.fromRGB(22, 27, 35),
-	TabHover = Color3.fromRGB(30, 36, 45),
-	TabActive = Color3.fromRGB(34, 41, 52),
-	Panel = Color3.fromRGB(21, 24, 31),
-	PanelHeader = Color3.fromRGB(27, 31, 39),
-	Toggle = Color3.fromRGB(46, 53, 66),
-	ToggleEnabled = Color3.fromRGB(78, 176, 255),
-	SliderTrack = Color3.fromRGB(43, 49, 61),
-	SliderFill = Color3.fromRGB(78, 176, 255),
-	SectionLine = Color3.fromRGB(52, 58, 71),
-	Font = 0,
+	Accent = Color3.fromRGB(74, 196, 255),
+	AccentSoft = Color3.fromRGB(46, 121, 168),
+	WindowBackground = Color3.fromRGB(12, 16, 22),
+	HeaderBackground = Color3.fromRGB(18, 24, 31),
+	CanvasBackground = Color3.fromRGB(10, 13, 18),
+	SidebarBackground = Color3.fromRGB(14, 18, 24),
+	AsideBackground = Color3.fromRGB(15, 19, 26),
+	Card = Color3.fromRGB(20, 26, 34),
+	CardHover = Color3.fromRGB(24, 31, 40),
+	Panel = Color3.fromRGB(17, 23, 30),
+	PanelHeader = Color3.fromRGB(22, 28, 37),
+	Input = Color3.fromRGB(13, 18, 25),
+	InputHover = Color3.fromRGB(18, 24, 32),
+	InputFocused = Color3.fromRGB(21, 29, 39),
+	Button = Color3.fromRGB(24, 31, 40),
+	ButtonHover = Color3.fromRGB(30, 39, 50),
+	Border = Color3.fromRGB(47, 60, 74),
+	InnerBorder = Color3.fromRGB(28, 36, 45),
+	SoftBorder = Color3.fromRGB(34, 44, 55),
+	Shadow = Color3.fromRGB(5, 8, 12),
+	Text = Color3.fromRGB(241, 247, 252),
+	SubText = Color3.fromRGB(163, 178, 192),
+	Muted = Color3.fromRGB(118, 131, 143),
+	HighlightText = Color3.fromRGB(168, 220, 255),
+	Nav = Color3.fromRGB(16, 21, 28),
+	NavHover = Color3.fromRGB(23, 30, 39),
+	NavActive = Color3.fromRGB(31, 44, 58),
+	NavText = Color3.fromRGB(229, 237, 244),
+	Toggle = Color3.fromRGB(37, 47, 58),
+	ToggleEnabled = Color3.fromRGB(74, 196, 255),
+	SliderTrack = Color3.fromRGB(35, 45, 56),
+	SliderFill = Color3.fromRGB(74, 196, 255),
+	SectionLine = Color3.fromRGB(36, 48, 60),
+	Success = Color3.fromRGB(97, 211, 143),
+	Warning = Color3.fromRGB(255, 196, 92),
+	Danger = Color3.fromRGB(255, 109, 109),
+	Font = 2,
+	TitleFont = 3,
+	AppTitleSize = 22,
 	TitleSize = 18,
-	TextSize = 14,
-	SmallTextSize = 12,
+	SectionTitleSize = 14,
+	TextSize = 13,
+	SmallTextSize = 11,
 }
 
-local DEFAULT_WINDOW = {
+local THEMES = {
+	Default = {},
+	Amber = {
+		Accent = Color3.fromRGB(255, 165, 73),
+		AccentSoft = Color3.fromRGB(169, 98, 38),
+		HeaderBackground = Color3.fromRGB(27, 22, 17),
+		SidebarBackground = Color3.fromRGB(19, 15, 12),
+		Card = Color3.fromRGB(28, 22, 18),
+		CardHover = Color3.fromRGB(34, 27, 21),
+		ButtonHover = Color3.fromRGB(44, 33, 25),
+		InputFocused = Color3.fromRGB(41, 28, 20),
+		ToggleEnabled = Color3.fromRGB(255, 165, 73),
+		SliderFill = Color3.fromRGB(255, 165, 73),
+		HighlightText = Color3.fromRGB(255, 226, 164),
+	},
+	Midnight = {
+		Accent = Color3.fromRGB(124, 164, 255),
+		AccentSoft = Color3.fromRGB(78, 112, 190),
+		WindowBackground = Color3.fromRGB(9, 11, 18),
+		HeaderBackground = Color3.fromRGB(13, 16, 25),
+		CanvasBackground = Color3.fromRGB(7, 9, 15),
+		SidebarBackground = Color3.fromRGB(11, 14, 23),
+		Card = Color3.fromRGB(17, 20, 31),
+		CardHover = Color3.fromRGB(21, 26, 38),
+		Input = Color3.fromRGB(11, 14, 23),
+		InputFocused = Color3.fromRGB(17, 21, 32),
+		Border = Color3.fromRGB(48, 58, 83),
+		InnerBorder = Color3.fromRGB(28, 34, 48),
+	},
+	Circuit = {
+		Accent = Color3.fromRGB(67, 224, 255),
+		AccentSoft = Color3.fromRGB(36, 118, 145),
+		WindowBackground = Color3.fromRGB(11, 16, 20),
+		HeaderBackground = Color3.fromRGB(15, 23, 29),
+		CanvasBackground = Color3.fromRGB(8, 12, 16),
+		SidebarBackground = Color3.fromRGB(10, 17, 22),
+		Card = Color3.fromRGB(16, 24, 31),
+		CardHover = Color3.fromRGB(21, 30, 38),
+		Border = Color3.fromRGB(45, 70, 81),
+		InnerBorder = Color3.fromRGB(24, 38, 46),
+		HighlightText = Color3.fromRGB(165, 237, 255),
+	},
+}
+
+local DEFAULT_OPTIONS = {
 	Title = "Drawing UI",
-	Position = Vector2.new(200, 160),
-	Size = Vector2.new(470, 360),
-	MinSize = nil,
+	Position = nil,
+	Size = nil,
+	MinSize = Vector2.new(860, 560),
 	Visible = true,
-	DragAnywhere = true,
-	Theme = {},
+	DragAnywhere = false,
+	Theme = nil,
+	ConfigRoot = "drawing-ui-lib-configs",
+	ConfigId = nil,
+	Density = "comfortable",
+	MotionMode = "full",
 }
 
-local FONT = 0
-local HEADER_HEIGHT = 38
-local TAB_HEIGHT = 28
-local TAB_GAP = 6
-local PADDING = 16
-local CONTENT_GAP = 14
-local ROW_HEIGHT = 24
-local ROW_GAP = 12
-local BUTTON_HEIGHT = 32
-local TOGGLE_HEIGHT = 24
-local SECTION_HEIGHT = 20
-local SLIDER_HEIGHT = 40
-local INPUT_HEIGHT = 30
-local DROPDOWN_OPTION_HEIGHT = 26
-local LABELED_INPUT_HEIGHT = 46
-local SEARCH_DROPDOWN_CLOSED_HEIGHT = 46
-local WINDOW_MARGIN = 8
-local WINDOW_HEIGHT_ANIMATION = 0.26
-local SECTION_EXPAND_ANIMATION = 0.22
-local TOGGLE_ANIMATION = 0.32
-local DROPDOWN_ANIMATION = 0.32
-local SLIDER_DRAG_ANIMATION = 0.58
-local SLIDER_IDLE_ANIMATION = 0.2
+local DENSITY = {
+	comfortable = {
+		cardPadding = 18,
+		cardGap = 18,
+		itemGap = 14,
+		groupGap = 12,
+		rowHeight = 34,
+		inputHeight = 34,
+		headerInset = 18,
+	},
+	compact = {
+		cardPadding = 14,
+		cardGap = 14,
+		itemGap = 11,
+		groupGap = 10,
+		rowHeight = 30,
+		inputHeight = 30,
+		headerInset = 14,
+	},
+}
 
-local windows = {}
+local MOTION_TOKENS = {
+	micro = 0.09,
+	fast = 0.14,
+	standard = 0.18,
+	emphasized = 0.24,
+	panel = 0.30,
+	open = 0.22,
+}
+
+local SHELL = {
+	HeaderHeight = 56,
+	SidebarWidth = 248,
+	SidebarCollapsedWidth = 68,
+	AsideWidth = 280,
+	OuterPadding = 24,
+	GridGap = 16,
+	MinWidth = 860,
+	MinHeight = 560,
+	ResizeEdge = 8,
+	NavItemHeight = 40,
+	TopActionHeight = 30,
+}
+
+local apps = {}
 local frameConnection
 local inputBeganConnection
 local inputChangedConnection
@@ -81,24 +165,25 @@ local inputEndedConnection
 local activeTextbox
 local listeningKeybind
 local inputBlockBound = false
-local updateInputBlocker
 
-local Window = {}
-Window.__index = Window
+local App = {}
+App.__index = App
 
-local Tab = {}
-Tab.__index = Tab
+local Page = {}
+Page.__index = Page
+
+local Section = {}
+Section.__index = Section
+
+local Group = {}
+Group.__index = Group
 
 local function clamp(value, minimum, maximum)
 	return math.max(minimum, math.min(maximum, value))
 end
 
 local function lerp(a, b, alpha)
-	return a + (b - a) * alpha
-end
-
-local function round(value)
-	return math.floor(value + 0.5)
+	return a + ((b - a) * alpha)
 end
 
 local function colorLerp(a, b, alpha)
@@ -109,32 +194,64 @@ local function colorLerp(a, b, alpha)
 	)
 end
 
-local function blendAccent(theme, color, amount)
-	return colorLerp(color, theme.Accent, amount)
+local function round(value)
+	return math.floor(value + 0.5)
+end
+
+local function shallowCopy(source)
+	local target = {}
+	for key, value in pairs(source or {}) do
+		target[key] = value
+	end
+	return target
 end
 
 local function mergeTheme(overrides)
-	local theme = {}
-
-	for key, value in pairs(DEFAULT_THEME) do
-		theme[key] = value
-	end
-
+	local theme = shallowCopy(DEFAULT_THEME)
 	for key, value in pairs(overrides or {}) do
 		theme[key] = value
 	end
-
 	return theme
 end
 
 local function getViewportSize()
 	local camera = Workspace.CurrentCamera
-
-	if camera then
+	if camera ~= nil then
 		return camera.ViewportSize
 	end
-
 	return Vector2.new(1280, 720)
+end
+
+local function computeDefaultSize()
+	local viewport = getViewportSize()
+	return Vector2.new(
+		clamp(math.floor(viewport.X * 0.72), 920, 1180),
+		clamp(math.floor(viewport.Y * 0.74), 600, 760)
+	)
+end
+
+local function computeDefaultPosition(size)
+	local viewport = getViewportSize()
+	return Vector2.new(
+		math.floor((viewport.X - size.X) * 0.5),
+		math.floor((viewport.Y - size.Y) * 0.5)
+	)
+end
+
+local function sanitizeFileName(name)
+	local value = tostring(name or "config")
+	value = value:gsub("[<>:\"/\\|%?%*]", "-")
+	value = value:gsub("^%s+", ""):gsub("%s+$", "")
+	return value ~= "" and value or "config"
+end
+
+local function hasFilesystem()
+	return typeof(writefile) == "function"
+		and typeof(readfile) == "function"
+		and typeof(isfile) == "function"
+		and typeof(makefolder) == "function"
+		and typeof(isfolder) == "function"
+		and typeof(listfiles) == "function"
 end
 
 local function writeProperty(drawing, property, value)
@@ -147,58 +264,27 @@ end
 
 local function createDrawing(className, properties)
 	local drawing = Drawing.new(className)
-
 	for property, value in pairs(properties) do
 		writeProperty(drawing, property, value)
 	end
-
 	return drawing
-end
-
-local function fitDrawingText(drawing, text, maxWidth)
-	local value = tostring(text or "")
-
-	if maxWidth == nil then
-		writeProperty(drawing, "Text", value)
-		return value
-	end
-
-	if maxWidth <= 0 then
-		writeProperty(drawing, "Text", "")
-		return ""
-	end
-
-	writeProperty(drawing, "Text", value)
-
-	if drawing.TextBounds.X <= maxWidth then
-		return value
-	end
-
-	local ellipsis = "..."
-
-	for length = #value - 1, 0, -1 do
-		local candidate = string.sub(value, 1, length) .. ellipsis
-		writeProperty(drawing, "Text", candidate)
-
-		if drawing.TextBounds.X <= maxWidth then
-			return candidate
-		end
-	end
-
-	writeProperty(drawing, "Text", ellipsis)
-	return ellipsis
 end
 
 local function destroyDrawing(drawing)
 	if drawing == nil then
 		return
 	end
-
 	if typeof(isrenderobj) == "function" and not isrenderobj(drawing) then
 		return
 	end
-
 	drawing:Remove()
+end
+
+local function setDrawingVisibility(drawing, visible, transparency)
+	writeProperty(drawing, "Visible", visible)
+	if transparency ~= nil then
+		writeProperty(drawing, "Transparency", transparency)
+	end
 end
 
 local function pointInRect(point, position, size)
@@ -208,8 +294,92 @@ local function pointInRect(point, position, size)
 		and point.Y <= position.Y + size.Y
 end
 
+local function pointInBounds(point, bounds)
+	return pointInRect(point, bounds.position, bounds.size)
+end
+
 local function getMousePosition()
 	return UserInputService:GetMouseLocation()
+end
+
+local function fitDrawingText(drawing, text, maxWidth)
+	local value = tostring(text or "")
+	writeProperty(drawing, "Text", value)
+	if maxWidth == nil or drawing.TextBounds.X <= maxWidth then
+		return value
+	end
+
+	local ellipsis = "..."
+	for length = #value - 1, 0, -1 do
+		local candidate = string.sub(value, 1, length) .. ellipsis
+		writeProperty(drawing, "Text", candidate)
+		if drawing.TextBounds.X <= maxWidth then
+			return candidate
+		end
+	end
+
+	writeProperty(drawing, "Text", ellipsis)
+	return ellipsis
+end
+
+local function wrapText(text, maxCharacters)
+	local value = tostring(text or "")
+	if value == "" then
+		return { "" }
+	end
+
+	local lines = {}
+	local current = ""
+
+	for word in value:gmatch("%S+") do
+		if current == "" then
+			current = word
+		elseif #current + 1 + #word <= maxCharacters then
+			current = current .. " " .. word
+		else
+			table.insert(lines, current)
+			current = word
+		end
+	end
+
+	if current ~= "" then
+		table.insert(lines, current)
+	end
+
+	if #lines == 0 then
+		table.insert(lines, "")
+	end
+
+	return lines
+end
+
+local function animateToward(current, target, duration, dt)
+	if duration <= 0 then
+		return target
+	end
+	local alpha = clamp(dt / duration, 0, 1)
+	local nextValue = lerp(current, target, alpha)
+	if math.abs(nextValue - target) < 0.001 then
+		return target
+	end
+	return nextValue
+end
+
+local function getMotionDuration(app, token)
+	if app.motionMode == "off" then
+		return 0
+	end
+	if app.motionMode == "reduced" then
+		if token == "panel" or token == "emphasized" then
+			return MOTION_TOKENS.fast
+		end
+		return MOTION_TOKENS.micro
+	end
+	return MOTION_TOKENS[token] or MOTION_TOKENS.standard
+end
+
+local function shouldUseTranslation(app)
+	return app.motionMode == "full"
 end
 
 local function formatKeyCode(keyCode)
@@ -218,7 +388,6 @@ local function formatKeyCode(keyCode)
 	end
 
 	local name = keyCode.Name
-
 	if #name == 1 then
 		return string.upper(name)
 	end
@@ -237,6 +406,8 @@ local function formatKeyCode(keyCode)
 		return "Mouse1"
 	elseif name == "MouseButton2" then
 		return "Mouse2"
+	elseif name == "MouseButton3" then
+		return "Mouse3"
 	end
 
 	return name
@@ -249,7 +420,9 @@ local function formatInputBinding(binding)
 
 	if binding.kind == "Keyboard" then
 		return formatKeyCode(binding.code)
-	elseif binding.kind == "MouseButton1" then
+	end
+
+	if binding.kind == "MouseButton1" then
 		return "Mouse1"
 	elseif binding.kind == "MouseButton2" then
 		return "Mouse2"
@@ -262,6 +435,9 @@ end
 
 local function makeBindingFromInput(input)
 	if input.UserInputType == Enum.UserInputType.Keyboard then
+		if input.KeyCode == Enum.KeyCode.Unknown then
+			return nil
+		end
 		return {
 			kind = "Keyboard",
 			code = input.KeyCode,
@@ -272,67 +448,6 @@ local function makeBindingFromInput(input)
 		return { kind = "MouseButton2" }
 	elseif input.UserInputType == Enum.UserInputType.MouseButton3 then
 		return { kind = "MouseButton3" }
-	end
-
-	return nil
-end
-
-local function serializeInputBinding(binding)
-	if binding == nil then
-		return nil
-	end
-
-	if binding.kind == "Keyboard" then
-		if typeof(binding.code) ~= "EnumItem" then
-			return nil
-		end
-
-		return {
-			kind = "Keyboard",
-			code = binding.code.Name,
-		}
-	elseif binding.kind == "MouseButton1" or binding.kind == "MouseButton2" or binding.kind == "MouseButton3" then
-		return {
-			kind = binding.kind,
-		}
-	end
-
-	return nil
-end
-
-local function deserializeInputBinding(value)
-	if type(value) ~= "table" or type(value.kind) ~= "string" then
-		return nil
-	end
-
-	if value.kind == "Keyboard" then
-		if typeof(value.code) == "EnumItem" then
-			return {
-				kind = "Keyboard",
-				code = value.code,
-			}
-		end
-
-		if type(value.code) ~= "string" then
-			return nil
-		end
-
-		local ok, keyCode = pcall(function()
-			return Enum.KeyCode[value.code]
-		end)
-
-		if not ok or keyCode == nil then
-			return nil
-		end
-
-		return {
-			kind = "Keyboard",
-			code = keyCode,
-		}
-	elseif value.kind == "MouseButton1" or value.kind == "MouseButton2" or value.kind == "MouseButton3" then
-		return {
-			kind = value.kind,
-		}
 	end
 
 	return nil
@@ -358,148 +473,52 @@ local function bindingMatchesInput(binding, input)
 	return false
 end
 
-local function getCharacterForInput(input, allowShiftUppercase)
-	if input.KeyCode == Enum.KeyCode.Space then
-		return " "
-	end
-
-	local character = UserInputService:GetStringForKeyCode(input.KeyCode)
-
-	if character == "" then
+local function serializeInputBinding(binding)
+	if binding == nil then
 		return nil
 	end
 
-	if allowShiftUppercase ~= false and (UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)) then
-		return string.upper(character)
+	if binding.kind == "Keyboard" then
+		return {
+			kind = "Keyboard",
+			code = binding.code and binding.code.Name or nil,
+		}
 	end
 
-	return character
-end
-
-local function wrapText(text, maxCharacters)
-	local lines = {}
-	local current = ""
-
-	for word in string.gmatch(text, "%S+") do
-		local candidate = current == "" and word or (current .. " " .. word)
-
-		if #candidate > maxCharacters and current ~= "" then
-			table.insert(lines, current)
-			current = word
-		else
-			current = candidate
-		end
+	if binding.kind == "MouseButton1" or binding.kind == "MouseButton2" or binding.kind == "MouseButton3" then
+		return {
+			kind = binding.kind,
+		}
 	end
 
-	if current ~= "" then
-		table.insert(lines, current)
+	return nil
+end
+
+local function deserializeInputBinding(value)
+	if value == nil then
+		return nil
 	end
 
-	if #lines == 0 then
-		table.insert(lines, text)
+	if typeof(value) == "EnumItem" then
+		return {
+			kind = "Keyboard",
+			code = value,
+		}
 	end
 
-	return table.concat(lines, "\n"), #lines
-end
-
-local function sanitizeFileName(name)
-	local cleaned = tostring(name or "default"):gsub("[<>:\"/\\|%?%*]", "_")
-	cleaned = cleaned:gsub("%s+", "_")
-	return cleaned ~= "" and cleaned or "default"
-end
-
-local function hasFilesystem()
-	return typeof(writefile) == "function"
-		and typeof(readfile) == "function"
-		and typeof(listfiles) == "function"
-		and typeof(isfolder) == "function"
-		and typeof(makefolder) == "function"
-end
-
-local function makeBaseControl(window, tab, kind, height)
-	return {
-		window = window,
-		tab = tab,
-		parentGroup = nil,
-		kind = kind,
-		height = height,
-		visible = true,
-		isDropdown = false,
-		acceptsTextInput = false,
-		capturesBindings = false,
-		drawings = {},
-		position = Vector2.zero,
-		size = Vector2.zero,
-		hovered = false,
-		pressing = false,
-	}
-end
-
-local function addControl(window, tab, control)
-	table.insert(window.controls, control)
-
-	if tab ~= nil then
-		table.insert(tab.controls, control)
+	if type(value) ~= "table" then
+		return nil
 	end
 
-	window:UpdateLayout()
-	window:RefreshZIndex()
-
-	return control
-end
-
-local function removeControlReference(list, control)
-	for index, candidate in ipairs(list) do
-		if candidate == control then
-			table.remove(list, index)
-			return
-		end
-	end
-end
-
-local function isGroupAncestor(group, control)
-	local current = control.parentGroup
-
-	while current ~= nil do
-		if current == group then
-			return true
-		end
-
-		current = current.parentGroup
+	if value.kind == "Keyboard" and type(value.code) == "string" and Enum.KeyCode[value.code] ~= nil then
+		return {
+			kind = "Keyboard",
+			code = Enum.KeyCode[value.code],
+		}
 	end
 
-	return false
-end
-
-local function getTabWidth(name)
-	return clamp(34 + (#name * 8), 82, 164)
-end
-
-local function bringWindowToFront(window)
-	for index, candidate in ipairs(windows) do
-		if candidate == window then
-			table.remove(windows, index)
-			break
-		end
-	end
-
-	table.insert(windows, window)
-
-	local baseZ = 100
-
-	for index, candidate in ipairs(windows) do
-		candidate.zBase = baseZ + (index * 24)
-		candidate:RefreshZIndex()
-	end
-end
-
-local function topWindowAt(point)
-	for index = #windows, 1, -1 do
-		local window = windows[index]
-
-		if window.visible and pointInRect(point, window.position, window.size) then
-			return window
-		end
+	if value.kind == "MouseButton1" or value.kind == "MouseButton2" or value.kind == "MouseButton3" then
+		return { kind = value.kind }
 	end
 
 	return nil
@@ -510,8 +529,6 @@ local function clearTextboxFocus(submit)
 		activeTextbox:Blur(submit)
 		activeTextbox = nil
 	end
-
-	updateInputBlocker()
 end
 
 local function clearKeybindListening()
@@ -519,1363 +536,342 @@ local function clearKeybindListening()
 		listeningKeybind:SetListening(false)
 		listeningKeybind = nil
 	end
-
-	updateInputBlocker()
 end
 
 local function shouldBlockGameInput()
 	return activeTextbox ~= nil or listeningKeybind ~= nil
 end
 
-updateInputBlocker = function()
-	local shouldBind = #windows > 0
+local function updateInputBlocker()
+	if shouldBlockGameInput() then
+		if inputBlockBound then
+			return
+		end
 
-	if shouldBind and not inputBlockBound then
 		ContextActionService:BindActionAtPriority(
-			"DrawingUIBlockInput",
+			"DrawingUIInputBlock",
 			function(_, inputState, inputObject)
 				if inputState ~= Enum.UserInputState.Begin then
 					return Enum.ContextActionResult.Pass
 				end
 
-				local mousePosition = getMousePosition()
-				local overWindow = topWindowAt(mousePosition) ~= nil
-				local keyboardFocused = shouldBlockGameInput()
-
-				if keyboardFocused then
-					return Enum.ContextActionResult.Sink
-				end
-
 				if inputObject.UserInputType == Enum.UserInputType.MouseButton1
 					or inputObject.UserInputType == Enum.UserInputType.MouseButton2
 					or inputObject.UserInputType == Enum.UserInputType.MouseButton3
+					or inputObject.UserInputType == Enum.UserInputType.Keyboard
 				then
-					return overWindow and Enum.ContextActionResult.Sink or Enum.ContextActionResult.Pass
+					return Enum.ContextActionResult.Sink
 				end
 
 				return Enum.ContextActionResult.Pass
 			end,
 			false,
-			Enum.ContextActionPriority.High.Value,
-			Enum.UserInputType.Keyboard,
+			3100,
 			Enum.UserInputType.MouseButton1,
 			Enum.UserInputType.MouseButton2,
-			Enum.UserInputType.MouseButton3
+			Enum.UserInputType.MouseButton3,
+			Enum.UserInputType.Keyboard
 		)
 		inputBlockBound = true
-	elseif not shouldBind and inputBlockBound then
-		ContextActionService:UnbindAction("DrawingUIBlockInput")
+	else
+		if not inputBlockBound then
+			return
+		end
+		ContextActionService:UnbindAction("DrawingUIInputBlock")
 		inputBlockBound = false
 	end
 end
 
-local function handleBoundInput(input)
-	if activeTextbox ~= nil then
-		activeTextbox:HandleKeyboardInput(input)
-		return
-	end
-
-	if listeningKeybind ~= nil then
-		listeningKeybind:CaptureInput(input)
-		return
-	end
-
-	for _, window in ipairs(windows) do
-		for _, control in ipairs(window.controls) do
-			if control.kind == "Keybind" and bindingMatchesInput(control.binding, input) then
-				control.callback(control.binding)
-			elseif control.activationBinding ~= nil and bindingMatchesInput(control.activationBinding, input) and control.TriggerActivation then
-				control:TriggerActivation()
-			end
-		end
-	end
-end
-
-local function ensureLoop()
-	if frameConnection ~= nil then
-		return
-	end
-
-	frameConnection = RunService.RenderStepped:Connect(function()
-		local mousePosition = getMousePosition()
-
-		for _, window in ipairs(windows) do
-			window:Step(mousePosition)
-		end
-	end)
-
-	inputBeganConnection = UserInputService.InputBegan:Connect(function(input, processed)
-		local mousePosition = getMousePosition()
-		local overWindow = topWindowAt(mousePosition) ~= nil
-
-		if processed and not shouldBlockGameInput() and not overWindow then
-			return
-		end
-
-		if listeningKeybind ~= nil then
-			listeningKeybind:CaptureInput(input)
-			return
-		end
-
-		if input.UserInputType == Enum.UserInputType.Keyboard
-			or input.UserInputType == Enum.UserInputType.MouseButton1
-			or input.UserInputType == Enum.UserInputType.MouseButton2
-			or input.UserInputType == Enum.UserInputType.MouseButton3
-		then
-			handleBoundInput(input)
-		end
-
-		if input.UserInputType == Enum.UserInputType.Keyboard then
-			return
-		end
-
-		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
-			return
-		end
-
-		local window = topWindowAt(mousePosition)
-
-		if window == nil then
-			clearTextboxFocus(true)
-			clearKeybindListening()
-			return
-		end
-
-		bringWindowToFront(window)
-		window:HandleMouseDown(mousePosition)
-	end)
-
-	inputChangedConnection = UserInputService.InputChanged:Connect(function(input, processed)
-		if input.UserInputType ~= Enum.UserInputType.MouseWheel then
-			return
-		end
-
-		local mousePosition = getMousePosition()
-		local overWindow = topWindowAt(mousePosition) ~= nil
-
-		if processed and not shouldBlockGameInput() and not overWindow then
-			return
-		end
-
-		local window = topWindowAt(mousePosition)
-
-		if window == nil then
-			return
-		end
-
-		window:HandleMouseWheel(mousePosition, input.Position.Z)
-	end)
-
-	inputEndedConnection = UserInputService.InputEnded:Connect(function(input)
-		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
-			return
-		end
-
-		local mousePosition = getMousePosition()
-
-		for _, window in ipairs(windows) do
-			window:HandleMouseUp(mousePosition)
-		end
-	end)
-end
-
-local function disconnectLoopIfEmpty()
-	if #windows > 0 then
-		return
-	end
-
-	if frameConnection ~= nil then
-		frameConnection:Disconnect()
-		frameConnection = nil
-	end
-
-	if inputBeganConnection ~= nil then
-		inputBeganConnection:Disconnect()
-		inputBeganConnection = nil
-	end
-
-	if inputEndedConnection ~= nil then
-		inputEndedConnection:Disconnect()
-		inputEndedConnection = nil
-	end
-
-	if inputChangedConnection ~= nil then
-		inputChangedConnection:Disconnect()
-		inputChangedConnection = nil
-	end
-
-	updateInputBlocker()
-end
-
-function Window:HasTabs()
-	return #self.tabs > 0
-end
-
-function Window:IsTabActive(tab)
-	if tab == nil then
-		return not self:HasTabs()
-	end
-
-	return self.activeTab == tab
-end
-
-function Window:IsControlDisplayed(control)
-	return self.visible and control.visible and self:IsTabActive(control.tab) and self:GetControlVisibilityAlpha(control) > 0.02
-end
-
-function Window:GetControlIndent(control)
-	local indent = 0
-	local currentGroup = control.parentGroup
-
-	while currentGroup ~= nil do
-		indent += 12
-		currentGroup = currentGroup.parentGroup
-	end
-
-	return indent
-end
-
-function Window:GetControlVisibilityAlpha(control)
-	local alpha = 1
-	local currentGroup = control.parentGroup
-
-	while currentGroup ~= nil do
-		alpha = math.min(alpha, currentGroup.expandAlpha or (currentGroup.expanded and 1 or 0))
-		currentGroup = currentGroup.parentGroup
-	end
-
-	return alpha
-end
-
-function Window:SyncControlVisibility(control)
-	local alpha = self:GetControlVisibilityAlpha(control)
-	local shouldShow = self.visible and control.visible and self:IsTabActive(control.tab) and alpha > 0.02
-
-	if control.refreshVisibility then
-		control:refreshVisibility(shouldShow, alpha)
-	else
-		for _, drawing in pairs(control.drawings) do
-			writeProperty(drawing, "Visible", shouldShow)
-		end
-	end
-end
-
-function Window:SyncAllControlVisibility()
-	for _, control in ipairs(self.controls) do
-		self:SyncControlVisibility(control)
-	end
-end
-
-function Window:ClampToViewport()
-	local viewport = getViewportSize()
-	local maxWidth = math.max(280, viewport.X - (WINDOW_MARGIN * 2))
-	local maxHeight = math.max(220, viewport.Y - (WINDOW_MARGIN * 2))
-	local width = clamp(self.size.X, self.minimumSize.X, maxWidth)
-	local targetHeight = clamp(self.targetHeight or self.size.Y, self.minimumSize.Y, maxHeight)
-	local height = clamp(self.size.Y, self.minimumSize.Y, maxHeight)
-
-	self.targetHeight = targetHeight
-	self.size = Vector2.new(width, height)
-end
-
-function Window:GetActiveControls()
-	local list = {}
-
-	for _, control in ipairs(self.controls) do
-		if self:IsTabActive(control.tab) and self:IsControlDisplayed(control) then
-			table.insert(list, control)
-		end
-	end
-
-	return list
-end
-
-function Window:GetRequiredHeight()
-	local height = HEADER_HEIGHT + CONTENT_GAP + PADDING
-
-	if self:HasTabs() then
-		height += TAB_HEIGHT + CONTENT_GAP
-	end
-
-	local activeControls = self:GetActiveControls()
-
-	for index, control in ipairs(activeControls) do
-		if control.visible then
-			height += control.GetHeight and control:GetHeight() or control.height
-
-			if index < #activeControls then
-				height += ROW_GAP
-			end
-		end
-	end
-
-	return math.max(self.minimumSize.Y, height)
-end
-
-function Window:UpdateChrome()
-	local position = self.position
-	local size = self.size
-	local headerLeft = position.X + PADDING
-	local headerRight = position.X + size.X - PADDING
-	local subtitleVisible = self.subtitle ~= nil and self.subtitle ~= ""
-	local subtitleGap = subtitleVisible and 18 or 0
-	local subtitleMaxWidth = subtitleVisible and math.max(0, math.floor(size.X * 0.32)) or 0
-
-	writeProperty(self.drawings.frame, "Position", position)
-	writeProperty(self.drawings.frame, "Size", size)
-	writeProperty(self.drawings.outline, "Position", position)
-	writeProperty(self.drawings.outline, "Size", size)
-	writeProperty(self.drawings.header, "Position", position)
-	writeProperty(self.drawings.header, "Size", Vector2.new(size.X, HEADER_HEIGHT))
-	writeProperty(self.drawings.innerOutline, "Position", position + Vector2.new(4, 4))
-	writeProperty(self.drawings.innerOutline, "Size", Vector2.new(math.max(0, size.X - 8), math.max(0, size.Y - 8)))
-	writeProperty(self.drawings.accent, "From", position + Vector2.new(0, HEADER_HEIGHT))
-	writeProperty(self.drawings.accent, "To", position + Vector2.new(size.X, HEADER_HEIGHT))
-	writeProperty(self.drawings.title, "Font", self.theme.Font)
-	writeProperty(self.drawings.subtitle, "Font", self.theme.Font)
-	writeProperty(self.drawings.title, "Size", self.theme.TitleSize)
-	writeProperty(self.drawings.subtitle, "Size", self.theme.SmallTextSize)
-
-	local fittedSubtitle = subtitleVisible and fitDrawingText(self.drawings.subtitle, self.subtitle, subtitleMaxWidth) or fitDrawingText(self.drawings.subtitle, "", 0)
-	local subtitleWidth = subtitleVisible and self.drawings.subtitle.TextBounds.X or 0
-	local subtitleX = headerRight - subtitleWidth
-	local titleMaxWidth = math.max(0, (subtitleVisible and (subtitleX - subtitleGap) or headerRight) - headerLeft)
-
-	fitDrawingText(self.drawings.title, self.title, titleMaxWidth)
-	writeProperty(self.drawings.title, "Position", Vector2.new(headerLeft, position.Y + 8))
-	writeProperty(self.drawings.subtitle, "Position", Vector2.new(subtitleX, position.Y + 10))
-	writeProperty(self.drawings.subtitle, "Visible", self.visible and fittedSubtitle ~= "")
-end
-
-function Window:LayoutTabs()
-	local y = self.position.Y + HEADER_HEIGHT + CONTENT_GAP
-	local nextTabX = self.position.X + PADDING
-
-	for _, tab in ipairs(self.tabs) do
-		local width = getTabWidth(tab.name)
-		tab.position = Vector2.new(nextTabX, y)
-		tab.size = Vector2.new(width, TAB_HEIGHT)
-		nextTabX += width + TAB_GAP
-
-		writeProperty(tab.drawings.background, "Position", tab.position)
-		writeProperty(tab.drawings.background, "Size", tab.size)
-		writeProperty(tab.drawings.outline, "Position", tab.position)
-		writeProperty(tab.drawings.outline, "Size", tab.size)
-		writeProperty(tab.drawings.accent, "From", tab.position + Vector2.new(0, TAB_HEIGHT - 1))
-		writeProperty(tab.drawings.accent, "To", tab.position + Vector2.new(tab.size.X, TAB_HEIGHT - 1))
-		writeProperty(tab.drawings.text, "Position", tab.position + Vector2.new(14, 6))
-		writeProperty(tab.drawings.background, "Visible", self.visible)
-		writeProperty(tab.drawings.outline, "Visible", self.visible)
-		writeProperty(tab.drawings.accent, "Visible", self.visible)
-		writeProperty(tab.drawings.text, "Visible", self.visible)
-	end
-
-	if self:HasTabs() then
-		return y + TAB_HEIGHT + CONTENT_GAP
-	end
-
-	return self.position.Y + HEADER_HEIGHT + CONTENT_GAP
-end
-
-function Window:UpdateTabVisuals(mousePosition)
-	for _, tab in ipairs(self.tabs) do
-		local hovered = self.visible and pointInRect(mousePosition, tab.position, tab.size)
-		local active = self.activeTab == tab
-		local backgroundColor = active and blendAccent(self.theme, self.theme.TabActive, 0.14) or hovered and blendAccent(self.theme, self.theme.TabHover, 0.06) or self.theme.Tab
-		local outlineColor = active and blendAccent(self.theme, self.theme.Border, 0.72) or hovered and blendAccent(self.theme, self.theme.Border, 0.18) or self.theme.Border
-		local textColor = active and self.theme.Text or hovered and blendAccent(self.theme, self.theme.Text, 0.1) or self.theme.SubText
-
-		writeProperty(tab.drawings.background, "Color", backgroundColor)
-		writeProperty(tab.drawings.outline, "Color", outlineColor)
-		writeProperty(tab.drawings.accent, "Color", active and self.theme.Accent or hovered and blendAccent(self.theme, self.theme.Accent, 0.18) or self.theme.InnerBorder)
-		writeProperty(tab.drawings.text, "Color", textColor)
-	end
-end
-
-function Window:UpdateLayout()
-	self.targetHeight = self:GetRequiredHeight()
-	self:ClampToViewport()
-
-	if not self.heightInitialized then
-		self.size = Vector2.new(self.size.X, self.targetHeight)
-		self.heightInitialized = true
-	end
-
-	self:UpdateChrome()
-
-	local y = self:LayoutTabs()
-	local contentWidth = self.size.X - (PADDING * 2)
-
-	for _, control in ipairs(self.controls) do
-		local indent = self:GetControlIndent(control)
-		if self:IsControlDisplayed(control) then
-			control.position = Vector2.new(self.position.X + PADDING + indent, y)
-			control.size = Vector2.new(contentWidth - indent, control.GetHeight and control:GetHeight() or control.height)
-
-			if control.layout then
-				control:layout()
-			end
-
-			if control.visible then
-				y += (control.GetHeight and control:GetHeight() or control.height) + ROW_GAP
-			end
-		end
-	end
-
-	self:SyncAllControlVisibility()
-	self:UpdateTabVisuals(getMousePosition())
-end
-
-function Window:RefreshZIndex()
-	local z = self.zBase
-
-	writeProperty(self.drawings.frame, "ZIndex", z)
-	writeProperty(self.drawings.outline, "ZIndex", z + 1)
-	writeProperty(self.drawings.header, "ZIndex", z + 2)
-	writeProperty(self.drawings.innerOutline, "ZIndex", z + 3)
-	writeProperty(self.drawings.accent, "ZIndex", z + 4)
-	writeProperty(self.drawings.title, "ZIndex", z + 5)
-	writeProperty(self.drawings.subtitle, "ZIndex", z + 5)
-
-	for _, tab in ipairs(self.tabs) do
-		writeProperty(tab.drawings.background, "ZIndex", z + 6)
-		writeProperty(tab.drawings.outline, "ZIndex", z + 7)
-		writeProperty(tab.drawings.accent, "ZIndex", z + 8)
-		writeProperty(tab.drawings.text, "ZIndex", z + 9)
-	end
-
-	local controlZ = z + 10
-
-	for _, control in ipairs(self.controls) do
-		if control.setZIndex then
-			control:setZIndex(controlZ)
-		end
-	end
-end
-
-function Window:SetVisible(isVisible)
-	self.visible = isVisible
-
-	if not isVisible then
-		if activeTextbox ~= nil and activeTextbox.window == self then
-			clearTextboxFocus(true)
-		end
-
-		if listeningKeybind ~= nil and listeningKeybind.window == self then
-			clearKeybindListening()
-		end
-
-		self:CloseDropdowns(nil)
-	end
-
-	for _, drawing in pairs(self.drawings) do
-		writeProperty(drawing, "Visible", isVisible)
-	end
-
-	for _, tab in ipairs(self.tabs) do
-		for _, drawing in pairs(tab.drawings) do
-			writeProperty(drawing, "Visible", isVisible)
-		end
-	end
-
-	self:UpdateChrome()
-	self:SyncAllControlVisibility()
-end
-
-function Window:CloseDropdowns(exceptControl)
-	for _, control in ipairs(self.controls) do
-		if control.isDropdown and control ~= exceptControl and control.SetOpen then
-			control:SetOpen(false)
-		end
-	end
-end
-
-function Window:SetTitle(text)
-	self.title = tostring(text or "")
-	self:UpdateChrome()
-end
-
-function Window:SetSubtitle(text)
-	self.subtitle = tostring(text or "")
-	self:UpdateChrome()
-end
-
-function Window:SetPosition(position)
-	self.position = position
-	self:UpdateLayout()
-end
-
-function Window:SetSize(size)
-	self.minimumSize = Vector2.new(size.X, self.minimumSize.Y)
-	self.size = size
-	self.targetHeight = size.Y
-	self.heightInitialized = false
-	self:UpdateLayout()
-end
-
-function Window:SetTheme(themeOverrides)
-	local mergedTheme = {}
-
-	for key, value in pairs(self.theme) do
-		mergedTheme[key] = value
-	end
-
-	for key, value in pairs(themeOverrides or {}) do
-		mergedTheme[key] = value
-	end
-
-	self.theme = mergeTheme(mergedTheme)
-	writeProperty(self.drawings.frame, "Color", self.theme.WindowBackground)
-	writeProperty(self.drawings.outline, "Color", self.theme.Border)
-	writeProperty(self.drawings.header, "Color", self.theme.HeaderBackground)
-	writeProperty(self.drawings.innerOutline, "Color", self.theme.InnerBorder)
-	writeProperty(self.drawings.accent, "Color", self.theme.Accent)
-	writeProperty(self.drawings.title, "Color", self.theme.Text)
-	writeProperty(self.drawings.subtitle, "Color", self.theme.Muted)
-
-	for _, tab in ipairs(self.tabs) do
-		writeProperty(tab.drawings.text, "Font", self.theme.Font)
-		writeProperty(tab.drawings.text, "Size", self.theme.TextSize)
-	end
-
-	for _, control in ipairs(self.controls) do
-		if control.applyTheme then
-			control:applyTheme()
-		end
-	end
-
-	self:UpdateLayout()
-end
-
-function Window:GetConfigId()
-	return sanitizeFileName(self.configId or self.title)
-end
-
-function Window:GetConfigFolder()
-	return (self.configRoot or "drawing-ui-lib-configs") .. "/" .. self:GetConfigId()
-end
-
-function Window:EnsureConfigFolder()
-	if not hasFilesystem() then
-		return false
-	end
-
-	local folder = self:GetConfigFolder()
-	if not isfolder(folder) then
-		local ok = pcall(makefolder, folder)
-		if not ok then
-			return false
-		end
-	end
-
-	return true
-end
-
-function Window:BuildConfig()
-	local data = {}
-
-	for _, control in ipairs(self.controls) do
-		if control.configKey ~= nil and control.GetConfigValue then
-			data[control.configKey] = control:GetConfigValue()
-		end
-	end
-
-	return data
-end
-
-function Window:ApplyConfig(config, fireCallbacks)
-	for _, control in ipairs(self.controls) do
-		if control.configKey ~= nil and control.ApplyConfigValue and config[control.configKey] ~= nil then
-			control:ApplyConfigValue(config[control.configKey], fireCallbacks)
-		end
-	end
-end
-
-function Window:ListConfigs()
-	if not self:EnsureConfigFolder() then
-		return {}
-	end
-
-	local names = {}
-	local ok, files = pcall(listfiles, self:GetConfigFolder())
-
-	if not ok or type(files) ~= "table" then
-		return {}
-	end
-
-	for _, path in ipairs(files) do
-		local name = path:match("([^\\/]+)%.json$")
-		if name then
-			table.insert(names, name)
-		end
-	end
-
-	table.sort(names)
-	return names
-end
-
-function Window:SaveConfig(name)
-	if not self:EnsureConfigFolder() then
-		return false, "filesystem unavailable"
-	end
-
-	local safeName = sanitizeFileName(name)
-	local path = self:GetConfigFolder() .. "/" .. safeName .. ".json"
-	local encodedOk, encoded = pcall(HttpService.JSONEncode, HttpService, self:BuildConfig())
-
-	if not encodedOk then
-		return false, "encode failed"
-	end
-
-	local writeOk = pcall(writefile, path, encoded)
-
-	if not writeOk then
-		return false, "write failed"
-	end
-
-	return true, safeName
-end
-
-function Window:LoadConfig(name, fireCallbacks)
-	if not self:EnsureConfigFolder() then
-		return false, "filesystem unavailable"
-	end
-
-	local safeName = sanitizeFileName(name)
-	local path = self:GetConfigFolder() .. "/" .. safeName .. ".json"
-
-	if typeof(isfile) ~= "function" or not isfile(path) then
-		return false, "missing file"
-	end
-
-	local readOk, contents = pcall(readfile, path)
-
-	if not readOk then
-		return false, "read failed"
-	end
-
-	local decodedOk, decoded = pcall(HttpService.JSONDecode, HttpService, contents)
-
-	if not decodedOk or type(decoded) ~= "table" then
-		return false, "invalid json"
-	end
-
-	self:ApplyConfig(decoded, fireCallbacks)
-	return true, safeName
-end
-
-function Window:DeleteConfig(name)
-	if not self:EnsureConfigFolder() then
-		return false, "filesystem unavailable"
-	end
-
-	local safeName = sanitizeFileName(name)
-	local path = self:GetConfigFolder() .. "/" .. safeName .. ".json"
-
-	if typeof(delfile) ~= "function" then
-		return false, "delete unavailable"
-	end
-
-	if typeof(isfile) == "function" and not isfile(path) then
-		return false, "missing file"
-	end
-
-	local deleteOk = pcall(delfile, path)
-
-	if not deleteOk then
-		return false, "delete failed"
-	end
-
-	return true, safeName
-end
-
-function Window:IsPointInHeader(point)
-	return pointInRect(point, self.position, Vector2.new(self.size.X, HEADER_HEIGHT))
-end
-
-function Window:GetTabAt(point)
-	for _, tab in ipairs(self.tabs) do
-		if pointInRect(point, tab.position, tab.size) then
-			return tab
-		end
-	end
-
-	return nil
-end
-
-function Window:GetControlAt(point)
-	for index = #self.controls, 1, -1 do
-		local control = self.controls[index]
-
-		if self:IsControlDisplayed(control) and control.hitTest and control:hitTest(point) then
-			return control
-		end
-	end
-
-	return nil
-end
-
-function Window:SetActiveTab(nameOrTab)
-	if typeof(nameOrTab) == "table" then
-		self.activeTab = nameOrTab
-	else
-		for _, tab in ipairs(self.tabs) do
-			if tab.name == nameOrTab then
-				self.activeTab = tab
-				break
-			end
-		end
-	end
-
-	clearTextboxFocus(true)
-	clearKeybindListening()
-	self:CloseDropdowns(nil)
-	self:UpdateLayout()
-end
-
-function Window:HandleMouseDown(point)
-	if self.dragAnywhere or self:IsPointInHeader(point) then
-		self.pendingDrag = true
-		self.dragOffset = point - self.position
-	end
-
-	if self:IsPointInHeader(point) then
-		self.dragging = true
-		self.dragOffset = point - self.position
-		return
-	end
-
-	local tab = self:GetTabAt(point)
-
-	if tab ~= nil then
-		self:SetActiveTab(tab)
-		return
-	end
-
-	local control = self:GetControlAt(point)
-
-	if control ~= nil and control.onMouseDown then
-		if control.blocksWindowDrag then
-			self.pendingDrag = false
-		end
-
-		if not control.acceptsTextInput then
-			clearTextboxFocus(true)
-		end
-
-		if not control.capturesBindings then
-			clearKeybindListening()
-		end
-
-		if not control.isDropdown then
-			self:CloseDropdowns(nil)
-		end
-
-		control:onMouseDown(point)
-	else
-		clearTextboxFocus(true)
-		clearKeybindListening()
-		self:CloseDropdowns(nil)
-	end
-end
-
-function Window:HandleMouseWheel(point, delta)
-	local control = self:GetControlAt(point)
-
-	if control == nil or control.onMouseWheel == nil then
-		return false
-	end
-
-	if control.blocksWindowDrag then
-		self.pendingDrag = false
-	end
-
-	return control:onMouseWheel(delta, point) == true
-end
-
-function Window:HandleMouseUp(point)
-	self.dragging = false
-	self.pendingDrag = false
-
-	for _, control in ipairs(self.controls) do
-		if control.onMouseUp then
-			control:onMouseUp(point)
-		end
-	end
-end
-
-function Window:Step(mousePosition)
-	if not self.visible then
-		return
-	end
-
-	if self.targetHeight ~= nil and math.abs(self.size.Y - self.targetHeight) > 0.5 then
-		self.size = Vector2.new(self.size.X, lerp(self.size.Y, self.targetHeight, WINDOW_HEIGHT_ANIMATION))
-		self:UpdateChrome()
-	elseif self.targetHeight ~= nil then
-		self.size = Vector2.new(self.size.X, self.targetHeight)
-		self:UpdateChrome()
-	end
-
-	if self.dragging then
-		self.position = mousePosition - self.dragOffset
-		self:ClampToViewport()
-		self:UpdateLayout()
-	elseif self.pendingDrag and (mousePosition - (self.position + self.dragOffset)).Magnitude > 4 then
-		self.dragging = true
-	end
-
-	self:UpdateTabVisuals(mousePosition)
-
-	local topWindow = topWindowAt(mousePosition)
-	local ownsHover = topWindow == self
-	local needsLayout = false
-
-	for _, control in ipairs(self.controls) do
-		if self:IsControlDisplayed(control) and control.onStep then
-			needsLayout = control:onStep(mousePosition, ownsHover) or needsLayout
-		end
-	end
-
-	if needsLayout then
-		self:UpdateLayout()
-	end
-end
-
-function Window:Destroy()
-	if activeTextbox ~= nil and activeTextbox.window == self then
-		clearTextboxFocus(false)
-	end
-
-	if listeningKeybind ~= nil and listeningKeybind.window == self then
-		clearKeybindListening()
-	end
-
-	self:CloseDropdowns(nil)
-
-	for _, control in ipairs(self.controls) do
-		if control.destroy then
-			control:destroy()
-		end
-	end
-
-	for _, tab in ipairs(self.tabs) do
-		for _, drawing in pairs(tab.drawings) do
-			destroyDrawing(drawing)
-		end
-	end
-
-	for _, drawing in pairs(self.drawings) do
-		destroyDrawing(drawing)
-	end
-
-	for index, candidate in ipairs(windows) do
-		if candidate == self then
-			table.remove(windows, index)
+local function bringAppToFront(app)
+	for index, candidate in ipairs(apps) do
+		if candidate == app then
+			table.remove(apps, index)
 			break
 		end
 	end
 
-	self.controls = {}
-	self.tabs = {}
+	table.insert(apps, app)
 
-	disconnectLoopIfEmpty()
-end
-
-local function addLabel(window, tab, text)
-	local control = makeBaseControl(window, tab, "Label", ROW_HEIGHT)
-	control.text = text
-
-	control.drawings.text = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = 13,
-		Font = FONT,
-		Outline = false,
-		Text = text,
-		Position = Vector2.zero,
-	})
-
-	function control:layout()
-		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(0, 3))
-	end
-
-	function control:refreshVisibility(shouldShow)
-		for _, drawingSet in ipairs(self.drawings) do
-			writeProperty(drawingSet.frame, "Visible", shouldShow)
-			writeProperty(drawingSet.outline, "Visible", shouldShow)
-			writeProperty(drawingSet.text, "Visible", shouldShow)
+	for index, candidate in ipairs(apps) do
+		candidate.zBase = 100 + ((index - 1) * 500)
+		if candidate.RefreshZIndex ~= nil then
+			candidate:RefreshZIndex()
 		end
 	end
+end
 
-	function control:applyTheme()
-		writeProperty(self.drawings.text, "Color", self.window.theme.SubText)
-		writeProperty(self.drawings.text, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.text, "Size", self.window.theme.TextSize)
+local function destroyDrawings(drawings)
+	for _, drawing in pairs(drawings) do
+		destroyDrawing(drawing)
+	end
+end
+
+local function setItemVisibility(item, visible)
+	if item.drawings ~= nil then
+		for _, drawing in pairs(item.drawings) do
+			writeProperty(drawing, "Visible", visible)
+		end
+	end
+	if item.optionDrawings ~= nil then
+		for _, row in ipairs(item.optionDrawings) do
+			writeProperty(row.frame, "Visible", visible)
+			writeProperty(row.outline, "Visible", visible)
+			writeProperty(row.text, "Visible", visible)
+			if row.check ~= nil then
+				writeProperty(row.check, "Visible", visible)
+			end
+		end
+	end
+	if item.svCells ~= nil then
+		for _, cell in ipairs(item.svCells) do
+			writeProperty(cell, "Visible", visible)
+		end
+	end
+	if item.hueCells ~= nil then
+		for _, cell in ipairs(item.hueCells) do
+			writeProperty(cell, "Visible", visible)
+		end
+	end
+	if item.buttons ~= nil then
+		for _, button in ipairs(item.buttons) do
+			writeProperty(button.frame, "Visible", visible)
+			writeProperty(button.outline, "Visible", visible)
+			writeProperty(button.textDrawing, "Visible", visible)
+		end
+	end
+	if item.items ~= nil then
+		for _, child in ipairs(item.items) do
+			setItemVisibility(child, visible)
+		end
+	end
+end
+
+local function makeRect(position, size)
+	return {
+		position = position,
+		size = size,
+	}
+end
+
+local function topAppAt(point)
+	for index = #apps, 1, -1 do
+		local app = apps[index]
+		if app.visible and app:HasPoint(point) then
+			return app
+		end
+	end
+	return nil
+end
+
+local function makeBaseControl(host, kind, height)
+	local control = {
+		host = host,
+		app = host.app,
+		page = host.page,
+		kind = kind,
+		height = height,
+		drawings = {},
+		visible = true,
+		alpha = 1,
+		position = Vector2.zero,
+		size = Vector2.zero,
+		hovered = false,
+		configKey = nil,
+	}
+
+	function control:IsDisplayed()
+		return self.visible and self.host:IsDisplayed()
 	end
 
-	function control:refreshVisibility(shouldShow, alpha)
-		writeProperty(self.drawings.text, "Visible", shouldShow)
+	function control:GetHeight()
+		return self.height
 	end
 
 	function control:setZIndex(z)
-		writeProperty(self.drawings.text, "ZIndex", z)
-	end
-
-	function control:SetText(nextText)
-		self.text = nextText
-		writeProperty(self.drawings.text, "Text", nextText)
+		for _, drawing in pairs(self.drawings) do
+			writeProperty(drawing, "ZIndex", z)
+		end
 	end
 
 	function control:destroy()
-		destroyDrawing(self.drawings.text)
+		destroyDrawings(self.drawings)
+	end
+
+return control
+end
+
+local function addHostChild(host, child)
+	table.insert(host.items, child)
+	host:MarkLayoutDirty()
+	return child
+end
+
+local function getItemGap(host)
+	return host.app.density.itemGap
+end
+
+local function addLabel(host, text)
+	local control = makeBaseControl(host, "Label", host.app.theme.TextSize + 6)
+	control.text = tostring(text or "")
+
+	control.drawings.text = createDrawing("Text", {
+		Visible = true,
+		Color = host.app.theme.SubText,
+		Size = host.app.theme.TextSize,
+		Font = host.app.theme.Font,
+		Outline = false,
+		Text = control.text,
+		Position = Vector2.zero,
+		Transparency = 1,
+	})
+
+	function control:layout()
+		local fitted = fitDrawingText(self.drawings.text, self.text, self.size.X)
+		self.height = self.drawings.text.TextBounds.Y + 2
+		writeProperty(self.drawings.text, "Text", fitted)
+		writeProperty(self.drawings.text, "Position", self.position)
+	end
+
+	function control:applyTheme()
+		writeProperty(self.drawings.text, "Color", self.app.theme.SubText)
+		writeProperty(self.drawings.text, "Size", self.app.theme.TextSize)
+		writeProperty(self.drawings.text, "Font", self.app.theme.Font)
+	end
+
+	function control:SetText(nextText)
+		self.text = tostring(nextText or "")
+		self.app:MarkLayoutDirty()
 	end
 
 	control:applyTheme()
-	return addControl(window, tab, control)
+	return addHostChild(host, control)
 end
 
-local function addParagraph(window, tab, title, text)
-	local control = makeBaseControl(window, tab, "Paragraph", ROW_HEIGHT * 2)
-	control.title = title
-	control.text = text
-	control.lineCount = 1
+local function addParagraph(host, title, text)
+	local control = makeBaseControl(host, "Paragraph", 0)
+	control.title = tostring(title or "")
+	control.body = tostring(text or "")
 
 	control.drawings.title = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.Text,
-		Size = window.theme.TextSize,
-		Font = window.theme.Font,
+		Visible = true,
+		Color = host.app.theme.Text,
+		Size = host.app.theme.SectionTitleSize,
+		Font = host.app.theme.Font,
 		Outline = false,
-		Text = title,
+		Text = control.title,
 		Position = Vector2.zero,
+		Transparency = 1,
 	})
 
 	control.drawings.body = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = window.theme.SmallTextSize,
-		Font = window.theme.Font,
+		Visible = true,
+		Color = host.app.theme.SubText,
+		Size = host.app.theme.TextSize,
+		Font = host.app.theme.Font,
 		Outline = false,
-		Text = text,
+		Text = control.body,
 		Position = Vector2.zero,
+		Transparency = 1,
 	})
 
-	function control:GetHeight()
-		return 22 + (self.lineCount * 14)
-	end
-
 	function control:layout()
-		local wrapped, lines = wrapText(self.text, math.max(18, math.floor(self.size.X / 7)))
-		self.lineCount = lines
+		local bodyLines = wrapText(self.body, math.max(20, math.floor(self.size.X / 7.2)))
 		writeProperty(self.drawings.title, "Position", self.position)
-		writeProperty(self.drawings.body, "Position", self.position + Vector2.new(0, 16))
-		writeProperty(self.drawings.body, "Text", wrapped)
+		writeProperty(self.drawings.body, "Text", table.concat(bodyLines, "\n"))
+		writeProperty(self.drawings.body, "Position", self.position + Vector2.new(0, 18))
+		self.height = 18 + self.drawings.body.TextBounds.Y + 4
 	end
 
 	function control:applyTheme()
-		writeProperty(self.drawings.title, "Color", self.window.theme.Text)
-		writeProperty(self.drawings.body, "Color", self.window.theme.SubText)
-		writeProperty(self.drawings.title, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.body, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.title, "Size", self.window.theme.TextSize)
-		writeProperty(self.drawings.body, "Size", self.window.theme.SmallTextSize)
-	end
-
-	function control:refreshVisibility(shouldShow, alpha)
-		writeProperty(self.drawings.title, "Visible", shouldShow)
-		writeProperty(self.drawings.body, "Visible", shouldShow)
-	end
-
-	function control:setZIndex(z)
-		writeProperty(self.drawings.title, "ZIndex", z)
-		writeProperty(self.drawings.body, "ZIndex", z)
+		writeProperty(self.drawings.title, "Color", self.app.theme.Text)
+		writeProperty(self.drawings.body, "Color", self.app.theme.SubText)
+		writeProperty(self.drawings.title, "Size", self.app.theme.SectionTitleSize)
+		writeProperty(self.drawings.body, "Size", self.app.theme.TextSize)
 	end
 
 	function control:SetText(nextText)
-		self.text = nextText
-		self.window:UpdateLayout()
-	end
-
-	function control:destroy()
-		destroyDrawing(self.drawings.title)
-		destroyDrawing(self.drawings.body)
+		self.body = tostring(nextText or "")
+		self.app:MarkLayoutDirty()
 	end
 
 	control:applyTheme()
-	return addControl(window, tab, control)
+	return addHostChild(host, control)
 end
 
-local function addSection(window, tab, text)
-	local control = makeBaseControl(window, tab, "Section", SECTION_HEIGHT)
-	control.text = text
+local function addInlineSectionLabel(host, text)
+	local control = makeBaseControl(host, "InlineSection", 20)
+	control.text = tostring(text or "")
 
 	control.drawings.text = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.HighlightText,
-		Size = 14,
-		Font = FONT,
+		Visible = true,
+		Color = host.app.theme.HighlightText,
+		Size = host.app.theme.SectionTitleSize,
+		Font = host.app.theme.Font,
 		Outline = false,
-		Text = text,
+		Text = control.text,
 		Position = Vector2.zero,
-	})
-
-	control.drawings.marker = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = true,
-		Color = window.theme.Accent,
-		Thickness = 1,
-		Size = Vector2.new(6, 6),
-		Position = Vector2.zero,
+		Transparency = 1,
 	})
 
 	control.drawings.line = createDrawing("Line", {
-		Visible = window.visible,
-		Color = window.theme.SectionLine,
+		Visible = true,
+		Color = host.app.theme.SectionLine,
 		Thickness = 1,
 		From = Vector2.zero,
 		To = Vector2.zero,
+		Transparency = 1,
 	})
 
 	function control:layout()
-		local textWidth = (#self.text * 7) + 24
-		local lineStartX = math.min(self.position.X + textWidth, self.position.X + self.size.X)
-		local lineY = self.position.Y + 10
-
-		writeProperty(self.drawings.marker, "Position", self.position + Vector2.new(0, 4))
-		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(14, 0))
-		writeProperty(self.drawings.line, "From", Vector2.new(lineStartX, lineY))
+		writeProperty(self.drawings.text, "Position", self.position)
+		local textWidth = self.drawings.text.TextBounds.X
+		local lineY = self.position.Y + 9
+		writeProperty(self.drawings.line, "From", Vector2.new(self.position.X + textWidth + 12, lineY))
 		writeProperty(self.drawings.line, "To", Vector2.new(self.position.X + self.size.X, lineY))
 	end
 
 	function control:applyTheme()
-		writeProperty(self.drawings.text, "Color", self.window.theme.HighlightText)
-		writeProperty(self.drawings.marker, "Color", self.window.theme.Accent)
-		writeProperty(self.drawings.line, "Color", self.window.theme.SectionLine)
-		writeProperty(self.drawings.text, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.text, "Size", self.window.theme.TextSize + 1)
-	end
-
-	function control:refreshVisibility(shouldShow, alpha)
-		writeProperty(self.drawings.marker, "Visible", shouldShow)
-		writeProperty(self.drawings.text, "Visible", shouldShow)
-		writeProperty(self.drawings.line, "Visible", shouldShow)
-	end
-
-	function control:setZIndex(z)
-		writeProperty(self.drawings.marker, "ZIndex", z)
-		writeProperty(self.drawings.text, "ZIndex", z)
-		writeProperty(self.drawings.line, "ZIndex", z)
-	end
-
-	function control:destroy()
-		destroyDrawing(self.drawings.marker)
-		destroyDrawing(self.drawings.text)
-		destroyDrawing(self.drawings.line)
+		writeProperty(self.drawings.text, "Color", self.app.theme.HighlightText)
+		writeProperty(self.drawings.text, "Size", self.app.theme.SectionTitleSize)
+		writeProperty(self.drawings.line, "Color", self.app.theme.SectionLine)
 	end
 
 	control:applyTheme()
-	return addControl(window, tab, control)
+	return addHostChild(host, control)
 end
 
-local addButton
-local addButtonRow
-local addToggle
-local addSlider
-local addDropdown
-local addSearchDropdown
-local addTextbox
-local addColorPicker
-local addMultiDropdown
-local addKeybind
-
-local function addSubTab(window, tab, text, expanded)
-	local group = makeBaseControl(window, tab, "SubTab", SECTION_HEIGHT + 2)
-	group.text = text
-	group.expanded = expanded ~= false
-	group.expandAlpha = group.expanded and 1 or 0
-	group.children = {}
-	group.configKey = nil
-
-	group.drawings.text = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.Text,
-		Size = window.theme.TextSize,
-		Font = window.theme.Font,
-		Outline = false,
-		Text = text,
-		Position = Vector2.zero,
-	})
-
-	group.drawings.arrow = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = window.theme.SmallTextSize,
-		Font = window.theme.Font,
-		Outline = false,
-		Text = expanded ~= false and "v" or ">",
-		Position = Vector2.zero,
-	})
-
-	group.drawings.line = createDrawing("Line", {
-		Visible = window.visible,
-		Color = window.theme.SectionLine,
-		Thickness = 1,
-		From = Vector2.zero,
-		To = Vector2.zero,
-	})
-
-	group.drawings.frame = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = true,
-		Color = window.theme.PanelHeader,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	group.drawings.outline = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = false,
-		Color = window.theme.Border,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	group.drawings.marker = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = true,
-		Color = window.theme.Accent,
-		Thickness = 1,
-		Size = Vector2.new(6, 6),
-		Position = Vector2.zero,
-	})
-
-	function group:applyTheme()
-		writeProperty(self.drawings.frame, "Color", self.window.theme.PanelHeader)
-		writeProperty(self.drawings.outline, "Color", self.window.theme.Border)
-		writeProperty(self.drawings.marker, "Color", self.window.theme.Accent)
-		writeProperty(self.drawings.text, "Color", self.window.theme.HighlightText)
-		writeProperty(self.drawings.arrow, "Color", self.window.theme.SubText)
-		writeProperty(self.drawings.line, "Color", self.window.theme.SectionLine)
-		writeProperty(self.drawings.text, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.arrow, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.text, "Size", self.window.theme.TextSize)
-		writeProperty(self.drawings.arrow, "Size", self.window.theme.SmallTextSize)
-	end
-
-	function group:layout()
-		local lineY = self.position.Y + 11
-		writeProperty(self.drawings.frame, "Position", self.position + Vector2.new(0, -2))
-		writeProperty(self.drawings.frame, "Size", Vector2.new(self.size.X, 22))
-		writeProperty(self.drawings.outline, "Position", self.position + Vector2.new(0, -2))
-		writeProperty(self.drawings.outline, "Size", Vector2.new(self.size.X, 22))
-		writeProperty(self.drawings.marker, "Position", self.position + Vector2.new(10, 5))
-		writeProperty(self.drawings.arrow, "Position", self.position + Vector2.new(self.size.X - 18, 0))
-		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(22, 0))
-		writeProperty(self.drawings.arrow, "Text", self.expanded and "v" or ">")
-		writeProperty(self.drawings.line, "From", Vector2.new(self.position.X + 92, lineY))
-		writeProperty(self.drawings.line, "To", Vector2.new(self.position.X + self.size.X, lineY))
-	end
-
-	function group:hitTest(point)
-		return pointInRect(point, self.position, self.size)
-	end
-
-	function group:onMouseDown(point)
-		if self:hitTest(point) then
-			self.pressing = true
-		end
-	end
-
-	function group:onMouseUp(point)
-		if self.pressing and self:hitTest(point) then
-			self.expanded = not self.expanded
-			self.window:UpdateLayout()
-		end
-		self.pressing = false
-	end
-
-	function group:onStep()
-		local target = self.expanded and 1 or 0
-		local nextAlpha = lerp(self.expandAlpha, target, SECTION_EXPAND_ANIMATION)
-
-		if math.abs(nextAlpha - self.expandAlpha) > 0.001 then
-			self.expandAlpha = nextAlpha
-			self.window:SyncAllControlVisibility()
-			return true
-		end
-
-		local changed = self.expandAlpha ~= target
-		self.expandAlpha = target
-		return changed
-	end
-
-	function group:refreshVisibility(shouldShow, alpha)
-		writeProperty(self.drawings.frame, "Visible", shouldShow)
-		writeProperty(self.drawings.outline, "Visible", shouldShow)
-		writeProperty(self.drawings.marker, "Visible", shouldShow)
-		writeProperty(self.drawings.text, "Visible", shouldShow)
-		writeProperty(self.drawings.arrow, "Visible", shouldShow)
-		writeProperty(self.drawings.line, "Visible", shouldShow)
-	end
-
-	function group:setZIndex(z)
-		writeProperty(self.drawings.frame, "ZIndex", z)
-		writeProperty(self.drawings.outline, "ZIndex", z + 1)
-		writeProperty(self.drawings.marker, "ZIndex", z + 2)
-		writeProperty(self.drawings.text, "ZIndex", z + 2)
-		writeProperty(self.drawings.arrow, "ZIndex", z + 2)
-		writeProperty(self.drawings.line, "ZIndex", z + 2)
-	end
-
-	function group:destroy()
-		destroyDrawing(self.drawings.frame)
-		destroyDrawing(self.drawings.outline)
-		destroyDrawing(self.drawings.marker)
-		destroyDrawing(self.drawings.text)
-		destroyDrawing(self.drawings.arrow)
-		destroyDrawing(self.drawings.line)
-	end
-
-	function group:addChild(control)
-		control.parentGroup = self
-		table.insert(self.children, control)
-
-		removeControlReference(self.window.controls, control)
-		if self.tab and self.tab.controls then
-			removeControlReference(self.tab.controls, control)
-		end
-
-		local insertIndex = 1
-
-		for index, candidate in ipairs(self.window.controls) do
-			if candidate == self then
-				insertIndex = index + 1
-
-				while insertIndex <= #self.window.controls and isGroupAncestor(self, self.window.controls[insertIndex]) do
-					insertIndex += 1
-				end
-
-				break
-			end
-		end
-
-		table.insert(self.window.controls, insertIndex, control)
-
-		if self.tab and self.tab.controls then
-			local tabInsertIndex = 1
-
-			for index, candidate in ipairs(self.tab.controls) do
-				if candidate == self then
-					tabInsertIndex = index + 1
-
-					while tabInsertIndex <= #self.tab.controls and isGroupAncestor(self, self.tab.controls[tabInsertIndex]) do
-						tabInsertIndex += 1
-					end
-
-					break
-				end
-			end
-
-			table.insert(self.tab.controls, tabInsertIndex, control)
-		end
-
-		self.window:UpdateLayout()
-		self.window:RefreshZIndex()
-		return control
-	end
-
-	function group:AddSection(label)
-		return self:addChild(addSection(self.window, self.tab, label))
-	end
-
-	function group:AddLabel(label)
-		return self:addChild(addLabel(self.window, self.tab, label))
-	end
-
-	function group:AddParagraph(titleText, bodyText)
-		return self:addChild(addParagraph(self.window, self.tab, titleText, bodyText))
-	end
-
-	function group:AddButton(label, callback)
-		return self:addChild(addButton(self.window, self.tab, label, callback))
-	end
-
-	function group:AddButtonRow(buttons)
-		return self:addChild(addButtonRow(self.window, self.tab, buttons))
-	end
-
-	function group:AddToggle(label, initialValue, callback)
-		return self:addChild(addToggle(self.window, self.tab, label, initialValue, callback))
-	end
-
-	function group:AddSlider(label, minimum, maximum, initialValue, callback)
-		return self:addChild(addSlider(self.window, self.tab, label, minimum, maximum, initialValue, callback))
-	end
-
-	function group:AddDropdown(label, options, defaultValue, callback)
-		return self:addChild(addDropdown(self.window, self.tab, label, options, defaultValue, callback))
-	end
-
-	function group:AddSearchDropdown(label, options, defaultValue, maxSizeOrCallback, callback)
-		return self:addChild(addSearchDropdown(self.window, self.tab, label, options, defaultValue, maxSizeOrCallback, callback))
-	end
-
-	function group:AddMultiDropdown(label, options, defaultValues, callback)
-		return self:addChild(addMultiDropdown(self.window, self.tab, label, options, defaultValues, callback))
-	end
-
-	function group:AddColorPicker(label, defaultColor, callback)
-		return self:addChild(addColorPicker(self.window, self.tab, label, defaultColor, callback))
-	end
-
-	function group:AddTextbox(label, placeholder, callback)
-		return self:addChild(addTextbox(self.window, self.tab, label, placeholder, callback))
-	end
-
-	function group:AddKeybind(label, defaultKey, callback, changedCallback)
-		return self:addChild(addKeybind(self.window, self.tab, label, defaultKey, callback, changedCallback))
-	end
-
-	group:applyTheme()
-	return addControl(window, tab, group)
-end
-
-function addButton(window, tab, text, callback)
-	local control = makeBaseControl(window, tab, "Button", BUTTON_HEIGHT)
-	control.text = text
+local function addButton(host, text, callback)
+	local control = makeBaseControl(host, "Button", host.app.density.rowHeight)
+	control.text = tostring(text or "")
 	control.callback = callback or function() end
-	control.blocksWindowDrag = true
 	control.activationBinding = nil
+	control.blocksWindowDrag = true
 
 	control.drawings.frame = createDrawing("Square", {
-		Visible = window.visible,
+		Visible = true,
 		Filled = true,
-		Color = window.theme.Button,
-		Thickness = 1,
-		Size = Vector2.zero,
+		Color = host.app.theme.Button,
 		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
 	})
-
 	control.drawings.outline = createDrawing("Square", {
-		Visible = window.visible,
+		Visible = true,
 		Filled = false,
-		Color = window.theme.Border,
-		Thickness = 1,
+		Color = host.app.theme.Border,
+		Position = Vector2.zero,
 		Size = Vector2.zero,
-		Position = Vector2.zero,
+		Transparency = 1,
 	})
-
 	control.drawings.text = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.Text,
-		Size = 13,
-		Font = FONT,
-		Outline = false,
-		Text = text,
+		Visible = true,
+		Color = host.app.theme.Text,
+		Size = host.app.theme.TextSize,
+		Font = host.app.theme.Font,
+		Text = control.text,
 		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
 	})
 
 	function control:layout()
@@ -1883,20 +879,9 @@ function addButton(window, tab, text, callback)
 		writeProperty(self.drawings.frame, "Size", self.size)
 		writeProperty(self.drawings.outline, "Position", self.position)
 		writeProperty(self.drawings.outline, "Size", self.size)
-		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(14, 7))
-	end
-
-	function control:applyTheme()
-		writeProperty(self.drawings.text, "Color", self.window.theme.Text)
-		writeProperty(self.drawings.outline, "Color", self.window.theme.Border)
-		writeProperty(self.drawings.text, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.text, "Size", self.window.theme.TextSize)
-	end
-
-	function control:setZIndex(z)
-		writeProperty(self.drawings.frame, "ZIndex", z)
-		writeProperty(self.drawings.outline, "ZIndex", z + 1)
-		writeProperty(self.drawings.text, "ZIndex", z + 2)
+		local fitted = fitDrawingText(self.drawings.text, self.text, self.size.X - 20)
+		writeProperty(self.drawings.text, "Text", fitted)
+		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(10, math.floor((self.size.Y - self.drawings.text.TextBounds.Y) * 0.5)))
 	end
 
 	function control:hitTest(point)
@@ -1910,300 +895,225 @@ function addButton(window, tab, text, callback)
 	end
 
 	function control:onMouseUp(point)
-		local shouldFire = self.pressing and self:hitTest(point)
-		self.pressing = false
-
-		if shouldFire then
-			self.callback()
+		if self.pressing and self:hitTest(point) then
+			self:TriggerActivation()
 		end
+		self.pressing = false
 	end
 
 	function control:TriggerActivation()
 		self.callback()
 	end
 
-	function control:onStep(mousePosition, ownsHover)
-		self.hovered = ownsHover and self:hitTest(mousePosition)
-		local frameColor = self.hovered and blendAccent(self.window.theme, self.window.theme.ButtonHover, self.pressing and 0.2 or 0.08) or self.window.theme.Button
-		writeProperty(self.drawings.frame, "Color", frameColor)
+	function control:onStep(mousePosition, _, dt)
+		self.hovered = self:IsDisplayed() and self:hitTest(mousePosition)
+		self.hoverAlpha = animateToward(self.hoverAlpha or 0, (self.hovered or self.pressing) and 1 or 0, getMotionDuration(self.app, "fast"), dt)
+		writeProperty(self.drawings.frame, "Color", colorLerp(self.app.theme.Button, self.app.theme.ButtonHover, self.hoverAlpha))
+		writeProperty(self.drawings.outline, "Color", self.hoverAlpha > 0.2 and colorLerp(self.app.theme.Border, self.app.theme.AccentSoft, self.hoverAlpha * 0.4) or self.app.theme.Border)
+	end
+
+	function control:applyTheme()
+		writeProperty(self.drawings.text, "Color", self.app.theme.Text)
+		writeProperty(self.drawings.frame, "Color", self.app.theme.Button)
+		writeProperty(self.drawings.outline, "Color", self.app.theme.Border)
 	end
 
 	function control:SetText(nextText)
-		self.text = nextText
-		writeProperty(self.drawings.text, "Text", nextText)
+		self.text = tostring(nextText or "")
+		self.app:MarkLayoutDirty()
 	end
 
 	function control:SetActivationBinding(binding)
 		self.activationBinding = binding
 	end
 
-	function control:destroy()
-		destroyDrawing(self.drawings.frame)
-		destroyDrawing(self.drawings.outline)
-		destroyDrawing(self.drawings.text)
-	end
-
 	control:applyTheme()
-	return addControl(window, tab, control)
+	table.insert(host.app.boundControls, control)
+	return addHostChild(host, control)
 end
 
-function addButtonRow(window, tab, buttons)
-	local control = makeBaseControl(window, tab, "ButtonRow", BUTTON_HEIGHT)
-	control.buttons = buttons or {}
-	control.drawings = {}
-	control.hitIndex = nil
+local function addButtonRow(host, buttons)
+	local height = host.app.density.rowHeight
+	local control = makeBaseControl(host, "ButtonRow", height)
+	control.buttons = {}
+	control.blocksWindowDrag = true
 
-	for index, definition in ipairs(control.buttons) do
-		control.drawings[index] = {
+	for index, definition in ipairs(buttons or {}) do
+		control.buttons[index] = {
+			text = tostring(definition.text or ("Button " .. index)),
+			callback = definition.callback or function() end,
 			frame = createDrawing("Square", {
-				Visible = window.visible,
+				Visible = true,
 				Filled = true,
-				Color = window.theme.Button,
-				Thickness = 1,
-				Size = Vector2.zero,
+				Color = host.app.theme.Button,
 				Position = Vector2.zero,
+				Size = Vector2.zero,
+				Transparency = 1,
 			}),
 			outline = createDrawing("Square", {
-				Visible = window.visible,
+				Visible = true,
 				Filled = false,
-				Color = window.theme.Border,
-				Thickness = 1,
+				Color = host.app.theme.Border,
+				Position = Vector2.zero,
 				Size = Vector2.zero,
-				Position = Vector2.zero,
+				Transparency = 1,
 			}),
-			text = createDrawing("Text", {
-				Visible = window.visible,
-				Color = window.theme.Text,
-				Size = window.theme.TextSize,
-				Font = window.theme.Font,
+			textDrawing = createDrawing("Text", {
+				Visible = true,
+				Color = host.app.theme.Text,
+				Size = host.app.theme.TextSize,
+				Font = host.app.theme.Font,
+				Text = tostring(definition.text or ("Button " .. index)),
+				Position = Vector2.zero,
 				Outline = false,
-				Text = definition.text or ("Button " .. index),
-				Position = Vector2.zero,
+				Transparency = 1,
 			}),
+			hoverAlpha = 0,
 		}
-	end
-
-	function control:applyTheme()
-		for _, drawingSet in ipairs(self.drawings) do
-			writeProperty(drawingSet.outline, "Color", self.window.theme.Border)
-			writeProperty(drawingSet.text, "Color", self.window.theme.Text)
-			writeProperty(drawingSet.text, "Font", self.window.theme.Font)
-			writeProperty(drawingSet.text, "Size", self.window.theme.TextSize)
-		end
 	end
 
 	function control:getButtonRect(index)
 		local count = math.max(1, #self.buttons)
-		local gap = 8
-		local width = math.floor((self.size.X - ((count - 1) * gap)) / count)
-		local x = self.position.X + ((index - 1) * (width + gap))
-		return Vector2.new(x, self.position.Y), Vector2.new(width, self.size.Y)
+		local gap = 10
+		local width = (self.size.X - ((count - 1) * gap)) / count
+		return self.position + Vector2.new((index - 1) * (width + gap), 0), Vector2.new(width, self.size.Y)
 	end
 
 	function control:layout()
-		for index, definition in ipairs(self.buttons) do
-			local buttonPosition, buttonSize = self:getButtonRect(index)
-			local drawingSet = self.drawings[index]
-
-			writeProperty(drawingSet.frame, "Position", buttonPosition)
-			writeProperty(drawingSet.frame, "Size", buttonSize)
-			writeProperty(drawingSet.outline, "Position", buttonPosition)
-			writeProperty(drawingSet.outline, "Size", buttonSize)
-			writeProperty(drawingSet.text, "Position", buttonPosition + Vector2.new(14, 7))
-			writeProperty(drawingSet.text, "Text", definition.text or ("Button " .. index))
-		end
-	end
-
-	function control:refreshVisibility(shouldShow)
-		for _, drawingSet in ipairs(self.drawings) do
-			writeProperty(drawingSet.frame, "Visible", shouldShow)
-			writeProperty(drawingSet.outline, "Visible", shouldShow)
-			writeProperty(drawingSet.text, "Visible", shouldShow)
+		for index, button in ipairs(self.buttons) do
+			local position, size = self:getButtonRect(index)
+			writeProperty(button.frame, "Position", position)
+			writeProperty(button.frame, "Size", size)
+			writeProperty(button.outline, "Position", position)
+			writeProperty(button.outline, "Size", size)
+			fitDrawingText(button.textDrawing, button.text, size.X - 20)
+			writeProperty(button.textDrawing, "Position", position + Vector2.new(10, math.floor((size.Y - button.textDrawing.TextBounds.Y) * 0.5)))
 		end
 	end
 
 	function control:hitTest(point)
-		for index = 1, #self.buttons do
-			local buttonPosition, buttonSize = self:getButtonRect(index)
-			if pointInRect(point, buttonPosition, buttonSize) then
-				self.hitIndex = index
-				return true
+		for index, _ in ipairs(self.buttons) do
+			local position, size = self:getButtonRect(index)
+			if pointInRect(point, position, size) then
+				return index
 			end
 		end
-
-		self.hitIndex = nil
-		return false
+		return nil
 	end
 
 	function control:onMouseDown(point)
-		self:hitTest(point)
-		self.pressing = self.hitIndex ~= nil
+		self.pressedIndex = self:hitTest(point)
 	end
 
 	function control:onMouseUp(point)
-		if not self.pressing then
-			return
+		local index = self:hitTest(point)
+		if self.pressedIndex ~= nil and self.pressedIndex == index then
+			self.buttons[index].callback()
 		end
+		self.pressedIndex = nil
+	end
 
-		self.pressing = false
-
-		if not self:hitTest(point) or self.hitIndex == nil then
-			return
-		end
-
-		local definition = self.buttons[self.hitIndex]
-		if definition and definition.callback then
-			definition.callback()
+	function control:onStep(mousePosition, _, dt)
+		local hoveredIndex = self:IsDisplayed() and self:hitTest(mousePosition) or nil
+		for index, button in ipairs(self.buttons) do
+			button.hoverAlpha = animateToward(button.hoverAlpha, hoveredIndex == index and 1 or 0, getMotionDuration(self.app, "fast"), dt)
+			writeProperty(button.frame, "Color", colorLerp(self.app.theme.Button, self.app.theme.ButtonHover, button.hoverAlpha))
+			writeProperty(button.outline, "Color", button.hoverAlpha > 0.2 and colorLerp(self.app.theme.Border, self.app.theme.AccentSoft, button.hoverAlpha * 0.4) or self.app.theme.Border)
 		end
 	end
 
-	function control:onStep(mousePosition, ownsHover)
-		for index, drawingSet in ipairs(self.drawings) do
-			local buttonPosition, buttonSize = self:getButtonRect(index)
-			local hovered = ownsHover and pointInRect(mousePosition, buttonPosition, buttonSize)
-			local isPressed = self.pressing and self.hitIndex == index
-			local frameColor = hovered and blendAccent(self.window.theme, self.window.theme.ButtonHover, isPressed and 0.2 or 0.08) or self.window.theme.Button
-			writeProperty(drawingSet.frame, "Color", frameColor)
+	function control:applyTheme()
+		for _, button in ipairs(self.buttons) do
+			writeProperty(button.textDrawing, "Color", self.app.theme.Text)
+			writeProperty(button.frame, "Color", self.app.theme.Button)
+			writeProperty(button.outline, "Color", self.app.theme.Border)
 		end
 	end
 
 	function control:setZIndex(z)
-		for index, drawingSet in ipairs(self.drawings) do
-			writeProperty(drawingSet.frame, "ZIndex", z + index)
-			writeProperty(drawingSet.outline, "ZIndex", z + index + 1)
-			writeProperty(drawingSet.text, "ZIndex", z + index + 2)
+		for _, button in ipairs(self.buttons) do
+			writeProperty(button.frame, "ZIndex", z)
+			writeProperty(button.outline, "ZIndex", z + 1)
+			writeProperty(button.textDrawing, "ZIndex", z + 2)
 		end
 	end
 
 	function control:destroy()
-		for _, drawingSet in ipairs(self.drawings) do
-			destroyDrawing(drawingSet.frame)
-			destroyDrawing(drawingSet.outline)
-			destroyDrawing(drawingSet.text)
+		for _, button in ipairs(self.buttons) do
+			destroyDrawing(button.frame)
+			destroyDrawing(button.outline)
+			destroyDrawing(button.textDrawing)
 		end
 	end
 
 	control:applyTheme()
-	return addControl(window, tab, control)
+	return addHostChild(host, control)
 end
 
-function addToggle(window, tab, text, initialValue, callback)
-	local control = makeBaseControl(window, tab, "Toggle", TOGGLE_HEIGHT)
-	control.text = text
-	control.configKey = text
+local function addToggle(host, text, initialValue, callback)
+	local control = makeBaseControl(host, "Toggle", host.app.density.rowHeight)
+	control.text = tostring(text or "")
 	control.value = initialValue == true
 	control.callback = callback or function() end
-	control.toggleAlpha = control.value and 1 or 0
+	control.configKey = control.text
 	control.blocksWindowDrag = true
-	control.activationBinding = nil
 
-	control.drawings.text = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.Text,
-		Size = 13,
-		Font = FONT,
-		Outline = false,
-		Text = text,
+	control.drawings.label = createDrawing("Text", {
+		Visible = true,
+		Color = host.app.theme.Text,
+		Size = host.app.theme.TextSize,
+		Font = host.app.theme.Font,
+		Text = control.text,
 		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
 	})
-
 	control.drawings.state = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = 12,
-		Font = FONT,
+		Visible = true,
+		Color = host.app.theme.SubText,
+		Size = host.app.theme.SmallTextSize,
+		Font = host.app.theme.Font,
+		Text = control.value and "ON" or "OFF",
+		Position = Vector2.zero,
 		Outline = false,
-		Text = "OFF",
-		Position = Vector2.zero,
+		Transparency = 1,
 	})
-
-	control.drawings.trackLeft = createDrawing("Circle", {
-		Visible = window.visible,
+	control.drawings.track = createDrawing("Square", {
+		Visible = true,
 		Filled = true,
-		Color = window.theme.Toggle,
-		Thickness = 1,
-		NumSides = 20,
-		Radius = 8,
+		Color = host.app.theme.Toggle,
 		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
 	})
-
-	control.drawings.trackRight = createDrawing("Circle", {
-		Visible = window.visible,
-		Filled = true,
-		Color = window.theme.Toggle,
-		Thickness = 1,
-		NumSides = 20,
-		Radius = 8,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.trackCenter = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = true,
-		Color = window.theme.Toggle,
-		Thickness = 1,
-		Size = Vector2.new(18, 16),
-		Position = Vector2.zero,
-	})
-
 	control.drawings.knob = createDrawing("Circle", {
-		Visible = window.visible,
+		Visible = true,
 		Filled = true,
-		Color = Color3.fromRGB(245, 247, 250),
-		Thickness = 1,
-		NumSides = 20,
-		Radius = 6,
+		Color = Color3.fromRGB(245, 248, 252),
+		Radius = 7,
 		Position = Vector2.zero,
+		NumSides = 18,
+		Transparency = 1,
 	})
 
-	function control:applyValue()
-		local activeColor = colorLerp(self.window.theme.Toggle, self.window.theme.ToggleEnabled, self.toggleAlpha)
-
-		writeProperty(self.drawings.trackLeft, "Color", activeColor)
-		writeProperty(self.drawings.trackRight, "Color", activeColor)
-		writeProperty(self.drawings.trackCenter, "Color", activeColor)
-		writeProperty(self.drawings.state, "Text", self.value and "ON" or "OFF")
-		writeProperty(self.drawings.state, "Color", colorLerp(self.window.theme.SubText, self.window.theme.Accent, self.toggleAlpha))
-	end
-
-	function control:refreshVisibility(shouldShow)
-		for _, drawing in pairs(self.drawings) do
-			writeProperty(drawing, "Visible", shouldShow)
-		end
-	end
+	control.toggleAlpha = control.value and 1 or 0
 
 	function control:layout()
-		local switchWidth = 34
-		local switchPosition = self.position + Vector2.new(self.size.X - switchWidth, 4)
-		local knobX = lerp(switchPosition.X + 8, switchPosition.X + 26, self.toggleAlpha)
-
-		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(0, 3))
-		writeProperty(self.drawings.state, "Position", self.position + Vector2.new(self.size.X - 72, 4))
-		writeProperty(self.drawings.trackLeft, "Position", switchPosition + Vector2.new(8, 8))
-		writeProperty(self.drawings.trackRight, "Position", switchPosition + Vector2.new(switchWidth - 8, 8))
-		writeProperty(self.drawings.trackCenter, "Position", switchPosition + Vector2.new(8, 0))
-		writeProperty(self.drawings.trackCenter, "Size", Vector2.new(switchWidth - 16, 16))
-		writeProperty(self.drawings.knob, "Position", Vector2.new(knobX, switchPosition.Y + 8))
-
-		self:applyValue()
+		writeProperty(self.drawings.label, "Position", self.position + Vector2.new(0, 2))
+		writeProperty(self.drawings.state, "Position", self.position + Vector2.new(self.size.X - 74, 4))
+		local trackSize = Vector2.new(38, 16)
+		local trackPosition = self.position + Vector2.new(self.size.X - trackSize.X, 1)
+		writeProperty(self.drawings.track, "Position", trackPosition)
+		writeProperty(self.drawings.track, "Size", trackSize)
 	end
 
-	function control:applyTheme()
-		writeProperty(self.drawings.text, "Color", self.window.theme.Text)
-		writeProperty(self.drawings.text, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.state, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.text, "Size", self.window.theme.TextSize)
-		writeProperty(self.drawings.state, "Size", self.window.theme.SmallTextSize)
-		self:applyValue()
-	end
-
-	function control:setZIndex(z)
-		writeProperty(self.drawings.text, "ZIndex", z)
-		writeProperty(self.drawings.state, "ZIndex", z)
-		writeProperty(self.drawings.trackLeft, "ZIndex", z + 1)
-		writeProperty(self.drawings.trackRight, "ZIndex", z + 1)
-		writeProperty(self.drawings.trackCenter, "ZIndex", z + 1)
-		writeProperty(self.drawings.knob, "ZIndex", z + 2)
+	function control:updateVisuals()
+		local trackPosition = self.position + Vector2.new(self.size.X - 38, 1)
+		local knobX = lerp(trackPosition.X + 8, trackPosition.X + 30, self.toggleAlpha)
+		writeProperty(self.drawings.knob, "Position", Vector2.new(knobX, trackPosition.Y + 8))
+		writeProperty(self.drawings.track, "Color", colorLerp(self.app.theme.Toggle, self.app.theme.ToggleEnabled, self.toggleAlpha))
+		writeProperty(self.drawings.state, "Color", colorLerp(self.app.theme.SubText, self.app.theme.Accent, self.toggleAlpha))
+		writeProperty(self.drawings.state, "Text", self.value and "ON" or "OFF")
 	end
 
 	function control:hitTest(point)
@@ -2217,44 +1127,27 @@ function addToggle(window, tab, text, initialValue, callback)
 	end
 
 	function control:onMouseUp(point)
-		if not self.pressing then
-			return
+		if self.pressing and self:hitTest(point) then
+			self:SetValue(not self.value)
+			self.callback(self.value)
 		end
-
 		self.pressing = false
-
-		if not self:hitTest(point) then
-			return
-		end
-
-		self.value = not self.value
-		self:layout()
-		self.callback(self.value)
 	end
 
-	function control:TriggerActivation()
-		self.value = not self.value
-		self:layout()
-		self.callback(self.value)
+	function control:onStep(_, _, dt)
+		self.toggleAlpha = animateToward(self.toggleAlpha, self.value and 1 or 0, getMotionDuration(self.app, "standard"), dt)
+		self:updateVisuals()
 	end
 
-	function control:onStep(mousePosition, ownsHover)
-		self.hovered = ownsHover and self:hitTest(mousePosition)
-		writeProperty(self.drawings.knob, "Color", self.hovered and blendAccent(self.window.theme, self.window.theme.Text, 0.08) or Color3.fromRGB(245, 247, 250))
-		local target = self.value and 1 or 0
-		local nextAlpha = lerp(self.toggleAlpha, target, TOGGLE_ANIMATION)
-
-		if math.abs(nextAlpha - self.toggleAlpha) > 0.001 then
-			self.toggleAlpha = nextAlpha
-			self:layout()
-		else
-			self.toggleAlpha = target
-		end
+	function control:applyTheme()
+		writeProperty(self.drawings.label, "Color", self.app.theme.Text)
+		writeProperty(self.drawings.state, "Color", self.app.theme.SubText)
+		writeProperty(self.drawings.track, "Color", self.app.theme.Toggle)
 	end
 
 	function control:SetValue(nextValue)
 		self.value = nextValue == true
-		self:layout()
+		self:updateVisuals()
 	end
 
 	function control:GetConfigValue()
@@ -2262,166 +1155,125 @@ function addToggle(window, tab, text, initialValue, callback)
 	end
 
 	function control:ApplyConfigValue(nextValue, fireCallback)
-		self:SetValue(nextValue == true)
+		self:SetValue(nextValue)
 		if fireCallback ~= false then
 			self.callback(self.value)
 		end
 	end
 
-	function control:SetActivationBinding(binding)
-		self.activationBinding = binding
-	end
-
-	function control:destroy()
-		for _, drawing in pairs(self.drawings) do
-			destroyDrawing(drawing)
-		end
-	end
-
 	control:applyTheme()
-	return addControl(window, tab, control)
+	return addHostChild(host, control)
 end
 
-function addSlider(window, tab, text, minimum, maximum, initialValue, callback)
-	local control = makeBaseControl(window, tab, "Slider", SLIDER_HEIGHT)
-	control.text = text
-	control.configKey = text
-	control.minimum = minimum
-	control.maximum = maximum
-	control.value = clamp(initialValue or minimum, minimum, maximum)
+local function addSlider(host, text, minimum, maximum, initialValue, callback)
+	local control = makeBaseControl(host, "Slider", host.app.density.rowHeight + 16)
+	control.text = tostring(text or "")
+	control.minimum = tonumber(minimum) or 0
+	control.maximum = tonumber(maximum) or 100
+	control.value = clamp(tonumber(initialValue) or control.minimum, control.minimum, control.maximum)
 	control.displayValue = control.value
 	control.callback = callback or function() end
-	control.dragging = false
+	control.configKey = control.text
 	control.blocksWindowDrag = true
 
 	control.drawings.label = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.Text,
-		Size = 13,
-		Font = FONT,
-		Outline = false,
-		Text = text,
+		Visible = true,
+		Color = host.app.theme.Text,
+		Size = host.app.theme.TextSize,
+		Font = host.app.theme.Font,
+		Text = control.text,
 		Position = Vector2.zero,
-	})
-
-	control.drawings.value = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = 12,
-		Font = FONT,
 		Outline = false,
+		Transparency = 1,
+	})
+	control.drawings.value = createDrawing("Text", {
+		Visible = true,
+		Color = host.app.theme.SubText,
+		Size = host.app.theme.SmallTextSize,
+		Font = host.app.theme.Font,
 		Text = tostring(control.value),
 		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
 	})
-
 	control.drawings.track = createDrawing("Square", {
-		Visible = window.visible,
+		Visible = true,
 		Filled = true,
-		Color = window.theme.SliderTrack,
-		Thickness = 1,
-		Size = Vector2.new(100, 6),
+		Color = host.app.theme.SliderTrack,
 		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
 	})
-
 	control.drawings.fill = createDrawing("Square", {
-		Visible = window.visible,
+		Visible = true,
 		Filled = true,
-		Color = window.theme.SliderFill,
-		Thickness = 1,
-		Size = Vector2.new(0, 6),
+		Color = host.app.theme.SliderFill,
 		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
 	})
-
 	control.drawings.knob = createDrawing("Circle", {
-		Visible = window.visible,
+		Visible = true,
 		Filled = true,
-		Color = window.theme.Text,
-		Thickness = 1,
-		NumSides = 18,
-		Radius = 5,
+		Color = host.app.theme.Text,
 		Position = Vector2.zero,
+		Radius = 6,
+		NumSides = 18,
+		Transparency = 1,
 	})
 
 	function control:getAlpha()
 		local span = self.maximum - self.minimum
-
 		if span == 0 then
 			return 0
 		end
-
 		return (self.value - self.minimum) / span
 	end
 
 	function control:getDisplayAlpha()
 		local span = self.maximum - self.minimum
-
 		if span == 0 then
 			return 0
 		end
-
 		return (self.displayValue - self.minimum) / span
 	end
 
 	function control:updateVisuals()
-		local barPosition = self.position + Vector2.new(0, 24)
-		local barWidth = self.size.X
+		local barPosition = self.position + Vector2.new(0, self.app.theme.TextSize + 8)
 		local alpha = self:getDisplayAlpha()
-		local fillWidth = clamp(round(barWidth * alpha), 0, barWidth)
-
+		local fillWidth = round(self.size.X * alpha)
 		writeProperty(self.drawings.track, "Position", barPosition)
-		writeProperty(self.drawings.track, "Size", Vector2.new(barWidth, 6))
+		writeProperty(self.drawings.track, "Size", Vector2.new(self.size.X, 6))
 		writeProperty(self.drawings.fill, "Position", barPosition)
 		writeProperty(self.drawings.fill, "Size", Vector2.new(fillWidth, 6))
-		writeProperty(self.drawings.knob, "Position", barPosition + Vector2.new(fillWidth, 3))
+		writeProperty(self.drawings.knob, "Position", Vector2.new(barPosition.X + fillWidth, barPosition.Y + 3))
 		writeProperty(self.drawings.value, "Text", string.format("%.2f", self.value))
-	end
-
-	function control:setFromMouse(mousePosition)
-		local alpha = clamp((mousePosition.X - self.position.X) / self.size.X, 0, 1)
-		local nextValue = lerp(self.minimum, self.maximum, alpha)
-
-		if math.abs(nextValue - self.value) < 0.001 then
-			return
-		end
-
-		self.value = nextValue
-		self:updateVisuals()
-		self.callback(self.value)
 	end
 
 	function control:layout()
 		writeProperty(self.drawings.label, "Position", self.position)
-		writeProperty(self.drawings.value, "Position", self.position + Vector2.new(self.size.X - 56, 1))
+		writeProperty(self.drawings.value, "Position", self.position + Vector2.new(self.size.X - 64, 1))
 		self:updateVisuals()
 	end
 
-	function control:applyTheme()
-		writeProperty(self.drawings.label, "Color", self.window.theme.Text)
-		writeProperty(self.drawings.value, "Color", self.window.theme.SubText)
-		writeProperty(self.drawings.track, "Color", self.window.theme.SliderTrack)
-		writeProperty(self.drawings.fill, "Color", self.window.theme.SliderFill)
-		writeProperty(self.drawings.label, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.value, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.label, "Size", self.window.theme.TextSize)
-		writeProperty(self.drawings.value, "Size", self.window.theme.SmallTextSize)
-	end
-
-	function control:setZIndex(z)
-		writeProperty(self.drawings.label, "ZIndex", z)
-		writeProperty(self.drawings.value, "ZIndex", z)
-		writeProperty(self.drawings.track, "ZIndex", z)
-		writeProperty(self.drawings.fill, "ZIndex", z + 1)
-		writeProperty(self.drawings.knob, "ZIndex", z + 2)
+	function control:setFromMouse(mousePosition)
+		local alpha = clamp((mousePosition.X - self.position.X) / math.max(1, self.size.X), 0, 1)
+		local nextValue = lerp(self.minimum, self.maximum, alpha)
+		if math.abs(nextValue - self.value) > 0.0001 then
+			self.value = nextValue
+			self.callback(self.value)
+		end
 	end
 
 	function control:hitTest(point)
-		return pointInRect(point, self.position, self.size)
+		return pointInRect(point, self.position, Vector2.new(self.size.X, self.size.Y))
 	end
 
 	function control:onMouseDown(point)
 		if self:hitTest(point) then
 			self.dragging = true
 			self:setFromMouse(point)
+			self:updateVisuals()
 		end
 	end
 
@@ -2429,21 +1281,23 @@ function addSlider(window, tab, text, minimum, maximum, initialValue, callback)
 		self.dragging = false
 	end
 
-	function control:onStep(mousePosition, ownsHover)
+	function control:onStep(mousePosition, _, dt)
 		if self.dragging then
 			self:setFromMouse(mousePosition)
 		end
-
-		self.displayValue = lerp(self.displayValue, self.value, self.dragging and SLIDER_DRAG_ANIMATION or SLIDER_IDLE_ANIMATION)
-
+		local token = self.dragging and "emphasized" or "standard"
+		self.displayValue = animateToward(self.displayValue, self.value, getMotionDuration(self.app, token), dt)
 		if math.abs(self.displayValue - self.value) < 0.001 then
 			self.displayValue = self.value
 		end
-
 		self:updateVisuals()
+	end
 
-		local hovered = ownsHover and self:hitTest(mousePosition)
-		writeProperty(self.drawings.knob, "Color", (hovered or self.dragging) and colorLerp(self.window.theme.Accent, self.window.theme.Text, 0.08) or self.window.theme.Text)
+	function control:applyTheme()
+		writeProperty(self.drawings.label, "Color", self.app.theme.Text)
+		writeProperty(self.drawings.value, "Color", self.app.theme.SubText)
+		writeProperty(self.drawings.track, "Color", self.app.theme.SliderTrack)
+		writeProperty(self.drawings.fill, "Color", self.app.theme.SliderFill)
 	end
 
 	function control:SetValue(nextValue)
@@ -2463,23 +1317,66 @@ function addSlider(window, tab, text, minimum, maximum, initialValue, callback)
 		end
 	end
 
-	function control:destroy()
-		for _, drawing in pairs(self.drawings) do
-			destroyDrawing(drawing)
-		end
-	end
-
 	control:applyTheme()
-	return addControl(window, tab, control)
+	return addHostChild(host, control)
 end
 
-function addDropdown(window, tab, text, options, defaultValue, callback)
-	local control = makeBaseControl(window, tab, "Dropdown", LABELED_INPUT_HEIGHT)
-	control.text = text
-	control.configKey = text
+local function createChoiceOverlay(control)
+	control.optionDrawings = control.optionDrawings or {}
+	for _, row in ipairs(control.optionDrawings) do
+		destroyDrawing(row.frame)
+		destroyDrawing(row.outline)
+		destroyDrawing(row.text)
+		if row.check ~= nil then
+			destroyDrawing(row.check)
+		end
+	end
+	control.optionDrawings = {}
+
+	for _, option in ipairs(control.options) do
+		local row = {
+			frame = createDrawing("Square", {
+				Visible = false,
+				Filled = true,
+				Color = control.app.theme.Input,
+				Position = Vector2.zero,
+				Size = Vector2.zero,
+				Transparency = 1,
+			}),
+			outline = createDrawing("Square", {
+				Visible = false,
+				Filled = false,
+				Color = control.app.theme.Border,
+				Position = Vector2.zero,
+				Size = Vector2.zero,
+				Transparency = 1,
+			}),
+			text = createDrawing("Text", {
+				Visible = false,
+				Color = control.app.theme.Text,
+				Size = control.app.theme.TextSize,
+				Font = control.app.theme.Font,
+				Text = tostring(option),
+				Position = Vector2.zero,
+				Outline = false,
+				Transparency = 1,
+			}),
+		}
+		table.insert(control.optionDrawings, row)
+	end
+end
+
+local function getOverlayBaseRect(control)
+	return makeRect(control.position + Vector2.new(0, control.app.theme.TextSize + 6), Vector2.new(control.size.X, control.app.density.inputHeight))
+end
+
+local function addDropdown(host, text, options, defaultValue, callback)
+	local control = makeBaseControl(host, "Dropdown", host.app.theme.TextSize + 6 + host.app.density.inputHeight)
+	control.text = tostring(text or "")
 	control.options = table.clone(options or {})
 	control.value = defaultValue or control.options[1] or "Select"
 	control.callback = callback or function() end
+	control.configKey = control.text
 	control.open = false
 	control.openAlpha = 0
 	control.hoverIndex = nil
@@ -2487,104 +1384,121 @@ function addDropdown(window, tab, text, options, defaultValue, callback)
 	control.isDropdown = true
 
 	control.drawings.label = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.Text,
-		Size = window.theme.TextSize,
-		Font = window.theme.Font,
-		Outline = false,
-		Text = text,
+		Visible = true,
+		Color = host.app.theme.Text,
+		Size = host.app.theme.TextSize,
+		Font = host.app.theme.Font,
+		Text = control.text,
 		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
 	})
-
 	control.drawings.frame = createDrawing("Square", {
-		Visible = window.visible,
+		Visible = true,
 		Filled = true,
-		Color = window.theme.Input,
-		Thickness = 1,
-		Size = Vector2.zero,
+		Color = host.app.theme.Input,
 		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
 	})
-
 	control.drawings.outline = createDrawing("Square", {
-		Visible = window.visible,
+		Visible = true,
 		Filled = false,
-		Color = window.theme.Border,
-		Thickness = 1,
-		Size = Vector2.zero,
+		Color = host.app.theme.Border,
 		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
 	})
-
 	control.drawings.value = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = window.theme.SmallTextSize,
-		Font = window.theme.Font,
-		Outline = false,
+		Visible = true,
+		Color = host.app.theme.SubText,
+		Size = host.app.theme.TextSize,
+		Font = host.app.theme.Font,
 		Text = tostring(control.value),
 		Position = Vector2.zero,
-	})
-
-	control.drawings.arrow = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = window.theme.SmallTextSize,
-		Font = window.theme.Font,
 		Outline = false,
+		Transparency = 1,
+	})
+	control.drawings.arrow = createDrawing("Text", {
+		Visible = true,
+		Color = host.app.theme.SubText,
+		Size = host.app.theme.TextSize,
+		Font = host.app.theme.Font,
 		Text = "v",
 		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
 	})
 
-	control.optionDrawings = {}
+	createChoiceOverlay(control)
 
-	for _, option in ipairs(control.options) do
-		table.insert(control.optionDrawings, {
-			frame = createDrawing("Square", {
-				Visible = false,
-				Filled = true,
-				Color = window.theme.Input,
-				Thickness = 1,
-				Size = Vector2.zero,
-				Position = Vector2.zero,
-			}),
-			outline = createDrawing("Square", {
-				Visible = false,
-				Filled = false,
-				Color = window.theme.Border,
-				Thickness = 1,
-				Size = Vector2.zero,
-				Position = Vector2.zero,
-			}),
-			text = createDrawing("Text", {
-				Visible = false,
-				Color = window.theme.Text,
-				Size = window.theme.SmallTextSize,
-				Font = window.theme.Font,
-				Outline = false,
-				Text = tostring(option),
-				Position = Vector2.zero,
-			}),
-		})
+	function control:getOptionHeight()
+		return self.app.density.inputHeight - 4
 	end
 
-	function control:GetHeight()
-		return LABELED_INPUT_HEIGHT + round((#self.options * DROPDOWN_OPTION_HEIGHT) * self.openAlpha)
+	function control:getOverlayRect()
+		local baseRect = getOverlayBaseRect(self)
+		local visibleRows = math.max(0, round(#self.options * self.openAlpha))
+		return makeRect(
+			baseRect.position + Vector2.new(0, baseRect.size.Y + 8),
+			Vector2.new(baseRect.size.X, visibleRows * self:getOptionHeight())
+		)
 	end
 
-	function control:getVisibleOptionRowCount()
-		return round(#self.options * self.openAlpha)
+	function control:layout()
+		writeProperty(self.drawings.label, "Position", self.position)
+		local baseRect = getOverlayBaseRect(self)
+		writeProperty(self.drawings.frame, "Position", baseRect.position)
+		writeProperty(self.drawings.frame, "Size", baseRect.size)
+		writeProperty(self.drawings.outline, "Position", baseRect.position)
+		writeProperty(self.drawings.outline, "Size", baseRect.size)
+		fitDrawingText(self.drawings.value, tostring(self.value), baseRect.size.X - 36)
+		writeProperty(self.drawings.value, "Position", baseRect.position + Vector2.new(10, 7))
+		writeProperty(self.drawings.arrow, "Position", baseRect.position + Vector2.new(baseRect.size.X - 18, 7))
+		self:layoutOverlay()
+	end
+
+	function control:layoutOverlay()
+		local overlayRect = self:getOverlayRect()
+		local rowHeight = self:getOptionHeight()
+		for index, row in ipairs(self.optionDrawings) do
+			local visible = self.openAlpha > 0 and index <= round(#self.options * self.openAlpha)
+			local rowPosition = overlayRect.position + Vector2.new(0, (index - 1) * rowHeight)
+			local rowSize = Vector2.new(overlayRect.size.X, rowHeight)
+			setDrawingVisibility(row.frame, visible, 1)
+			setDrawingVisibility(row.outline, visible, 1)
+			setDrawingVisibility(row.text, visible, 1)
+			if visible then
+				writeProperty(row.frame, "Position", rowPosition)
+				writeProperty(row.frame, "Size", rowSize)
+				writeProperty(row.outline, "Position", rowPosition)
+				writeProperty(row.outline, "Size", rowSize)
+				writeProperty(row.text, "Position", rowPosition + Vector2.new(10, 6))
+			end
+		end
 	end
 
 	function control:SetOpen(isOpen)
-		self.open = isOpen and #self.options > 0
-
-		if self.open then
-			self.window:CloseDropdowns(self)
+		local nextValue = isOpen == true and #self.options > 0
+		if nextValue then
+			self.app:OpenOverlay(self)
+		elseif self.app.openOverlay == self then
+			self.app:CloseOverlay(nil)
+		else
+			self.open = false
 		end
 	end
 
 	function control:SetValue(nextValue)
 		self.value = nextValue
 		writeProperty(self.drawings.value, "Text", tostring(nextValue))
+	end
+
+	function control:SetOptions(nextOptions, nextValue)
+		self.options = table.clone(nextOptions or {})
+		self.value = nextValue or self.options[1] or "Select"
+		createChoiceOverlay(self)
+		self.app:MarkLayoutDirty()
 	end
 
 	function control:GetConfigValue()
@@ -2598,188 +1512,79 @@ function addDropdown(window, tab, text, options, defaultValue, callback)
 		end
 	end
 
-	function control:SetOptions(nextOptions, nextValue)
-		for _, drawingSet in ipairs(self.optionDrawings) do
-			destroyDrawing(drawingSet.frame)
-			destroyDrawing(drawingSet.outline)
-			destroyDrawing(drawingSet.text)
-		end
-
-		self.options = table.clone(nextOptions or {})
-		self.optionDrawings = {}
-
-		for _, option in ipairs(self.options) do
-			table.insert(self.optionDrawings, {
-				frame = createDrawing("Square", {
-					Visible = false,
-					Filled = true,
-					Color = self.window.theme.Input,
-					Thickness = 1,
-					Size = Vector2.zero,
-					Position = Vector2.zero,
-				}),
-				outline = createDrawing("Square", {
-					Visible = false,
-					Filled = false,
-					Color = self.window.theme.Border,
-					Thickness = 1,
-					Size = Vector2.zero,
-					Position = Vector2.zero,
-				}),
-				text = createDrawing("Text", {
-					Visible = false,
-					Color = self.window.theme.Text,
-					Size = self.window.theme.SmallTextSize,
-					Font = self.window.theme.Font,
-					Outline = false,
-					Text = tostring(option),
-					Position = Vector2.zero,
-				}),
-			})
-		end
-
-		self:SetValue(nextValue or self.options[1] or "Select")
-		self.window:RefreshZIndex()
-		self.window:UpdateLayout()
-	end
-
-	function control:applyTheme()
-		writeProperty(self.drawings.label, "Color", self.window.theme.Text)
-		writeProperty(self.drawings.value, "Color", self.window.theme.SubText)
-		writeProperty(self.drawings.arrow, "Color", self.window.theme.SubText)
-		writeProperty(self.drawings.outline, "Color", self.window.theme.Border)
-		writeProperty(self.drawings.label, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.value, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.arrow, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.label, "Size", self.window.theme.TextSize)
-		writeProperty(self.drawings.value, "Size", self.window.theme.SmallTextSize)
-		writeProperty(self.drawings.arrow, "Size", self.window.theme.SmallTextSize)
-
-		for _, drawingSet in ipairs(self.optionDrawings) do
-			writeProperty(drawingSet.outline, "Color", self.window.theme.Border)
-			writeProperty(drawingSet.text, "Color", self.window.theme.Text)
-			writeProperty(drawingSet.text, "Font", self.window.theme.Font)
-			writeProperty(drawingSet.text, "Size", self.window.theme.SmallTextSize)
-		end
-	end
-
-	function control:layout()
-		local basePosition = self.position + Vector2.new(0, 16)
-		local baseSize = Vector2.new(self.size.X, INPUT_HEIGHT)
-		local visibleCount = round(#self.options * self.openAlpha)
-
-		writeProperty(self.drawings.label, "Position", self.position)
-		writeProperty(self.drawings.frame, "Position", basePosition)
-		writeProperty(self.drawings.frame, "Size", baseSize)
-		writeProperty(self.drawings.outline, "Position", basePosition)
-		writeProperty(self.drawings.outline, "Size", baseSize)
-		writeProperty(self.drawings.value, "Position", basePosition + Vector2.new(10, 6))
-		writeProperty(self.drawings.arrow, "Position", basePosition + Vector2.new(baseSize.X - 16, 6))
-		writeProperty(self.drawings.arrow, "Text", self.openAlpha > 0.5 and "^" or "v")
-
-		for index, option in ipairs(self.options) do
-			local drawingSet = self.optionDrawings[index]
-			local rowPosition = basePosition + Vector2.new(0, INPUT_HEIGHT + ((index - 1) * DROPDOWN_OPTION_HEIGHT))
-			local isVisible = self.window:IsControlDisplayed(self) and index <= visibleCount and self.openAlpha > 0.02
-
-			writeProperty(drawingSet.frame, "Position", rowPosition)
-			writeProperty(drawingSet.frame, "Size", Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT))
-			writeProperty(drawingSet.outline, "Position", rowPosition)
-			writeProperty(drawingSet.outline, "Size", Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT))
-			writeProperty(drawingSet.text, "Position", rowPosition + Vector2.new(10, 5))
-			writeProperty(drawingSet.text, "Text", tostring(option))
-			writeProperty(drawingSet.frame, "Visible", isVisible)
-			writeProperty(drawingSet.outline, "Visible", isVisible)
-			writeProperty(drawingSet.text, "Visible", isVisible)
-		end
-	end
-
-	function control:refreshVisibility(shouldShow)
-		for key, drawing in pairs(self.drawings) do
-			writeProperty(drawing, "Visible", shouldShow)
-		end
-
-		for index, drawingSet in ipairs(self.optionDrawings) do
-			local rowVisible = shouldShow and self.openAlpha > 0.02 and (index <= round(#self.options * self.openAlpha))
-			writeProperty(drawingSet.frame, "Visible", rowVisible)
-			writeProperty(drawingSet.outline, "Visible", rowVisible)
-			writeProperty(drawingSet.text, "Visible", rowVisible)
-		end
-	end
-
-	function control:getBaseRect()
-		local basePosition = self.position + Vector2.new(0, 16)
-		return basePosition, Vector2.new(self.size.X, INPUT_HEIGHT)
-	end
-
-	function control:getOptionIndex(point)
-		local basePosition = self.position + Vector2.new(0, 16 + INPUT_HEIGHT)
-		local visibleCount = self:getVisibleOptionRowCount()
-
-		for index = 1, visibleCount do
-			local rowPosition = basePosition + Vector2.new(0, (index - 1) * DROPDOWN_OPTION_HEIGHT)
-
-			if pointInRect(point, rowPosition, Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT)) then
-				return index
-			end
-		end
-
-		return nil
-	end
-
 	function control:hitTest(point)
-		local basePosition, baseSize = self:getBaseRect()
+		local baseRect = getOverlayBaseRect(self)
+		return pointInBounds(point, baseRect)
+	end
 
-		if pointInRect(point, basePosition, baseSize) then
-			return true
+	function control:getOverlayIndex(point)
+		if not self.open then
+			return nil
 		end
-
-		return self.openAlpha > 0.02 and self:getOptionIndex(point) ~= nil
+		local overlayRect = self:getOverlayRect()
+		if not pointInBounds(point, overlayRect) then
+			return nil
+		end
+		return clamp(math.floor((point.Y - overlayRect.position.Y) / self:getOptionHeight()) + 1, 1, #self.options)
 	end
 
 	function control:onMouseDown(point)
-		local basePosition, baseSize = self:getBaseRect()
-
-		if pointInRect(point, basePosition, baseSize) then
-			self:SetOpen(not self.open)
-			return
-		end
-
-		local optionIndex = self:getOptionIndex(point)
-
-		if optionIndex ~= nil then
-			self:SetValue(self.options[optionIndex])
-			self:SetOpen(false)
-			self.callback(self.value)
+		if self:hitTest(point) then
+			self.pressing = true
 		end
 	end
 
-	function control:onStep(mousePosition, ownsHover)
-		local basePosition, baseSize = self:getBaseRect()
-		local targetAlpha = self.open and 1 or 0
-		local nextAlpha = lerp(self.openAlpha, targetAlpha, DROPDOWN_ANIMATION)
-		local needsLayout = false
-
-		if math.abs(nextAlpha - self.openAlpha) > 0.001 then
-			self.openAlpha = nextAlpha
-			needsLayout = true
-		else
-			self.openAlpha = targetAlpha
+	function control:onMouseUp(point)
+		if self.pressing and self:hitTest(point) then
+			self:SetOpen(not self.open)
 		end
+		self.pressing = false
+	end
 
-		self.hovered = ownsHover and pointInRect(mousePosition, basePosition, baseSize)
-		writeProperty(self.drawings.frame, "Color", self.hovered and blendAccent(self.window.theme, self.window.theme.InputHover, 0.06) or self.window.theme.Input)
-		writeProperty(self.drawings.outline, "Color", self.open and blendAccent(self.window.theme, self.window.theme.Border, 0.72) or self.window.theme.Border)
+	function control:overlayHitTest(point)
+		return self:getOverlayIndex(point) ~= nil
+	end
 
-		for index, drawingSet in ipairs(self.optionDrawings) do
-			local hoveredOption = ownsHover and self:getOptionIndex(mousePosition) == index
+	function control:onOverlayMouseDown(point)
+		self.overlayPressedIndex = self:getOverlayIndex(point)
+	end
+
+	function control:onOverlayMouseUp(point)
+		local index = self:getOverlayIndex(point)
+		if self.overlayPressedIndex ~= nil and index == self.overlayPressedIndex then
+			self:SetValue(self.options[index])
+			self.callback(self.value)
+			self.app:CloseOverlay(nil)
+		end
+		self.overlayPressedIndex = nil
+	end
+
+	function control:onStep(mousePosition, _, dt)
+		self.openAlpha = animateToward(self.openAlpha, self.open and 1 or 0, getMotionDuration(self.app, "standard"), dt)
+		self.hovered = self:IsDisplayed() and self:hitTest(mousePosition)
+		writeProperty(self.drawings.frame, "Color", self.hovered and self.app.theme.InputHover or self.app.theme.Input)
+		writeProperty(self.drawings.outline, "Color", (self.open or self.hovered) and colorLerp(self.app.theme.Border, self.app.theme.AccentSoft, 0.35) or self.app.theme.Border)
+		self.hoverIndex = self:getOverlayIndex(mousePosition)
+		for index, row in ipairs(self.optionDrawings) do
 			local selected = self.options[index] == self.value
-			local rowColor = selected and blendAccent(self.window.theme, self.window.theme.TabActive, 0.14) or hoveredOption and blendAccent(self.window.theme, self.window.theme.InputHover, 0.06) or self.window.theme.Input
-
-			writeProperty(drawingSet.frame, "Color", rowColor)
+			local hovered = self.hoverIndex == index
+			writeProperty(row.frame, "Color", selected and colorLerp(self.app.theme.Input, self.app.theme.NavActive, 0.85) or hovered and self.app.theme.InputHover or self.app.theme.Input)
+			writeProperty(row.outline, "Color", selected and self.app.theme.AccentSoft or self.app.theme.Border)
 		end
+		self:layoutOverlay()
+	end
 
-		return needsLayout
+	function control:applyTheme()
+		writeProperty(self.drawings.label, "Color", self.app.theme.Text)
+		writeProperty(self.drawings.frame, "Color", self.app.theme.Input)
+		writeProperty(self.drawings.outline, "Color", self.app.theme.Border)
+		writeProperty(self.drawings.value, "Color", self.app.theme.SubText)
+		writeProperty(self.drawings.arrow, "Color", self.app.theme.SubText)
+		for _, row in ipairs(self.optionDrawings) do
+			writeProperty(row.text, "Color", self.app.theme.Text)
+			writeProperty(row.frame, "Color", self.app.theme.Input)
+			writeProperty(row.outline, "Color", self.app.theme.Border)
+		end
 	end
 
 	function control:setZIndex(z)
@@ -2788,354 +1593,451 @@ function addDropdown(window, tab, text, options, defaultValue, callback)
 		writeProperty(self.drawings.outline, "ZIndex", z + 1)
 		writeProperty(self.drawings.value, "ZIndex", z + 2)
 		writeProperty(self.drawings.arrow, "ZIndex", z + 2)
-
-		for index, drawingSet in ipairs(self.optionDrawings) do
-			writeProperty(drawingSet.frame, "ZIndex", z + 3 + index)
-			writeProperty(drawingSet.outline, "ZIndex", z + 4 + index)
-			writeProperty(drawingSet.text, "ZIndex", z + 5 + index)
+		local overlayBase = self.app.zBase + 400
+		for index, row in ipairs(self.optionDrawings) do
+			writeProperty(row.frame, "ZIndex", overlayBase + (index * 3))
+			writeProperty(row.outline, "ZIndex", overlayBase + (index * 3) + 1)
+			writeProperty(row.text, "ZIndex", overlayBase + (index * 3) + 2)
 		end
 	end
 
 	function control:destroy()
-		for _, drawing in pairs(self.drawings) do
-			destroyDrawing(drawing)
-		end
-
-		for _, drawingSet in ipairs(self.optionDrawings) do
-			destroyDrawing(drawingSet.frame)
-			destroyDrawing(drawingSet.outline)
-			destroyDrawing(drawingSet.text)
+		destroyDrawings(self.drawings)
+		for _, row in ipairs(self.optionDrawings) do
+			destroyDrawing(row.frame)
+			destroyDrawing(row.outline)
+			destroyDrawing(row.text)
 		end
 	end
 
 	control:applyTheme()
-	return addControl(window, tab, control)
+	return addHostChild(host, control)
 end
 
 local function normalizeSearchDropdownMaxSize(maxSize)
-	local numeric = tonumber(maxSize)
-
-	if numeric == nil then
-		return nil
+	local value = tonumber(maxSize)
+	if value == nil then
+		return 6
 	end
-
-	return math.max(1, math.floor(numeric))
+	return clamp(math.floor(value), 3, 10)
 end
 
 local function resolveSearchDropdownArguments(defaultValue, maxSizeOrCallback, callback)
-	if typeof(maxSizeOrCallback) == "function" and callback == nil then
-		return defaultValue, nil, maxSizeOrCallback
+	if type(maxSizeOrCallback) == "function" and callback == nil then
+		return defaultValue, 6, maxSizeOrCallback
 	end
-
 	return defaultValue, normalizeSearchDropdownMaxSize(maxSizeOrCallback), callback
 end
 
-function addSearchDropdown(window, tab, text, options, defaultValue, maxSizeOrCallback, callback)
+local function addSearchDropdown(host, text, options, defaultValue, maxSizeOrCallback, callback)
 	local resolvedDefaultValue, resolvedMaxSize, resolvedCallback = resolveSearchDropdownArguments(defaultValue, maxSizeOrCallback, callback)
-	local control = makeBaseControl(window, tab, "SearchDropdown", SEARCH_DROPDOWN_CLOSED_HEIGHT)
-	control.text = text
-	control.configKey = text
-	control.options = table.clone(options or {})
-	control.filteredIndices = {}
-	control.value = resolvedDefaultValue or control.options[1] or "Select"
+	local control = addDropdown(host, text, options, resolvedDefaultValue, resolvedCallback)
+	control.kind = "SearchDropdown"
 	control.searchText = ""
-	control.callback = resolvedCallback or function() end
-	control.open = false
-	control.openAlpha = 0
-	control.blocksWindowDrag = true
-	control.focused = false
-	control.cursorVisible = false
-	control.lastBlink = os.clock()
-	control.optionDrawings = {}
 	control.maxSize = resolvedMaxSize
-	control.scrollOffset = 0
-	control.isDropdown = true
+	control.filteredIndices = {}
 	control.acceptsTextInput = true
-
-	control.drawings.label = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.Text,
-		Size = window.theme.TextSize,
-		Font = window.theme.Font,
-		Outline = false,
-		Text = text,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.frame = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = true,
-		Color = window.theme.Input,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.outline = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = false,
-		Color = window.theme.Border,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.value = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = window.theme.SmallTextSize,
-		Font = window.theme.Font,
-		Outline = false,
-		Text = tostring(control.value),
-		Position = Vector2.zero,
-	})
-
-	control.drawings.arrow = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = window.theme.SmallTextSize,
-		Font = window.theme.Font,
-		Outline = false,
-		Text = "v",
-		Position = Vector2.zero,
-	})
+	control.scrollOffset = 0
+	control.focused = false
 
 	control.drawings.searchFrame = createDrawing("Square", {
 		Visible = false,
 		Filled = true,
-		Color = window.theme.Input,
-		Thickness = 1,
-		Size = Vector2.zero,
+		Color = control.app.theme.Input,
 		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
 	})
-
 	control.drawings.searchOutline = createDrawing("Square", {
 		Visible = false,
 		Filled = false,
-		Color = window.theme.Border,
-		Thickness = 1,
-		Size = Vector2.zero,
+		Color = control.app.theme.Border,
 		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
 	})
-
 	control.drawings.searchText = createDrawing("Text", {
 		Visible = false,
-		Color = window.theme.SubText,
-		Size = window.theme.SmallTextSize,
-		Font = window.theme.Font,
-		Outline = false,
+		Color = control.app.theme.SubText,
+		Size = control.app.theme.TextSize,
+		Font = control.app.theme.Font,
 		Text = "",
 		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
 	})
 
-	function control:getVisibleOptionLimit()
-		if self.maxSize == nil then
-			return #self.options
-		end
-
-		return self.maxSize
-	end
-
-	function control:getVisibleOptionCount()
-		return math.min(#self.filteredIndices, self:getVisibleOptionLimit())
-	end
-
-	function control:getRenderedOptionCount()
-		return round(self:getVisibleOptionCount() * self.openAlpha)
-	end
-
-	function control:getMaxScrollOffset()
-		return math.max(0, #self.filteredIndices - self:getVisibleOptionCount())
-	end
-
-	function control:clampScrollOffset()
-		self.scrollOffset = clamp(self.scrollOffset, 0, self:getMaxScrollOffset())
-	end
-
-	function control:getFilteredRowIndex(visibleRow)
-		return self.filteredIndices[self.scrollOffset + visibleRow]
-	end
-
-	function control:scrollToTop()
-		self.scrollOffset = 0
-	end
-
-	function control:scrollToValue()
-		local selectedFilteredRow = nil
-
-		for filteredRow, optionIndex in ipairs(self.filteredIndices) do
-			if self.options[optionIndex] == self.value then
-				selectedFilteredRow = filteredRow
-				break
-			end
-		end
-
-		if selectedFilteredRow == nil then
-			self:clampScrollOffset()
-			return
-		end
-
-		local visibleCount = self:getVisibleOptionCount()
-
-		if visibleCount <= 0 then
-			self.scrollOffset = 0
-			return
-		end
-
-		local firstVisibleRow = self.scrollOffset + 1
-		local lastVisibleRow = self.scrollOffset + visibleCount
-
-		if selectedFilteredRow < firstVisibleRow then
-			self.scrollOffset = selectedFilteredRow - 1
-		elseif selectedFilteredRow > lastVisibleRow then
-			self.scrollOffset = selectedFilteredRow - visibleCount
-		end
-
-		self:clampScrollOffset()
-	end
-
-	function control:scrollBy(step)
-		if self:getMaxScrollOffset() <= 0 then
-			return false
-		end
-
-		local nextOffset = clamp(self.scrollOffset + step, 0, self:getMaxScrollOffset())
-
-		if nextOffset == self.scrollOffset then
-			return false
-		end
-
-		self.scrollOffset = nextOffset
-		self.window:UpdateLayout()
-		return true
-	end
-
-	function control:rebuildOptions()
-		for _, drawingSet in ipairs(self.optionDrawings) do
-			destroyDrawing(drawingSet.frame)
-			destroyDrawing(drawingSet.outline)
-			destroyDrawing(drawingSet.text)
-		end
-
-		self.optionDrawings = {}
-
-		for _ = 1, math.min(#self.options, self:getVisibleOptionLimit()) do
-			table.insert(self.optionDrawings, {
-				frame = createDrawing("Square", {
-					Visible = false,
-					Filled = true,
-					Color = self.window.theme.Input,
-					Thickness = 1,
-					Size = Vector2.zero,
-					Position = Vector2.zero,
-				}),
-				outline = createDrawing("Square", {
-					Visible = false,
-					Filled = false,
-					Color = self.window.theme.Border,
-					Thickness = 1,
-					Size = Vector2.zero,
-					Position = Vector2.zero,
-				}),
-				text = createDrawing("Text", {
-					Visible = false,
-					Color = self.window.theme.Text,
-					Size = self.window.theme.SmallTextSize,
-					Font = self.window.theme.Font,
-					Outline = false,
-					Text = "",
-					Position = Vector2.zero,
-				}),
-			})
-		end
-	end
-
-	function control:updateFilter(resetScroll)
-		self.filteredIndices = {}
-		local needle = string.lower(self.searchText)
-
+	function control:updateFilter()
+		table.clear(self.filteredIndices)
+		local query = string.lower(self.searchText or "")
 		for index, option in ipairs(self.options) do
-			local textValue = tostring(option)
-			if needle == "" or string.find(string.lower(textValue), needle, 1, true) then
+			if query == "" or string.find(string.lower(tostring(option)), query, 1, true) ~= nil then
 				table.insert(self.filteredIndices, index)
 			end
 		end
-
-		if resetScroll ~= false then
-			self:scrollToTop()
-		else
-			self:clampScrollOffset()
-		end
+		self.scrollOffset = clamp(self.scrollOffset, 0, math.max(0, #self.filteredIndices - self.maxSize))
 	end
 
-	function control:GetHeight()
-		local optionHeight = round((self:getVisibleOptionCount() * DROPDOWN_OPTION_HEIGHT) * self.openAlpha)
-		return SEARCH_DROPDOWN_CLOSED_HEIGHT + round(INPUT_HEIGHT * self.openAlpha) + optionHeight
+	function control:getVisibleRowCount()
+		return math.min(#self.filteredIndices, self.maxSize)
+	end
+
+	function control:getOverlayRect()
+		local baseRect = getOverlayBaseRect(self)
+		local rowHeight = self:getOptionHeight()
+		local visibleRows = round(self:getVisibleRowCount() * self.openAlpha)
+		return makeRect(
+			baseRect.position + Vector2.new(0, baseRect.size.Y + 8 + baseRect.size.Y + 6),
+			Vector2.new(baseRect.size.X, visibleRows * rowHeight)
+		)
+	end
+
+	function control:getSearchRect()
+		local baseRect = getOverlayBaseRect(self)
+		return makeRect(baseRect.position + Vector2.new(0, baseRect.size.Y + 8), Vector2.new(baseRect.size.X, baseRect.size.Y))
+	end
+
+	function control:getOverlayIndex(point)
+		if not self.open then
+			return nil
+		end
+		local overlayRect = self:getOverlayRect()
+		if not pointInBounds(point, overlayRect) then
+			return nil
+		end
+		local rowIndex = clamp(math.floor((point.Y - overlayRect.position.Y) / self:getOptionHeight()) + 1, 1, self:getVisibleRowCount())
+		return self.filteredIndices[self.scrollOffset + rowIndex]
+	end
+
+	function control:layoutOverlay()
+		local searchRect = self:getSearchRect()
+		local overlayRect = self:getOverlayRect()
+		local rowHeight = self:getOptionHeight()
+		local showSearch = self.openAlpha > 0
+		setDrawingVisibility(self.drawings.searchFrame, showSearch, 1)
+		setDrawingVisibility(self.drawings.searchOutline, showSearch, 1)
+		setDrawingVisibility(self.drawings.searchText, showSearch, 1)
+
+		if showSearch then
+			writeProperty(self.drawings.searchFrame, "Position", searchRect.position)
+			writeProperty(self.drawings.searchFrame, "Size", searchRect.size)
+			writeProperty(self.drawings.searchOutline, "Position", searchRect.position)
+			writeProperty(self.drawings.searchOutline, "Size", searchRect.size)
+			writeProperty(self.drawings.searchText, "Text", self.searchText ~= "" and self.searchText or "Search...")
+			writeProperty(self.drawings.searchText, "Position", searchRect.position + Vector2.new(10, 7))
+		end
+
+		for index, row in ipairs(self.optionDrawings) do
+			local visibleRowIndex
+			for offset = 1, self:getVisibleRowCount() do
+				if self.filteredIndices[self.scrollOffset + offset] == index then
+					visibleRowIndex = offset
+					break
+				end
+			end
+			local visible = self.openAlpha > 0 and visibleRowIndex ~= nil
+			setDrawingVisibility(row.frame, visible, 1)
+			setDrawingVisibility(row.outline, visible, 1)
+			setDrawingVisibility(row.text, visible, 1)
+			if visible then
+				local rowPosition = overlayRect.position + Vector2.new(0, (visibleRowIndex - 1) * rowHeight)
+				local rowSize = Vector2.new(overlayRect.size.X, rowHeight)
+				writeProperty(row.frame, "Position", rowPosition)
+				writeProperty(row.frame, "Size", rowSize)
+				writeProperty(row.outline, "Position", rowPosition)
+				writeProperty(row.outline, "Size", rowSize)
+				writeProperty(row.text, "Position", rowPosition + Vector2.new(10, 6))
+			end
+		end
 	end
 
 	function control:SetOpen(isOpen)
-		self.open = isOpen and #self.options > 0
-
-		if self.open then
-			self.window:CloseDropdowns(self)
-			self:scrollToValue()
-			if activeTextbox ~= nil and activeTextbox ~= self then
-				activeTextbox:Blur(true)
-			end
-			activeTextbox = self
-			self.focused = true
-			self.cursorVisible = true
-			self.lastBlink = os.clock()
-		else
-			if activeTextbox == self then
-				activeTextbox = nil
-			end
-			self.focused = false
-			self.cursorVisible = false
-			self.searchText = ""
+		local nextValue = isOpen == true and #self.options > 0
+		if nextValue then
 			self:updateFilter()
+			self.app:OpenOverlay(self)
+		else
+			self.focused = false
+			if activeTextbox == self then
+				clearTextboxFocus(false)
+			end
+			if self.app.openOverlay == self then
+				self.app:CloseOverlay(nil)
+			else
+				self.open = false
+			end
 		end
-
-		updateInputBlocker()
-	end
-
-	function control:Blur()
-		self:SetOpen(false)
-	end
-
-	function control:SetValue(nextValue)
-		self.value = nextValue
-		writeProperty(self.drawings.value, "Text", tostring(nextValue))
 	end
 
 	function control:SetSearchText(nextText)
 		self.searchText = tostring(nextText or "")
 		self:updateFilter()
-		self.window:UpdateLayout()
+		self:layoutOverlay()
 	end
 
 	function control:SetMaxSize(nextMaxSize)
 		self.maxSize = normalizeSearchDropdownMaxSize(nextMaxSize)
-		self:rebuildOptions()
-		self:applyTheme()
-		self:scrollToValue()
-		self.window:RefreshZIndex()
-		self.window:UpdateLayout()
+		self:updateFilter()
+		self.app:MarkLayoutDirty()
 	end
 
 	function control:SetOptions(nextOptions, nextValue, nextMaxSize)
 		self.options = table.clone(nextOptions or {})
-		self.searchText = ""
-		if nextMaxSize ~= nil then
-			self.maxSize = normalizeSearchDropdownMaxSize(nextMaxSize)
-		end
-		self:rebuildOptions()
-		self:applyTheme()
+		self.value = nextValue or self.options[1] or "Select"
+		self.maxSize = normalizeSearchDropdownMaxSize(nextMaxSize or self.maxSize)
+		createChoiceOverlay(self)
 		self:updateFilter()
-		self:SetValue(nextValue or self.options[1] or "Select")
-		self:scrollToValue()
-		self.window:RefreshZIndex()
-		self.window:UpdateLayout()
+		self.app:MarkLayoutDirty()
+	end
+
+	function control:Blur(submit)
+		self.focused = false
+		if submit and self.filteredIndices[1] ~= nil then
+			self:SetValue(self.options[self.filteredIndices[1]])
+			self.callback(self.value)
+		end
+		updateInputBlocker()
+	end
+
+	function control:HandleKeyboardInput(input)
+		if input.UserInputType ~= Enum.UserInputType.Keyboard then
+			return
+		end
+		if input.KeyCode == Enum.KeyCode.Backspace then
+			self.searchText = string.sub(self.searchText, 1, math.max(0, #self.searchText - 1))
+		elseif input.KeyCode == Enum.KeyCode.Return then
+			self:Blur(true)
+		elseif input.KeyCode == Enum.KeyCode.Escape then
+			self:Blur(false)
+		elseif input.KeyCode == Enum.KeyCode.Space then
+			self.searchText = self.searchText .. " "
+		else
+			local textValue = input.KeyCode.Name
+			if #textValue == 1 then
+				self.searchText = self.searchText .. string.lower(textValue)
+			else
+				return
+			end
+		end
+		self:updateFilter()
+		self:layoutOverlay()
+	end
+
+	function control:onMouseDown(point)
+		if self:hitTest(point) then
+			self.pressing = true
+			return
+		end
+		if pointInBounds(point, self:getSearchRect()) then
+			self.focused = true
+			activeTextbox = self
+			updateInputBlocker()
+		end
+	end
+
+	function control:overlayHitTest(point)
+		return pointInBounds(point, self:getSearchRect()) or self:getOverlayIndex(point) ~= nil
+	end
+
+	function control:onOverlayMouseDown(point)
+		if pointInBounds(point, self:getSearchRect()) then
+			self.focused = true
+			activeTextbox = self
+			updateInputBlocker()
+			return
+		end
+		self.overlayPressedIndex = self:getOverlayIndex(point)
+	end
+
+	function control:onOverlayMouseWheel(delta)
+		if #self.filteredIndices <= self.maxSize then
+			return false
+		end
+		self.scrollOffset = clamp(self.scrollOffset - delta, 0, math.max(0, #self.filteredIndices - self.maxSize))
+		self:layoutOverlay()
+		return true
+	end
+
+	function control:onOverlayMouseUp(point)
+		local index = self:getOverlayIndex(point)
+		if self.overlayPressedIndex ~= nil and index == self.overlayPressedIndex then
+			self:SetValue(self.options[index])
+			self.callback(self.value)
+			self.app:CloseOverlay(nil)
+		end
+		self.overlayPressedIndex = nil
+	end
+
+	local previousStep = control.onStep
+	function control:onStep(mousePosition, ownsHover, dt)
+		previousStep(self, mousePosition, ownsHover, dt)
+		self.openAlpha = animateToward(self.openAlpha, self.open and 1 or 0, getMotionDuration(self.app, "standard"), dt)
+		writeProperty(self.drawings.searchFrame, "Color", self.focused and self.app.theme.InputFocused or self.app.theme.Input)
+		writeProperty(self.drawings.searchOutline, "Color", self.focused and colorLerp(self.app.theme.Border, self.app.theme.AccentSoft, 0.35) or self.app.theme.Border)
+		writeProperty(self.drawings.searchText, "Color", self.searchText == "" and self.app.theme.Muted or self.app.theme.SubText)
+		self.hoverIndex = self:getOverlayIndex(mousePosition)
+		self:layoutOverlay()
+	end
+
+	local previousApplyTheme = control.applyTheme
+	function control:applyTheme()
+		previousApplyTheme(self)
+		writeProperty(self.drawings.searchFrame, "Color", self.app.theme.Input)
+		writeProperty(self.drawings.searchOutline, "Color", self.app.theme.Border)
+		writeProperty(self.drawings.searchText, "Color", self.app.theme.SubText)
+	end
+
+	local previousSetZIndex = control.setZIndex
+	function control:setZIndex(z)
+		previousSetZIndex(self, z)
+		local overlayBase = self.app.zBase + 400
+		writeProperty(self.drawings.searchFrame, "ZIndex", overlayBase)
+		writeProperty(self.drawings.searchOutline, "ZIndex", overlayBase + 1)
+		writeProperty(self.drawings.searchText, "ZIndex", overlayBase + 2)
+	end
+
+	local previousDestroy = control.destroy
+	function control:destroy()
+		previousDestroy(self)
+		destroyDrawing(self.drawings.searchFrame)
+		destroyDrawing(self.drawings.searchOutline)
+		destroyDrawing(self.drawings.searchText)
+	end
+
+	control:updateFilter()
+	return control
+end
+
+local function addTextbox(host, text, placeholder, callback)
+	local control = makeBaseControl(host, "Textbox", host.app.theme.TextSize + 6 + host.app.density.inputHeight)
+	control.text = tostring(text or "")
+	control.placeholder = tostring(placeholder or "")
+	control.value = ""
+	control.callback = callback or function() end
+	control.configKey = control.text
+	control.acceptsTextInput = true
+	control.blocksWindowDrag = true
+	control.focused = false
+
+	control.drawings.label = createDrawing("Text", {
+		Visible = true,
+		Color = host.app.theme.Text,
+		Size = host.app.theme.TextSize,
+		Font = host.app.theme.Font,
+		Text = control.text,
+		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
+	})
+	control.drawings.frame = createDrawing("Square", {
+		Visible = true,
+		Filled = true,
+		Color = host.app.theme.Input,
+		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
+	})
+	control.drawings.outline = createDrawing("Square", {
+		Visible = true,
+		Filled = false,
+		Color = host.app.theme.Border,
+		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
+	})
+	control.drawings.value = createDrawing("Text", {
+		Visible = true,
+		Color = host.app.theme.SubText,
+		Size = host.app.theme.TextSize,
+		Font = host.app.theme.Font,
+		Text = control.placeholder,
+		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
+	})
+
+	function control:getDisplayText()
+		if self.value == "" then
+			return self.placeholder, self.app.theme.Muted
+		end
+		return self.value, self.app.theme.SubText
+	end
+
+	function control:layout()
+		writeProperty(self.drawings.label, "Position", self.position)
+		local rect = getOverlayBaseRect(self)
+		writeProperty(self.drawings.frame, "Position", rect.position)
+		writeProperty(self.drawings.frame, "Size", rect.size)
+		writeProperty(self.drawings.outline, "Position", rect.position)
+		writeProperty(self.drawings.outline, "Size", rect.size)
+		local displayText, displayColor = self:getDisplayText()
+		writeProperty(self.drawings.value, "Text", displayText)
+		writeProperty(self.drawings.value, "Color", displayColor)
+		writeProperty(self.drawings.value, "Position", rect.position + Vector2.new(10, 7))
+	end
+
+	function control:hitTest(point)
+		return pointInBounds(point, getOverlayBaseRect(self))
+	end
+
+	function control:onMouseDown(point)
+		if self:hitTest(point) then
+			self.focused = true
+			activeTextbox = self
+			updateInputBlocker()
+		end
+	end
+
+	function control:Blur(submit)
+		if submit then
+			self.callback(self.value)
+		end
+		self.focused = false
+		self:layout()
+		updateInputBlocker()
+	end
+
+	function control:HandleKeyboardInput(input)
+		if input.UserInputType ~= Enum.UserInputType.Keyboard then
+			return
+		end
+		if input.KeyCode == Enum.KeyCode.Backspace then
+			self.value = string.sub(self.value, 1, math.max(0, #self.value - 1))
+		elseif input.KeyCode == Enum.KeyCode.Return then
+			clearTextboxFocus(true)
+			return
+		elseif input.KeyCode == Enum.KeyCode.Escape then
+			clearTextboxFocus(false)
+			return
+		elseif input.KeyCode == Enum.KeyCode.Space then
+			self.value = self.value .. " "
+		else
+			local name = input.KeyCode.Name
+			if #name == 1 then
+				local shift = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+				self.value = self.value .. (shift and string.upper(name) or string.lower(name))
+			else
+				return
+			end
+		end
+		self:layout()
+	end
+
+	function control:onStep(mousePosition)
+		self.hovered = self:IsDisplayed() and self:hitTest(mousePosition)
+		writeProperty(self.drawings.frame, "Color", self.focused and self.app.theme.InputFocused or self.hovered and self.app.theme.InputHover or self.app.theme.Input)
+		writeProperty(self.drawings.outline, "Color", self.focused and colorLerp(self.app.theme.Border, self.app.theme.AccentSoft, 0.4) or self.app.theme.Border)
+	end
+
+	function control:applyTheme()
+		writeProperty(self.drawings.label, "Color", self.app.theme.Text)
+		writeProperty(self.drawings.frame, "Color", self.app.theme.Input)
+		writeProperty(self.drawings.outline, "Color", self.app.theme.Border)
+	end
+
+	function control:SetText(nextText)
+		self.value = tostring(nextText or "")
+		self:layout()
 	end
 
 	function control:GetConfigValue()
@@ -3143,1254 +2045,85 @@ function addSearchDropdown(window, tab, text, options, defaultValue, maxSizeOrCa
 	end
 
 	function control:ApplyConfigValue(nextValue, fireCallback)
-		self.searchText = ""
-		self:updateFilter()
-		self:SetValue(nextValue)
-		self:scrollToValue()
-		self.window:UpdateLayout()
+		self.value = tostring(nextValue or "")
+		self:layout()
 		if fireCallback ~= false then
 			self.callback(self.value)
 		end
 	end
 
-	function control:HandleKeyboardInput(input)
-		if input.KeyCode == Enum.KeyCode.Return then
-			if #self.filteredIndices > 0 then
-				self:SetValue(self.options[self.filteredIndices[1]])
-				self.callback(self.value)
-			end
-			self:SetOpen(false)
-			return
-		elseif input.KeyCode == Enum.KeyCode.Escape then
-			self:SetOpen(false)
-			return
-		elseif input.KeyCode == Enum.KeyCode.Backspace then
-			self.searchText = string.sub(self.searchText, 1, math.max(0, #self.searchText - 1))
-			self:updateFilter()
-			self.window:UpdateLayout()
-			return
-		end
-
-		local character = getCharacterForInput(input, false)
-
-		if character == nil then
-			return
-		end
-
-		self.searchText = self.searchText .. character
-		self:updateFilter()
-		self.window:UpdateLayout()
-	end
-
-	function control:applyTheme()
-		for _, key in ipairs({ "label", "value", "arrow", "searchText" }) do
-			writeProperty(self.drawings[key], "Font", self.window.theme.Font)
-		end
-
-		writeProperty(self.drawings.label, "Color", self.window.theme.Text)
-		writeProperty(self.drawings.value, "Color", self.window.theme.SubText)
-		writeProperty(self.drawings.arrow, "Color", self.window.theme.SubText)
-		writeProperty(self.drawings.outline, "Color", self.window.theme.Border)
-		writeProperty(self.drawings.searchOutline, "Color", self.window.theme.Border)
-		writeProperty(self.drawings.label, "Size", self.window.theme.TextSize)
-		writeProperty(self.drawings.value, "Size", self.window.theme.SmallTextSize)
-		writeProperty(self.drawings.arrow, "Size", self.window.theme.SmallTextSize)
-		writeProperty(self.drawings.searchText, "Size", self.window.theme.SmallTextSize)
-
-		for _, drawingSet in ipairs(self.optionDrawings) do
-			writeProperty(drawingSet.outline, "Color", self.window.theme.Border)
-			writeProperty(drawingSet.text, "Color", self.window.theme.Text)
-			writeProperty(drawingSet.text, "Font", self.window.theme.Font)
-			writeProperty(drawingSet.text, "Size", self.window.theme.SmallTextSize)
-		end
-	end
-
-	function control:getBaseRect()
-		local basePosition = self.position + Vector2.new(0, 16)
-		return basePosition, Vector2.new(self.size.X, INPUT_HEIGHT)
-	end
-
-	function control:getSearchRect()
-		local basePosition = self.position + Vector2.new(0, 16 + INPUT_HEIGHT)
-		return basePosition, Vector2.new(self.size.X, INPUT_HEIGHT)
-	end
-
-	function control:getOptionIndex(point)
-		local optionStart = self.position + Vector2.new(0, 16 + INPUT_HEIGHT + INPUT_HEIGHT)
-		local renderedCount = self:getRenderedOptionCount()
-
-		for visibleRow = 1, renderedCount do
-			local rowPosition = optionStart + Vector2.new(0, (visibleRow - 1) * DROPDOWN_OPTION_HEIGHT)
-
-			if pointInRect(point, rowPosition, Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT)) then
-				return visibleRow
-			end
-		end
-
-		return nil
-	end
-
-	function control:layout()
-		local basePosition, baseSize = self:getBaseRect()
-		local searchPosition, searchSize = self:getSearchRect()
-		local visibleOptionCount = self:getVisibleOptionCount()
-		local visibleCount = round(visibleOptionCount * self.openAlpha)
-		local searchDisplay = self.searchText
-
-		if self.focused and self.cursorVisible then
-			searchDisplay = searchDisplay .. "|"
-		end
-
-		if searchDisplay == "" then
-			searchDisplay = "Type to filter..."
-		end
-
-		writeProperty(self.drawings.label, "Position", self.position)
-		writeProperty(self.drawings.frame, "Position", basePosition)
-		writeProperty(self.drawings.frame, "Size", baseSize)
-		writeProperty(self.drawings.outline, "Position", basePosition)
-		writeProperty(self.drawings.outline, "Size", baseSize)
-		writeProperty(self.drawings.value, "Position", basePosition + Vector2.new(10, 6))
-		writeProperty(self.drawings.arrow, "Position", basePosition + Vector2.new(baseSize.X - 16, 6))
-		writeProperty(self.drawings.arrow, "Text", self.openAlpha > 0.5 and "^" or "v")
-
-		local searchVisible = self.window:IsControlDisplayed(self) and self.openAlpha > 0.02
-		writeProperty(self.drawings.searchFrame, "Position", searchPosition)
-		writeProperty(self.drawings.searchFrame, "Size", searchSize)
-		writeProperty(self.drawings.searchOutline, "Position", searchPosition)
-		writeProperty(self.drawings.searchOutline, "Size", searchSize)
-		writeProperty(self.drawings.searchText, "Position", searchPosition + Vector2.new(10, 6))
-		writeProperty(self.drawings.searchText, "Text", searchDisplay)
-		writeProperty(self.drawings.searchText, "Color", self.searchText == "" and not self.focused and self.window.theme.Muted or self.window.theme.SubText)
-		writeProperty(self.drawings.searchFrame, "Visible", searchVisible)
-		writeProperty(self.drawings.searchOutline, "Visible", searchVisible)
-		writeProperty(self.drawings.searchText, "Visible", searchVisible)
-
-		for visibleRow, drawingSet in ipairs(self.optionDrawings) do
-			local optionIndex = self:getFilteredRowIndex(visibleRow)
-			local isVisible = optionIndex ~= nil and self.window:IsControlDisplayed(self) and visibleRow <= visibleCount and self.openAlpha > 0.02
-
-			if optionIndex ~= nil then
-				local rowPosition = searchPosition + Vector2.new(0, INPUT_HEIGHT + ((visibleRow - 1) * DROPDOWN_OPTION_HEIGHT))
-				writeProperty(drawingSet.frame, "Position", rowPosition)
-				writeProperty(drawingSet.frame, "Size", Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT))
-				writeProperty(drawingSet.outline, "Position", rowPosition)
-				writeProperty(drawingSet.outline, "Size", Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT))
-				writeProperty(drawingSet.text, "Position", rowPosition + Vector2.new(10, 5))
-				writeProperty(drawingSet.text, "Text", tostring(self.options[optionIndex]))
-			end
-
-			writeProperty(drawingSet.frame, "Visible", isVisible)
-			writeProperty(drawingSet.outline, "Visible", isVisible)
-			writeProperty(drawingSet.text, "Visible", isVisible)
-		end
-	end
-
-	function control:refreshVisibility(shouldShow)
-		for _, drawing in pairs(self.drawings) do
-			writeProperty(drawing, "Visible", shouldShow and drawing ~= self.drawings.searchFrame and drawing ~= self.drawings.searchOutline and drawing ~= self.drawings.searchText)
-		end
-
-		local searchVisible = shouldShow and self.openAlpha > 0.02
-		writeProperty(self.drawings.searchFrame, "Visible", searchVisible)
-		writeProperty(self.drawings.searchOutline, "Visible", searchVisible)
-		writeProperty(self.drawings.searchText, "Visible", searchVisible)
-
-		for index, drawingSet in ipairs(self.optionDrawings) do
-			local rowVisible = shouldShow and self.openAlpha > 0.02 and (index <= round(self:getVisibleOptionCount() * self.openAlpha)) and self:getFilteredRowIndex(index) ~= nil
-			writeProperty(drawingSet.frame, "Visible", rowVisible)
-			writeProperty(drawingSet.outline, "Visible", rowVisible)
-			writeProperty(drawingSet.text, "Visible", rowVisible)
-		end
-	end
-
-	function control:hitTest(point)
-		local basePosition, baseSize = self:getBaseRect()
-		local searchPosition, searchSize = self:getSearchRect()
-
-		if pointInRect(point, basePosition, baseSize) then
-			return true
-		end
-
-		if self.openAlpha > 0.02 and pointInRect(point, searchPosition, searchSize) then
-			return true
-		end
-
-		return self.openAlpha > 0.02 and self:getOptionIndex(point) ~= nil
-	end
-
-	function control:onMouseDown(point)
-		local basePosition, baseSize = self:getBaseRect()
-		local searchPosition, searchSize = self:getSearchRect()
-
-		if pointInRect(point, basePosition, baseSize) then
-			self:SetOpen(not self.open)
-			return
-		end
-
-		if self.openAlpha > 0.02 and pointInRect(point, searchPosition, searchSize) then
-			if activeTextbox ~= nil and activeTextbox ~= self then
-				activeTextbox:Blur(true)
-			end
-			activeTextbox = self
-			self.focused = true
-			self.cursorVisible = true
-			self.lastBlink = os.clock()
-			updateInputBlocker()
-			return
-		end
-
-		local optionIndex = self:getOptionIndex(point)
-		local optionValueIndex = optionIndex ~= nil and self:getFilteredRowIndex(optionIndex) or nil
-
-		if optionValueIndex ~= nil then
-			self:SetValue(self.options[optionValueIndex])
-			self.callback(self.value)
-			self:SetOpen(false)
-		end
-	end
-
-	function control:onMouseWheel(delta)
-		if not self.open or self.openAlpha <= 0.02 then
-			return false
-		end
-
-		if delta > 0 then
-			return self:scrollBy(-1)
-		elseif delta < 0 then
-			return self:scrollBy(1)
-		end
-
-		return false
-	end
-
-	function control:onStep(mousePosition, ownsHover)
-		local basePosition, baseSize = self:getBaseRect()
-		local targetAlpha = self.open and 1 or 0
-		local nextAlpha = lerp(self.openAlpha, targetAlpha, DROPDOWN_ANIMATION)
-		local needsLayout = false
-
-		if math.abs(nextAlpha - self.openAlpha) > 0.001 then
-			self.openAlpha = nextAlpha
-			needsLayout = true
-		else
-			self.openAlpha = targetAlpha
-		end
-
-		if self.focused and os.clock() - self.lastBlink >= 0.5 then
-			self.lastBlink = os.clock()
-			self.cursorVisible = not self.cursorVisible
-			needsLayout = true
-		end
-
-		self.hovered = ownsHover and pointInRect(mousePosition, basePosition, baseSize)
-		writeProperty(self.drawings.frame, "Color", self.hovered and blendAccent(self.window.theme, self.window.theme.InputHover, 0.06) or self.window.theme.Input)
-		writeProperty(self.drawings.outline, "Color", self.open and blendAccent(self.window.theme, self.window.theme.Border, 0.72) or self.window.theme.Border)
-		writeProperty(self.drawings.searchFrame, "Color", self.focused and blendAccent(self.window.theme, self.window.theme.InputFocused, 0.08) or self.window.theme.Input)
-		writeProperty(self.drawings.searchOutline, "Color", self.focused and blendAccent(self.window.theme, self.window.theme.Border, 0.72) or self.window.theme.Border)
-
-		for visibleRow, drawingSet in ipairs(self.optionDrawings) do
-			local optionIndex = self:getFilteredRowIndex(visibleRow)
-			local hoveredOption = ownsHover and self:getOptionIndex(mousePosition) == visibleRow
-			local selected = optionIndex ~= nil and self.options[optionIndex] == self.value
-			local rowColor = selected and blendAccent(self.window.theme, self.window.theme.TabActive, 0.14) or hoveredOption and blendAccent(self.window.theme, self.window.theme.InputHover, 0.06) or self.window.theme.Input
-			writeProperty(drawingSet.frame, "Color", rowColor)
-		end
-
-		return needsLayout
-	end
-
-	function control:setZIndex(z)
-		for _, key in ipairs({ "label", "frame", "outline", "value", "arrow", "searchFrame", "searchOutline", "searchText" }) do
-			writeProperty(self.drawings[key], "ZIndex", z)
-		end
-
-		for index, drawingSet in ipairs(self.optionDrawings) do
-			writeProperty(drawingSet.frame, "ZIndex", z + 2 + index)
-			writeProperty(drawingSet.outline, "ZIndex", z + 3 + index)
-			writeProperty(drawingSet.text, "ZIndex", z + 4 + index)
-		end
-	end
-
-	function control:destroy()
-		for _, drawing in pairs(self.drawings) do
-			destroyDrawing(drawing)
-		end
-
-		for _, drawingSet in ipairs(self.optionDrawings) do
-			destroyDrawing(drawingSet.frame)
-			destroyDrawing(drawingSet.outline)
-			destroyDrawing(drawingSet.text)
-		end
-	end
-
-	control:rebuildOptions()
-	control:updateFilter()
 	control:applyTheme()
-	return addControl(window, tab, control)
+	return addHostChild(host, control)
 end
 
-function addTextbox(window, tab, text, placeholder, callback)
-	local control = makeBaseControl(window, tab, "Textbox", LABELED_INPUT_HEIGHT)
-	control.text = ""
-	control.title = text
-	control.configKey = text
-	control.placeholder = placeholder or "Enter text..."
-	control.callback = callback or function() end
-	control.focused = false
-	control.cursorVisible = true
-	control.lastBlink = os.clock()
-	control.maxLength = 64
-	control.blocksWindowDrag = true
-	control.acceptsTextInput = true
-
-	control.drawings.label = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.Text,
-		Size = window.theme.TextSize,
-		Font = window.theme.Font,
-		Outline = false,
-		Text = text,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.frame = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = true,
-		Color = window.theme.Input,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.outline = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = false,
-		Color = window.theme.Border,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.value = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = window.theme.SmallTextSize,
-		Font = window.theme.Font,
-		Outline = false,
-		Text = control.placeholder,
-		Position = Vector2.zero,
-	})
-
-	function control:getDisplayText()
-		if self.text == "" and not self.focused then
-			return self.placeholder, self.window.theme.Muted
-		end
-
-		local display = self.text
-
-		if self.focused and self.cursorVisible then
-			display = display .. "|"
-		end
-
-		return display, self.window.theme.SubText
-	end
-
-	function control:applyTheme()
-		writeProperty(self.drawings.label, "Color", self.window.theme.Text)
-		writeProperty(self.drawings.label, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.value, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.label, "Size", self.window.theme.TextSize)
-		writeProperty(self.drawings.value, "Size", self.window.theme.SmallTextSize)
-	end
-
-	function control:layout()
-		local basePosition = self.position + Vector2.new(0, 16)
-		local displayText, displayColor = self:getDisplayText()
-
-		writeProperty(self.drawings.label, "Position", self.position)
-		writeProperty(self.drawings.frame, "Position", basePosition)
-		writeProperty(self.drawings.frame, "Size", Vector2.new(self.size.X, INPUT_HEIGHT))
-		writeProperty(self.drawings.outline, "Position", basePosition)
-		writeProperty(self.drawings.outline, "Size", Vector2.new(self.size.X, INPUT_HEIGHT))
-		writeProperty(self.drawings.value, "Position", basePosition + Vector2.new(10, 6))
-		writeProperty(self.drawings.value, "Text", displayText)
-		writeProperty(self.drawings.value, "Color", displayColor)
-	end
-
-	function control:hitTest(point)
-		return pointInRect(point, self.position + Vector2.new(0, 16), Vector2.new(self.size.X, INPUT_HEIGHT))
-	end
-
-	function control:onMouseDown()
-		if activeTextbox ~= nil and activeTextbox ~= self then
-			activeTextbox:Blur(true)
-		end
-
-		activeTextbox = self
-		self.focused = true
-		self.cursorVisible = true
-		self.lastBlink = os.clock()
-		updateInputBlocker()
-		self:layout()
-	end
-
-	function control:Blur(submit)
-		self.focused = false
-		self.cursorVisible = false
-		self:layout()
-		updateInputBlocker()
-
-		if submit then
-			self.callback(self.text)
-		end
-	end
-
-	function control:HandleKeyboardInput(input)
-		if input.KeyCode == Enum.KeyCode.Return then
-			clearTextboxFocus(true)
-			return
-		elseif input.KeyCode == Enum.KeyCode.Escape then
-			clearTextboxFocus(false)
-			return
-		elseif input.KeyCode == Enum.KeyCode.Backspace then
-			self.text = string.sub(self.text, 1, math.max(0, #self.text - 1))
-			self:layout()
-			return
-		end
-
-		local character = getCharacterForInput(input)
-
-		if character == nil or #self.text >= self.maxLength then
-			return
-		end
-
-		self.text = self.text .. character
-		self:layout()
-	end
-
-	function control:SetText(nextText)
-		self.text = tostring(nextText)
-		self:layout()
-	end
-
-	function control:GetConfigValue()
-		return self.text
-	end
-
-	function control:ApplyConfigValue(nextValue, fireCallback)
-		self:SetText(nextValue)
-		if fireCallback ~= false then
-			self.callback(self.text)
-		end
-	end
-
-	function control:onStep(mousePosition, ownsHover)
-		self.hovered = ownsHover and self:hitTest(mousePosition)
-		if os.clock() - self.lastBlink >= 0.5 then
-			self.lastBlink = os.clock()
-			self.cursorVisible = not self.cursorVisible
-			if self.focused then
-				self:layout()
-			end
-		end
-
-		local frameColor = self.focused and blendAccent(self.window.theme, self.window.theme.InputFocused, 0.08) or self.hovered and blendAccent(self.window.theme, self.window.theme.InputHover, 0.06) or self.window.theme.Input
-		writeProperty(self.drawings.frame, "Color", frameColor)
-		writeProperty(self.drawings.outline, "Color", self.focused and blendAccent(self.window.theme, self.window.theme.Border, 0.72) or self.window.theme.Border)
-	end
-
-	function control:setZIndex(z)
-		writeProperty(self.drawings.label, "ZIndex", z)
-		writeProperty(self.drawings.frame, "ZIndex", z)
-		writeProperty(self.drawings.outline, "ZIndex", z + 1)
-		writeProperty(self.drawings.value, "ZIndex", z + 2)
-	end
-
-	function control:destroy()
-		for _, drawing in pairs(self.drawings) do
-			destroyDrawing(drawing)
-		end
-	end
-
-	control:applyTheme()
-	return addControl(window, tab, control)
-end
-
-function addColorPicker(window, tab, text, defaultColor, callback)
-	local control = makeBaseControl(window, tab, "ColorPicker", 148)
-	control.text = text
-	control.configKey = text
-	control.callback = callback or function() end
-	control.color = defaultColor or Color3.fromRGB(255, 255, 255)
-	control.hue = 0
-	control.sat = 1
-	control.val = 1
-	control.dragMode = nil
-	control.blocksWindowDrag = true
-	control.hueCells = {}
-	control.svCells = {}
-
-	local hue, sat, val = control.color:ToHSV()
-	control.hue = hue
-	control.sat = sat
-	control.val = val
-
-	control.drawings.label = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.Text,
-		Size = window.theme.TextSize,
-		Font = window.theme.Font,
-		Outline = false,
-		Text = text,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.preview = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = true,
-		Color = control.color,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.previewOutline = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = false,
-		Color = window.theme.Border,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.hex = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = window.theme.SmallTextSize,
-		Font = window.theme.Font,
-		Outline = false,
-		Text = "#FFFFFF",
-		Position = Vector2.zero,
-	})
-
-	control.drawings.areaOutline = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = false,
-		Color = window.theme.Border,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.hueOutline = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = false,
-		Color = window.theme.Border,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.hueMarker = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = false,
-		Color = window.theme.Text,
-		Thickness = 2,
-		Size = Vector2.new(16, 6),
-		Position = Vector2.zero,
-	})
-
-	control.drawings.svMarker = createDrawing("Circle", {
-		Visible = window.visible,
-		Filled = false,
-		Color = window.theme.Text,
-		Thickness = 2,
-		NumSides = 18,
-		Radius = 4,
-		Position = Vector2.zero,
-	})
-
-	for index = 1, 96 do
-		control.hueCells[index] = createDrawing("Square", {
-			Visible = window.visible,
-			Filled = true,
-			Color = Color3.fromHSV((index - 1) / 96, 1, 1),
-			Thickness = 0,
-			Size = Vector2.zero,
-			Position = Vector2.zero,
-		})
-	end
-
-	for index = 1, 900 do
-		control.svCells[index] = createDrawing("Square", {
-			Visible = window.visible,
-			Filled = true,
-			Color = Color3.new(1, 1, 1),
-			Thickness = 0,
-			Size = Vector2.zero,
-			Position = Vector2.zero,
-		})
-	end
-
-	function control:getAreaRect()
-		local position = self.position + Vector2.new(0, 22)
-		local size = 108
-		return position, size
-	end
-
-	function control:getHueRect()
-		local areaPosition, areaSize = self:getAreaRect()
-		return areaPosition + Vector2.new(areaSize + 10, 0), 18, areaSize
-	end
-
-	function control:applyColor()
-		self.color = Color3.fromHSV(self.hue, self.sat, self.val)
-		writeProperty(self.drawings.preview, "Color", self.color)
-		writeProperty(self.drawings.hex, "Text", string.format("#%02X%02X%02X", round(self.color.R * 255), round(self.color.G * 255), round(self.color.B * 255)))
-	end
-
-	function control:SetColor(nextColor)
-		self.color = nextColor
-		self.hue, self.sat, self.val = nextColor:ToHSV()
-		self:layout()
-	end
-
-	function control:GetConfigValue()
-		return {
-			r = self.color.R,
-			g = self.color.G,
-			b = self.color.B,
-		}
-	end
-
-	function control:ApplyConfigValue(nextValue, fireCallback)
-		if type(nextValue) == "table" and nextValue.r and nextValue.g and nextValue.b then
-			self:SetColor(Color3.new(nextValue.r, nextValue.g, nextValue.b))
-		end
-
-		if fireCallback ~= false then
-			self.callback(self.color)
-		end
-	end
-
-	function control:applyTheme()
-		writeProperty(self.drawings.label, "Color", self.window.theme.Text)
-		writeProperty(self.drawings.hex, "Color", self.window.theme.SubText)
-		writeProperty(self.drawings.label, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.hex, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.label, "Size", self.window.theme.TextSize)
-		writeProperty(self.drawings.hex, "Size", self.window.theme.SmallTextSize)
-		writeProperty(self.drawings.previewOutline, "Color", self.window.theme.Border)
-		writeProperty(self.drawings.areaOutline, "Color", self.window.theme.Border)
-		writeProperty(self.drawings.hueOutline, "Color", self.window.theme.Border)
-		writeProperty(self.drawings.hueMarker, "Color", self.window.theme.Text)
-		writeProperty(self.drawings.svMarker, "Color", self.window.theme.Text)
-	end
-
-	function control:refreshVisibility(shouldShow)
-		for _, drawing in pairs(self.drawings) do
-			writeProperty(drawing, "Visible", shouldShow)
-		end
-
-		for _, cell in ipairs(self.hueCells) do
-			writeProperty(cell, "Visible", shouldShow)
-		end
-
-		for _, cell in ipairs(self.svCells) do
-			writeProperty(cell, "Visible", shouldShow)
-		end
-	end
-
-	function control:updateHueStrip()
-		local huePosition, hueWidth, hueHeight = self:getHueRect()
-		local cellHeight = hueHeight / #self.hueCells
-
-		for index, cell in ipairs(self.hueCells) do
-			local alpha = (index - 1) / (#self.hueCells - 1)
-			writeProperty(cell, "Position", huePosition + Vector2.new(0, alpha * (hueHeight - cellHeight)))
-			writeProperty(cell, "Size", Vector2.new(hueWidth, cellHeight + 1))
-			writeProperty(cell, "Color", Color3.fromHSV(alpha, 1, 1))
-		end
-
-		writeProperty(self.drawings.hueMarker, "Position", huePosition + Vector2.new(-1, self.hue * hueHeight - 3))
-		writeProperty(self.drawings.hueMarker, "Size", Vector2.new(hueWidth + 2, 6))
-	end
-
-	function control:updateSvBox()
-		local boxPosition, boxSize = self:getAreaRect()
-		local cellSize = boxSize / 30
-
-		for row = 0, 29 do
-			for column = 0, 29 do
-				local index = (row * 30) + column + 1
-				local cell = self.svCells[index]
-				local sat = column / 29
-				local val = 1 - (row / 29)
-
-				writeProperty(cell, "Position", boxPosition + Vector2.new(column * cellSize, row * cellSize))
-				writeProperty(cell, "Size", Vector2.new(cellSize + 1, cellSize + 1))
-				writeProperty(cell, "Color", Color3.fromHSV(self.hue, sat, val))
-			end
-		end
-
-		writeProperty(self.drawings.svMarker, "Position", boxPosition + Vector2.new(self.sat * boxSize, (1 - self.val) * boxSize))
-	end
-
-	function control:setHueFromMouse(mousePosition)
-		local huePosition, _, hueHeight = self:getHueRect()
-		self.hue = clamp((mousePosition.Y - huePosition.Y) / hueHeight, 0, 1)
-	end
-
-	function control:setSvFromMouse(mousePosition)
-		local boxPosition, boxSize = self:getAreaRect()
-		self.sat = clamp((mousePosition.X - boxPosition.X) / boxSize, 0, 1)
-		self.val = 1 - clamp((mousePosition.Y - boxPosition.Y) / boxSize, 0, 1)
-	end
-
-	function control:layout()
-		local areaPosition, areaSize = self:getAreaRect()
-		local huePosition, hueWidth, hueHeight = self:getHueRect()
-		local previewPosition = huePosition + Vector2.new(hueWidth + 14, 0)
-
-		writeProperty(self.drawings.label, "Position", self.position)
-		writeProperty(self.drawings.preview, "Position", previewPosition)
-		writeProperty(self.drawings.preview, "Size", Vector2.new(36, 36))
-		writeProperty(self.drawings.previewOutline, "Position", previewPosition)
-		writeProperty(self.drawings.previewOutline, "Size", Vector2.new(36, 36))
-		writeProperty(self.drawings.hex, "Position", previewPosition + Vector2.new(0, 44))
-		writeProperty(self.drawings.areaOutline, "Position", areaPosition)
-		writeProperty(self.drawings.areaOutline, "Size", Vector2.new(areaSize, areaSize))
-		writeProperty(self.drawings.hueOutline, "Position", huePosition)
-		writeProperty(self.drawings.hueOutline, "Size", Vector2.new(hueWidth, hueHeight))
-
-		self:updateHueStrip()
-		self:updateSvBox()
-		self:applyColor()
-	end
-
-	function control:isInHueStrip(point)
-		local huePosition, hueWidth, hueHeight = self:getHueRect()
-		return pointInRect(point, huePosition, Vector2.new(hueWidth, hueHeight))
-	end
-
-	function control:isInSvBox(point)
-		local boxPosition, boxSize = self:getAreaRect()
-		return pointInRect(point, boxPosition, Vector2.new(boxSize, boxSize))
-	end
-
-	function control:hitTest(point)
-		return self:isInHueStrip(point) or self:isInSvBox(point)
-	end
-
-	function control:onMouseDown(point)
-		if self:isInHueStrip(point) then
-			self.dragMode = "hue"
-			self:setHueFromMouse(point)
-		elseif self:isInSvBox(point) then
-			self.dragMode = "sv"
-			self:setSvFromMouse(point)
-		end
-
-		if self.dragMode ~= nil then
-			self:layout()
-			self.callback(self.color)
-		end
-	end
-
-	function control:onMouseUp()
-		self.dragMode = nil
-	end
-
-	function control:onStep(mousePosition, ownsHover)
-		if self.dragMode == "hue" then
-			self:setHueFromMouse(mousePosition)
-			self:layout()
-			self.callback(self.color)
-		elseif self.dragMode == "sv" then
-			self:setSvFromMouse(mousePosition)
-			self:layout()
-			self.callback(self.color)
-		end
-
-		writeProperty(self.drawings.hueMarker, "Color", self.dragMode == "hue" and self.window.theme.Accent or self.window.theme.Text)
-		writeProperty(self.drawings.svMarker, "Color", self.dragMode == "sv" and self.window.theme.Accent or self.window.theme.Text)
-	end
-
-	function control:setZIndex(z)
-		writeProperty(self.drawings.label, "ZIndex", z)
-		writeProperty(self.drawings.preview, "ZIndex", z)
-		writeProperty(self.drawings.previewOutline, "ZIndex", z + 1)
-		writeProperty(self.drawings.hex, "ZIndex", z + 1)
-		writeProperty(self.drawings.areaOutline, "ZIndex", z + 1)
-		writeProperty(self.drawings.hueOutline, "ZIndex", z + 1)
-		writeProperty(self.drawings.hueMarker, "ZIndex", z + 2)
-		writeProperty(self.drawings.svMarker, "ZIndex", z + 2)
-
-		for _, cell in ipairs(self.hueCells) do
-			writeProperty(cell, "ZIndex", z)
-		end
-
-		for _, cell in ipairs(self.svCells) do
-			writeProperty(cell, "ZIndex", z)
-		end
-	end
-
-	function control:destroy()
-		for _, drawing in pairs(self.drawings) do
-			destroyDrawing(drawing)
-		end
-
-		for _, cell in ipairs(self.hueCells) do
-			destroyDrawing(cell)
-		end
-
-		for _, cell in ipairs(self.svCells) do
-			destroyDrawing(cell)
-		end
-	end
-
-	control:applyTheme()
-	control:applyColor()
-	return addControl(window, tab, control)
-end
-
-function addMultiDropdown(window, tab, text, options, defaultValues, callback)
-	local control = makeBaseControl(window, tab, "MultiDropdown", LABELED_INPUT_HEIGHT)
-	control.text = text
-	control.configKey = text
-	control.options = table.clone(options or {})
-	control.values = {}
-	control.selected = {}
-	control.callback = callback or function() end
-	control.open = false
-	control.openAlpha = 0
-	control.blocksWindowDrag = true
-	control.isDropdown = true
-
-	for _, value in ipairs(defaultValues or {}) do
-		control.selected[value] = true
-		table.insert(control.values, value)
-	end
-
-	control.drawings.label = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.Text,
-		Size = window.theme.TextSize,
-		Font = window.theme.Font,
-		Outline = false,
-		Text = text,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.frame = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = true,
-		Color = window.theme.Input,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.outline = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = false,
-		Color = window.theme.Border,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.value = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = window.theme.SmallTextSize,
-		Font = window.theme.Font,
-		Outline = false,
-		Text = "None",
-		Position = Vector2.zero,
-	})
-
-	control.drawings.arrow = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = window.theme.SmallTextSize,
-		Font = window.theme.Font,
-		Outline = false,
-		Text = "v",
-		Position = Vector2.zero,
-	})
-
-	control.optionDrawings = {}
-
-	for _, option in ipairs(control.options) do
-		table.insert(control.optionDrawings, {
-			frame = createDrawing("Square", {
-				Visible = false,
-				Filled = true,
-				Color = window.theme.Input,
-				Thickness = 1,
-				Size = Vector2.zero,
-				Position = Vector2.zero,
-			}),
-			outline = createDrawing("Square", {
-				Visible = false,
-				Filled = false,
-				Color = window.theme.Border,
-				Thickness = 1,
-				Size = Vector2.zero,
-				Position = Vector2.zero,
-			}),
-			check = createDrawing("Text", {
-				Visible = false,
-				Color = window.theme.Accent,
-				Size = window.theme.SmallTextSize,
-				Font = window.theme.Font,
-				Outline = false,
-				Text = "+",
-				Position = Vector2.zero,
-			}),
-			text = createDrawing("Text", {
-				Visible = false,
-				Color = window.theme.Text,
-				Size = window.theme.SmallTextSize,
-				Font = window.theme.Font,
-				Outline = false,
-				Text = tostring(option),
-				Position = Vector2.zero,
-			}),
-		})
-	end
-
-	function control:GetHeight()
-		return LABELED_INPUT_HEIGHT + round((#self.options * DROPDOWN_OPTION_HEIGHT) * self.openAlpha)
-	end
-
-	function control:getVisibleOptionRowCount()
-		return round(#self.options * self.openAlpha)
-	end
-
-	function control:getDisplayText()
-		if #self.values == 0 then
-			return "None"
-		end
-
-		local joined = table.concat(self.values, ", ")
-
-		if #joined > 26 then
-			return tostring(#self.values) .. " selected"
-		end
-
-		return joined
-	end
-
-	function control:applyTheme()
-		writeProperty(self.drawings.label, "Color", self.window.theme.Text)
-		writeProperty(self.drawings.value, "Color", self.window.theme.SubText)
-		writeProperty(self.drawings.arrow, "Color", self.window.theme.SubText)
-		writeProperty(self.drawings.label, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.value, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.arrow, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.label, "Size", self.window.theme.TextSize)
-		writeProperty(self.drawings.value, "Size", self.window.theme.SmallTextSize)
-		writeProperty(self.drawings.arrow, "Size", self.window.theme.SmallTextSize)
-
-		for _, drawingSet in ipairs(self.optionDrawings) do
-			writeProperty(drawingSet.outline, "Color", self.window.theme.Border)
-			writeProperty(drawingSet.text, "Color", self.window.theme.Text)
-			writeProperty(drawingSet.check, "Color", self.window.theme.Accent)
-			writeProperty(drawingSet.text, "Font", self.window.theme.Font)
-			writeProperty(drawingSet.check, "Font", self.window.theme.Font)
-			writeProperty(drawingSet.text, "Size", self.window.theme.SmallTextSize)
-			writeProperty(drawingSet.check, "Size", self.window.theme.SmallTextSize)
-		end
-	end
-
-	function control:SetOpen(isOpen)
-		self.open = isOpen and #self.options > 0
-		if self.open then
-			self.window:CloseDropdowns(self)
-		end
-	end
-
-	function control:getBaseRect()
-		local basePosition = self.position + Vector2.new(0, 16)
-		return basePosition, Vector2.new(self.size.X, INPUT_HEIGHT)
-	end
-
-	function control:getOptionIndex(point)
-		local basePosition = self.position + Vector2.new(0, 16 + INPUT_HEIGHT)
-		local visibleCount = self:getVisibleOptionRowCount()
-
-		for index = 1, visibleCount do
-			local rowPosition = basePosition + Vector2.new(0, (index - 1) * DROPDOWN_OPTION_HEIGHT)
-
-			if pointInRect(point, rowPosition, Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT)) then
-				return index
-			end
-		end
-
-		return nil
-	end
-
-	function control:toggleValue(option)
-		if self.selected[option] then
-			self.selected[option] = nil
-
-			for index, value in ipairs(self.values) do
-				if value == option then
-					table.remove(self.values, index)
-					break
-				end
-			end
-		else
-			self.selected[option] = true
-			table.insert(self.values, option)
-		end
-
-		self.callback(table.clone(self.values))
-	end
-
-	function control:SetValues(nextValues)
-		self.values = {}
-		self.selected = {}
-
-		for _, option in ipairs(nextValues or {}) do
-			self.selected[option] = true
-			table.insert(self.values, option)
-		end
-
-		self:layout()
-	end
-
-	function control:GetConfigValue()
-		return table.clone(self.values)
-	end
-
-	function control:ApplyConfigValue(nextValues, fireCallback)
-		self:SetValues(nextValues or {})
-		if fireCallback ~= false then
-			self.callback(table.clone(self.values))
-		end
-	end
-
-	function control:layout()
-		local basePosition = self.position + Vector2.new(0, 16)
-		local baseSize = Vector2.new(self.size.X, INPUT_HEIGHT)
-		local visibleCount = round(#self.options * self.openAlpha)
-
-		writeProperty(self.drawings.label, "Position", self.position)
-		writeProperty(self.drawings.frame, "Position", basePosition)
-		writeProperty(self.drawings.frame, "Size", baseSize)
-		writeProperty(self.drawings.outline, "Position", basePosition)
-		writeProperty(self.drawings.outline, "Size", baseSize)
-		writeProperty(self.drawings.value, "Position", basePosition + Vector2.new(10, 6))
-		writeProperty(self.drawings.value, "Text", self:getDisplayText())
-		writeProperty(self.drawings.arrow, "Position", basePosition + Vector2.new(baseSize.X - 16, 6))
-		writeProperty(self.drawings.arrow, "Text", self.openAlpha > 0.5 and "^" or "v")
-
-		for index, option in ipairs(self.options) do
-			local drawingSet = self.optionDrawings[index]
-			local rowPosition = basePosition + Vector2.new(0, INPUT_HEIGHT + ((index - 1) * DROPDOWN_OPTION_HEIGHT))
-			local isVisible = self.window:IsControlDisplayed(self) and index <= visibleCount and self.openAlpha > 0.02
-
-			writeProperty(drawingSet.frame, "Position", rowPosition)
-			writeProperty(drawingSet.frame, "Size", Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT))
-			writeProperty(drawingSet.outline, "Position", rowPosition)
-			writeProperty(drawingSet.outline, "Size", Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT))
-			writeProperty(drawingSet.check, "Position", rowPosition + Vector2.new(8, 5))
-			writeProperty(drawingSet.check, "Text", self.selected[option] and "+" or "-")
-			writeProperty(drawingSet.text, "Position", rowPosition + Vector2.new(24, 5))
-			writeProperty(drawingSet.text, "Text", tostring(option))
-			writeProperty(drawingSet.frame, "Visible", isVisible)
-			writeProperty(drawingSet.outline, "Visible", isVisible)
-			writeProperty(drawingSet.check, "Visible", isVisible)
-			writeProperty(drawingSet.text, "Visible", isVisible)
-		end
-	end
-
-	function control:refreshVisibility(shouldShow)
-		for _, drawing in pairs(self.drawings) do
-			writeProperty(drawing, "Visible", shouldShow)
-		end
-
-		for index, drawingSet in ipairs(self.optionDrawings) do
-			local rowVisible = shouldShow and self.openAlpha > 0.02 and (index <= round(#self.options * self.openAlpha))
-			writeProperty(drawingSet.frame, "Visible", rowVisible)
-			writeProperty(drawingSet.outline, "Visible", rowVisible)
-			writeProperty(drawingSet.check, "Visible", rowVisible)
-			writeProperty(drawingSet.text, "Visible", rowVisible)
-		end
-	end
-
-	function control:hitTest(point)
-		local basePosition, baseSize = self:getBaseRect()
-
-		if pointInRect(point, basePosition, baseSize) then
-			return true
-		end
-
-		return self.openAlpha > 0.02 and self:getOptionIndex(point) ~= nil
-	end
-
-	function control:onMouseDown(point)
-		local basePosition, baseSize = self:getBaseRect()
-
-		if pointInRect(point, basePosition, baseSize) then
-			self:SetOpen(not self.open)
-			return
-		end
-
-		local optionIndex = self:getOptionIndex(point)
-
-		if optionIndex ~= nil then
-			self:toggleValue(self.options[optionIndex])
-		end
-	end
-
-	function control:onStep(mousePosition, ownsHover)
-		local basePosition, baseSize = self:getBaseRect()
-		local targetAlpha = self.open and 1 or 0
-		local nextAlpha = lerp(self.openAlpha, targetAlpha, DROPDOWN_ANIMATION)
-		local needsLayout = false
-
-		if math.abs(nextAlpha - self.openAlpha) > 0.001 then
-			self.openAlpha = nextAlpha
-			needsLayout = true
-		else
-			self.openAlpha = targetAlpha
-		end
-
-		self.hovered = ownsHover and pointInRect(mousePosition, basePosition, baseSize)
-		writeProperty(self.drawings.frame, "Color", self.hovered and blendAccent(self.window.theme, self.window.theme.InputHover, 0.06) or self.window.theme.Input)
-		writeProperty(self.drawings.outline, "Color", self.open and blendAccent(self.window.theme, self.window.theme.Border, 0.72) or self.window.theme.Border)
-
-		for index, drawingSet in ipairs(self.optionDrawings) do
-			local option = self.options[index]
-			local hoveredOption = ownsHover and self:getOptionIndex(mousePosition) == index
-			local selected = self.selected[option]
-			local rowColor = selected and blendAccent(self.window.theme, self.window.theme.TabActive, 0.14) or hoveredOption and blendAccent(self.window.theme, self.window.theme.InputHover, 0.06) or self.window.theme.Input
-
-			writeProperty(drawingSet.frame, "Color", rowColor)
-		end
-
-		return needsLayout
-	end
-
-	function control:setZIndex(z)
-		writeProperty(self.drawings.label, "ZIndex", z)
-		writeProperty(self.drawings.frame, "ZIndex", z)
-		writeProperty(self.drawings.outline, "ZIndex", z + 1)
-		writeProperty(self.drawings.value, "ZIndex", z + 2)
-		writeProperty(self.drawings.arrow, "ZIndex", z + 2)
-
-		for index, drawingSet in ipairs(self.optionDrawings) do
-			writeProperty(drawingSet.frame, "ZIndex", z + 3 + index)
-			writeProperty(drawingSet.outline, "ZIndex", z + 4 + index)
-			writeProperty(drawingSet.check, "ZIndex", z + 5 + index)
-			writeProperty(drawingSet.text, "ZIndex", z + 5 + index)
-		end
-	end
-
-	function control:destroy()
-		for _, drawing in pairs(self.drawings) do
-			destroyDrawing(drawing)
-		end
-
-		for _, drawingSet in ipairs(self.optionDrawings) do
-			destroyDrawing(drawingSet.frame)
-			destroyDrawing(drawingSet.outline)
-			destroyDrawing(drawingSet.check)
-			destroyDrawing(drawingSet.text)
-		end
-	end
-
-	control:applyTheme()
-	return addControl(window, tab, control)
-end
-
-function addKeybind(window, tab, text, defaultKey, callback, changedCallback)
-	local control = makeBaseControl(window, tab, "Keybind", LABELED_INPUT_HEIGHT)
-	control.text = text
-	control.configKey = text
-	control.binding = typeof(defaultKey) == "EnumItem" and {
-		kind = "Keyboard",
-		code = defaultKey,
-	} or defaultKey
+local function addKeybind(host, text, defaultKey, callback, changedCallback)
+	local control = makeBaseControl(host, "Keybind", host.app.theme.TextSize + 6 + host.app.density.inputHeight)
+	control.text = tostring(text or "")
+	control.configKey = control.text
+	control.binding = deserializeInputBinding(defaultKey) or (typeof(defaultKey) == "EnumItem" and { kind = "Keyboard", code = defaultKey } or defaultKey)
 	control.callback = callback or function() end
 	control.changedCallback = changedCallback or function() end
 	control.listening = false
-	control.blocksWindowDrag = true
 	control.allowMouseInputs = false
+	control.blocksWindowDrag = true
 	control.capturesBindings = true
 
 	control.drawings.label = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.Text,
-		Size = window.theme.TextSize,
-		Font = window.theme.Font,
-		Outline = false,
-		Text = text,
+		Visible = true,
+		Color = host.app.theme.Text,
+		Size = host.app.theme.TextSize,
+		Font = host.app.theme.Font,
+		Text = control.text,
 		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
 	})
-
 	control.drawings.frame = createDrawing("Square", {
-		Visible = window.visible,
+		Visible = true,
 		Filled = true,
-		Color = window.theme.Input,
-		Thickness = 1,
-		Size = Vector2.zero,
+		Color = host.app.theme.Input,
 		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
 	})
-
 	control.drawings.outline = createDrawing("Square", {
-		Visible = window.visible,
+		Visible = true,
 		Filled = false,
-		Color = window.theme.Border,
-		Thickness = 1,
-		Size = Vector2.zero,
+		Color = host.app.theme.Border,
 		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
 	})
-
 	control.drawings.value = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = window.theme.SmallTextSize,
-		Font = window.theme.Font,
-		Outline = false,
+		Visible = true,
+		Color = host.app.theme.SubText,
+		Size = host.app.theme.TextSize,
+		Font = host.app.theme.Font,
 		Text = formatInputBinding(control.binding),
 		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
 	})
 
-	function control:applyTheme()
-		writeProperty(self.drawings.label, "Color", self.window.theme.Text)
-		writeProperty(self.drawings.value, "Color", self.window.theme.SubText)
-		writeProperty(self.drawings.label, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.value, "Font", self.window.theme.Font)
-		writeProperty(self.drawings.label, "Size", self.window.theme.TextSize)
-		writeProperty(self.drawings.value, "Size", self.window.theme.SmallTextSize)
-	end
-
 	function control:layout()
-		local basePosition = self.position + Vector2.new(0, 16)
-
 		writeProperty(self.drawings.label, "Position", self.position)
-		writeProperty(self.drawings.frame, "Position", basePosition)
-		writeProperty(self.drawings.frame, "Size", Vector2.new(self.size.X, INPUT_HEIGHT))
-		writeProperty(self.drawings.outline, "Position", basePosition)
-		writeProperty(self.drawings.outline, "Size", Vector2.new(self.size.X, INPUT_HEIGHT))
-		writeProperty(self.drawings.value, "Position", basePosition + Vector2.new(10, 6))
+		local rect = getOverlayBaseRect(self)
+		writeProperty(self.drawings.frame, "Position", rect.position)
+		writeProperty(self.drawings.frame, "Size", rect.size)
+		writeProperty(self.drawings.outline, "Position", rect.position)
+		writeProperty(self.drawings.outline, "Size", rect.size)
+		writeProperty(self.drawings.value, "Position", rect.position + Vector2.new(10, 7))
 		writeProperty(self.drawings.value, "Text", self.listening and "Press a key..." or formatInputBinding(self.binding))
 	end
 
 	function control:hitTest(point)
-		return pointInRect(point, self.position + Vector2.new(0, 16), Vector2.new(self.size.X, INPUT_HEIGHT))
+		return pointInBounds(point, getOverlayBaseRect(self))
 	end
 
 	function control:SetListening(isListening)
-		self.listening = isListening
-		updateInputBlocker()
+		self.listening = isListening == true
 		self:layout()
+		updateInputBlocker()
 	end
 
 	function control:SetBinding(nextBinding)
@@ -4407,12 +2140,10 @@ function addKeybind(window, tab, text, defaultKey, callback, changedCallback)
 	end
 
 	function control:ApplyConfigValue(nextBinding, fireCallback)
-		local resolvedBinding = deserializeInputBinding(nextBinding)
-
-		if nextBinding == nil or resolvedBinding ~= nil then
-			self:SetBinding(resolvedBinding)
+		local resolved = deserializeInputBinding(nextBinding)
+		if nextBinding == nil or resolved ~= nil then
+			self:SetBinding(resolved)
 		end
-
 		if fireCallback ~= false then
 			self.changedCallback(self.binding)
 		end
@@ -4423,18 +2154,14 @@ function addKeybind(window, tab, text, defaultKey, callback, changedCallback)
 			self.binding = nil
 		else
 			local nextBinding = makeBindingFromInput(input)
-
 			if nextBinding == nil then
 				return
 			end
-
 			if nextBinding.kind ~= "Keyboard" and not self.allowMouseInputs then
 				return
 			end
-
 			self.binding = nextBinding
 		end
-
 		self:SetListening(false)
 		listeningKeybind = nil
 		self.changedCallback(self.binding)
@@ -4445,366 +2172,2541 @@ function addKeybind(window, tab, text, defaultKey, callback, changedCallback)
 		if listeningKeybind ~= nil and listeningKeybind ~= self then
 			listeningKeybind:SetListening(false)
 		end
-
 		listeningKeybind = self
 		self:SetListening(true)
 	end
 
-	function control:onStep(mousePosition, ownsHover)
-		self.hovered = ownsHover and self:hitTest(mousePosition)
-		local frameColor = self.listening and blendAccent(self.window.theme, self.window.theme.InputFocused, 0.08) or self.hovered and blendAccent(self.window.theme, self.window.theme.InputHover, 0.06) or self.window.theme.Input
-		writeProperty(self.drawings.frame, "Color", frameColor)
-		writeProperty(self.drawings.outline, "Color", self.listening and blendAccent(self.window.theme, self.window.theme.Border, 0.72) or self.window.theme.Border)
+	function control:onStep(mousePosition)
+		self.hovered = self:IsDisplayed() and self:hitTest(mousePosition)
+		writeProperty(self.drawings.frame, "Color", self.listening and self.app.theme.InputFocused or self.hovered and self.app.theme.InputHover or self.app.theme.Input)
+		writeProperty(self.drawings.outline, "Color", self.listening and colorLerp(self.app.theme.Border, self.app.theme.AccentSoft, 0.4) or self.app.theme.Border)
+	end
+
+	function control:applyTheme()
+		writeProperty(self.drawings.label, "Color", self.app.theme.Text)
+		writeProperty(self.drawings.frame, "Color", self.app.theme.Input)
+		writeProperty(self.drawings.outline, "Color", self.app.theme.Border)
+		writeProperty(self.drawings.value, "Color", self.app.theme.SubText)
+	end
+
+	control:applyTheme()
+	table.insert(host.app.boundControls, control)
+	return addHostChild(host, control)
+end
+
+local function addMultiDropdown(host, text, options, defaultValues, callback)
+	local control = addDropdown(host, text, options, nil, callback)
+	control.kind = "MultiDropdown"
+	control.values = {}
+	control.callback = callback or function() end
+	control.configKey = tostring(text or "")
+	control.selectedLookup = {}
+
+	for _, value in ipairs(defaultValues or {}) do
+		table.insert(control.values, value)
+		control.selectedLookup[value] = true
+	end
+
+	createChoiceOverlay(control)
+	for _, row in ipairs(control.optionDrawings) do
+		row.check = createDrawing("Text", {
+			Visible = false,
+			Color = control.app.theme.Accent,
+			Size = control.app.theme.TextSize,
+			Font = control.app.theme.Font,
+			Text = "x",
+			Position = Vector2.zero,
+			Outline = false,
+			Transparency = 1,
+		})
+	end
+
+	function control:getDisplayText()
+		if #self.values == 0 then
+			return "Select"
+		end
+		return table.concat(self.values, ", ")
+	end
+
+	function control:SetValue()
+	end
+
+	function control:SetValues(nextValues)
+		self.values = {}
+		self.selectedLookup = {}
+		for _, value in ipairs(nextValues or {}) do
+			table.insert(self.values, value)
+			self.selectedLookup[value] = true
+		end
+		writeProperty(self.drawings.value, "Text", self:getDisplayText())
+	end
+
+	function control:GetConfigValue()
+		return table.clone(self.values)
+	end
+
+	function control:ApplyConfigValue(nextValues, fireCallback)
+		self:SetValues(nextValues)
+		if fireCallback ~= false then
+			self.callback(table.clone(self.values))
+		end
+	end
+
+	function control:toggleValue(option)
+		if self.selectedLookup[option] then
+			self.selectedLookup[option] = nil
+			for index, value in ipairs(self.values) do
+				if value == option then
+					table.remove(self.values, index)
+					break
+				end
+			end
+		else
+			self.selectedLookup[option] = true
+			table.insert(self.values, option)
+		end
+		writeProperty(self.drawings.value, "Text", self:getDisplayText())
+	end
+
+	local previousOnOverlayMouseUp = control.onOverlayMouseUp
+	function control:onOverlayMouseUp(point)
+		local index = self:getOverlayIndex(point)
+		if self.overlayPressedIndex ~= nil and index == self.overlayPressedIndex then
+			local option = self.options[index]
+			self:toggleValue(option)
+			self.callback(table.clone(self.values))
+		end
+		self.overlayPressedIndex = nil
+	end
+
+	local previousOnStep = control.onStep
+	function control:onStep(mousePosition, ownsHover, dt)
+		previousOnStep(self, mousePosition, ownsHover, dt)
+		writeProperty(self.drawings.value, "Text", self:getDisplayText())
+		for index, row in ipairs(self.optionDrawings) do
+			local selected = self.selectedLookup[self.options[index]] == true
+			if row.check ~= nil then
+				setDrawingVisibility(row.check, self.openAlpha > 0, 1)
+				if self.openAlpha > 0 then
+					writeProperty(row.check, "Position", Vector2.new(row.frame.Position.X + row.frame.Size.X - 18, row.frame.Position.Y + 6))
+					writeProperty(row.check, "Text", selected and "x" or "")
+				end
+				writeProperty(row.outline, "Color", selected and self.app.theme.AccentSoft or row.outline.Color)
+			end
+		end
+	end
+
+	local previousSetZIndex = control.setZIndex
+	function control:setZIndex(z)
+		previousSetZIndex(self, z)
+		local overlayBase = self.app.zBase + 402
+		for index, row in ipairs(self.optionDrawings) do
+			if row.check ~= nil then
+				writeProperty(row.check, "ZIndex", overlayBase + (index * 3) + 2)
+			end
+		end
+	end
+
+	local previousDestroy = control.destroy
+	function control:destroy()
+		previousDestroy(self)
+		for _, row in ipairs(self.optionDrawings) do
+			destroyDrawing(row.check)
+		end
+	end
+
+	return control
+end
+
+local function addColorPicker(host, text, defaultColor, callback)
+	local control = makeBaseControl(host, "ColorPicker", host.app.theme.TextSize + 6 + host.app.density.inputHeight)
+	control.text = tostring(text or "")
+	control.color = defaultColor or Color3.fromRGB(255, 255, 255)
+	control.callback = callback or function() end
+	control.configKey = control.text
+	control.hue, control.sat, control.val = control.color:ToHSV()
+	control.blocksWindowDrag = true
+	control.isDropdown = true
+	control.open = false
+	control.openAlpha = 0
+	control.dragMode = nil
+
+	control.drawings.label = createDrawing("Text", {
+		Visible = true,
+		Color = host.app.theme.Text,
+		Size = host.app.theme.TextSize,
+		Font = host.app.theme.Font,
+		Text = control.text,
+		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
+	})
+	control.drawings.frame = createDrawing("Square", {
+		Visible = true,
+		Filled = true,
+		Color = host.app.theme.Input,
+		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
+	})
+	control.drawings.outline = createDrawing("Square", {
+		Visible = true,
+		Filled = false,
+		Color = host.app.theme.Border,
+		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
+	})
+	control.drawings.preview = createDrawing("Square", {
+		Visible = true,
+		Filled = true,
+		Color = control.color,
+		Position = Vector2.zero,
+		Size = Vector2.new(24, 16),
+		Transparency = 1,
+	})
+	control.drawings.hex = createDrawing("Text", {
+		Visible = true,
+		Color = host.app.theme.SubText,
+		Size = host.app.theme.TextSize,
+		Font = host.app.theme.Font,
+		Text = "#FFFFFF",
+		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
+	})
+	control.drawings.overlayFrame = createDrawing("Square", {
+		Visible = false,
+		Filled = true,
+		Color = host.app.theme.Panel,
+		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
+	})
+	control.drawings.overlayOutline = createDrawing("Square", {
+		Visible = false,
+		Filled = false,
+		Color = host.app.theme.Border,
+		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
+	})
+	control.drawings.svMarker = createDrawing("Circle", {
+		Visible = false,
+		Filled = false,
+		Color = host.app.theme.Text,
+		Position = Vector2.zero,
+		Radius = 5,
+		Thickness = 1,
+		NumSides = 18,
+		Transparency = 1,
+	})
+	control.drawings.hueMarker = createDrawing("Square", {
+		Visible = false,
+		Filled = false,
+		Color = host.app.theme.Text,
+		Position = Vector2.zero,
+		Size = Vector2.new(14, 10),
+		Thickness = 1,
+		Transparency = 1,
+	})
+
+	control.svCells = {}
+	for row = 0, 11 do
+		for column = 0, 17 do
+			table.insert(control.svCells, createDrawing("Square", {
+				Visible = false,
+				Filled = true,
+				Color = control.color,
+				Position = Vector2.zero,
+				Size = Vector2.new(8, 8),
+				Transparency = 1,
+			}))
+		end
+	end
+
+	control.hueCells = {}
+	for index = 1, 18 do
+		table.insert(control.hueCells, createDrawing("Square", {
+			Visible = false,
+			Filled = true,
+			Color = Color3.fromHSV((index - 1) / 18, 1, 1),
+			Position = Vector2.zero,
+			Size = Vector2.new(12, 8),
+			Transparency = 1,
+		}))
+	end
+
+	function control:applyColor()
+		self.color = Color3.fromHSV(self.hue, self.sat, self.val)
+		writeProperty(self.drawings.preview, "Color", self.color)
+		writeProperty(self.drawings.hex, "Text", string.format("#%02X%02X%02X", round(self.color.R * 255), round(self.color.G * 255), round(self.color.B * 255)))
+	end
+
+	function control:getOverlayRect()
+		local baseRect = getOverlayBaseRect(self)
+		return makeRect(baseRect.position + Vector2.new(0, baseRect.size.Y + 8), Vector2.new(198, 166 * self.openAlpha))
+	end
+
+	function control:getSvRect()
+		local rect = self:getOverlayRect()
+		return makeRect(rect.position + Vector2.new(12, 12), Vector2.new(144, 96))
+	end
+
+	function control:getHueRect()
+		local rect = self:getOverlayRect()
+		return makeRect(rect.position + Vector2.new(12, 120), Vector2.new(144, 10))
+	end
+
+	function control:updateOverlay()
+		local overlayRect = self:getOverlayRect()
+		local show = self.openAlpha > 0
+		setDrawingVisibility(self.drawings.overlayFrame, show, 1)
+		setDrawingVisibility(self.drawings.overlayOutline, show, 1)
+		setDrawingVisibility(self.drawings.svMarker, show, 1)
+		setDrawingVisibility(self.drawings.hueMarker, show, 1)
+		if not show then
+			for _, cell in ipairs(self.svCells) do
+				setDrawingVisibility(cell, false, 1)
+			end
+			for _, cell in ipairs(self.hueCells) do
+				setDrawingVisibility(cell, false, 1)
+			end
+			return
+		end
+
+		writeProperty(self.drawings.overlayFrame, "Position", overlayRect.position)
+		writeProperty(self.drawings.overlayFrame, "Size", overlayRect.size)
+		writeProperty(self.drawings.overlayOutline, "Position", overlayRect.position)
+		writeProperty(self.drawings.overlayOutline, "Size", overlayRect.size)
+
+		local svRect = self:getSvRect()
+		local cellWidth = svRect.size.X / 18
+		local cellHeight = svRect.size.Y / 12
+		for row = 0, 11 do
+			for column = 0, 17 do
+				local index = (row * 18) + column + 1
+				local sat = column / 17
+				local val = 1 - (row / 11)
+				local cell = self.svCells[index]
+				setDrawingVisibility(cell, true, 1)
+				writeProperty(cell, "Color", Color3.fromHSV(self.hue, sat, val))
+				writeProperty(cell, "Position", svRect.position + Vector2.new(column * cellWidth, row * cellHeight))
+				writeProperty(cell, "Size", Vector2.new(math.ceil(cellWidth), math.ceil(cellHeight)))
+			end
+		end
+
+		local hueRect = self:getHueRect()
+		local hueWidth = hueRect.size.X / 18
+		for index, cell in ipairs(self.hueCells) do
+			setDrawingVisibility(cell, true, 1)
+			writeProperty(cell, "Color", Color3.fromHSV((index - 1) / 18, 1, 1))
+			writeProperty(cell, "Position", hueRect.position + Vector2.new((index - 1) * hueWidth, 0))
+			writeProperty(cell, "Size", Vector2.new(math.ceil(hueWidth), 10))
+		end
+
+		writeProperty(self.drawings.svMarker, "Position", svRect.position + Vector2.new(self.sat * svRect.size.X, (1 - self.val) * svRect.size.Y))
+		writeProperty(self.drawings.hueMarker, "Position", hueRect.position + Vector2.new(self.hue * hueRect.size.X, 5))
+	end
+
+	function control:SetColor(nextColor)
+		self.color = nextColor
+		self.hue, self.sat, self.val = self.color:ToHSV()
+		self:applyColor()
+		self:updateOverlay()
+	end
+
+	function control:GetConfigValue()
+		return { r = self.color.R, g = self.color.G, b = self.color.B }
+	end
+
+	function control:ApplyConfigValue(nextValue, fireCallback)
+		if type(nextValue) == "table" then
+			self:SetColor(Color3.new(nextValue.r or 1, nextValue.g or 1, nextValue.b or 1))
+			if fireCallback ~= false then
+				self.callback(self.color)
+			end
+		end
+	end
+
+	function control:SetOpen(isOpen)
+		local nextValue = isOpen == true
+		if nextValue then
+			self.app:OpenOverlay(self)
+		elseif self.app.openOverlay == self then
+			self.app:CloseOverlay(nil)
+		else
+			self.open = false
+		end
+	end
+
+	function control:layout()
+		writeProperty(self.drawings.label, "Position", self.position)
+		local rect = getOverlayBaseRect(self)
+		writeProperty(self.drawings.frame, "Position", rect.position)
+		writeProperty(self.drawings.frame, "Size", rect.size)
+		writeProperty(self.drawings.outline, "Position", rect.position)
+		writeProperty(self.drawings.outline, "Size", rect.size)
+		writeProperty(self.drawings.preview, "Position", rect.position + Vector2.new(10, 9))
+		writeProperty(self.drawings.hex, "Position", rect.position + Vector2.new(42, 7))
+		self:applyColor()
+		self:updateOverlay()
+	end
+
+	function control:hitTest(point)
+		return pointInBounds(point, getOverlayBaseRect(self))
+	end
+
+	function control:overlayHitTest(point)
+		return pointInBounds(point, self:getOverlayRect())
+	end
+
+	function control:onMouseDown(point)
+		if self:hitTest(point) then
+			self.pressing = true
+		end
+	end
+
+	function control:onMouseUp(point)
+		if self.pressing and self:hitTest(point) then
+			self:SetOpen(not self.open)
+		end
+		self.pressing = false
+	end
+
+	function control:setHueFromMouse(point)
+		local hueRect = self:getHueRect()
+		self.hue = clamp((point.X - hueRect.position.X) / hueRect.size.X, 0, 1)
+		self:applyColor()
+		self:updateOverlay()
+		self.callback(self.color)
+	end
+
+	function control:setSvFromMouse(point)
+		local svRect = self:getSvRect()
+		self.sat = clamp((point.X - svRect.position.X) / svRect.size.X, 0, 1)
+		self.val = 1 - clamp((point.Y - svRect.position.Y) / svRect.size.Y, 0, 1)
+		self:applyColor()
+		self:updateOverlay()
+		self.callback(self.color)
+	end
+
+	function control:onOverlayMouseDown(point)
+		if pointInBounds(point, self:getHueRect()) then
+			self.dragMode = "hue"
+			self:setHueFromMouse(point)
+		elseif pointInBounds(point, self:getSvRect()) then
+			self.dragMode = "sv"
+			self:setSvFromMouse(point)
+		end
+	end
+
+	function control:onOverlayMouseUp()
+		self.dragMode = nil
+	end
+
+	function control:onStep(mousePosition, _, dt)
+		self.openAlpha = animateToward(self.openAlpha, self.open and 1 or 0, getMotionDuration(self.app, "standard"), dt)
+		self.hovered = self:IsDisplayed() and self:hitTest(mousePosition)
+		writeProperty(self.drawings.frame, "Color", self.hovered and self.app.theme.InputHover or self.app.theme.Input)
+		writeProperty(self.drawings.outline, "Color", (self.open or self.hovered) and colorLerp(self.app.theme.Border, self.app.theme.AccentSoft, 0.35) or self.app.theme.Border)
+		if self.dragMode == "hue" then
+			self:setHueFromMouse(mousePosition)
+		elseif self.dragMode == "sv" then
+			self:setSvFromMouse(mousePosition)
+		else
+			self:updateOverlay()
+		end
+	end
+
+	function control:applyTheme()
+		writeProperty(self.drawings.label, "Color", self.app.theme.Text)
+		writeProperty(self.drawings.frame, "Color", self.app.theme.Input)
+		writeProperty(self.drawings.outline, "Color", self.app.theme.Border)
+		writeProperty(self.drawings.hex, "Color", self.app.theme.SubText)
+		writeProperty(self.drawings.overlayFrame, "Color", self.app.theme.Panel)
+		writeProperty(self.drawings.overlayOutline, "Color", self.app.theme.Border)
 	end
 
 	function control:setZIndex(z)
 		writeProperty(self.drawings.label, "ZIndex", z)
 		writeProperty(self.drawings.frame, "ZIndex", z)
 		writeProperty(self.drawings.outline, "ZIndex", z + 1)
-		writeProperty(self.drawings.value, "ZIndex", z + 2)
+		writeProperty(self.drawings.preview, "ZIndex", z + 2)
+		writeProperty(self.drawings.hex, "ZIndex", z + 2)
+		local overlayBase = self.app.zBase + 400
+		writeProperty(self.drawings.overlayFrame, "ZIndex", overlayBase)
+		writeProperty(self.drawings.overlayOutline, "ZIndex", overlayBase + 1)
+		for index, cell in ipairs(self.svCells) do
+			writeProperty(cell, "ZIndex", overlayBase + 2 + index)
+		end
+		for index, cell in ipairs(self.hueCells) do
+			writeProperty(cell, "ZIndex", overlayBase + 300 + index)
+		end
+		writeProperty(self.drawings.svMarker, "ZIndex", overlayBase + 600)
+		writeProperty(self.drawings.hueMarker, "ZIndex", overlayBase + 601)
 	end
 
 	function control:destroy()
-		for _, drawing in pairs(self.drawings) do
-			destroyDrawing(drawing)
+		destroyDrawings(self.drawings)
+		for _, cell in ipairs(self.svCells) do
+			destroyDrawing(cell)
+		end
+		for _, cell in ipairs(self.hueCells) do
+			destroyDrawing(cell)
 		end
 	end
 
+	control:applyColor()
 	control:applyTheme()
-	return addControl(window, tab, control)
+	return addHostChild(host, control)
 end
 
-function Tab:AddLabel(text)
-	return addLabel(self.window, self, text)
+function Group:IsDisplayed()
+	return self.visible and self.host:IsDisplayed()
 end
 
-function Tab:AddParagraph(title, text)
-	return addParagraph(self.window, self, title, text)
+function Group:MarkLayoutDirty()
+	self.app:MarkLayoutDirty()
 end
 
-function Tab:AddSection(text)
-	return addSection(self.window, self, text)
+function Group:GetHeight()
+	local total = 28
+	local childGap = self.app.density.groupGap
+	local expandedAlpha = self.expandAlpha or (self.expanded and 1 or 0)
+	if expandedAlpha <= 0 then
+		return total
+	end
+
+	local childHeight = 0
+	for index, item in ipairs(self.items) do
+		if item.visible then
+			childHeight = childHeight + item:GetHeight()
+			if index < #self.items then
+				childHeight = childHeight + childGap
+			end
+		end
+	end
+
+	return total + math.floor((childHeight + 12) * expandedAlpha)
 end
 
-function Tab:AddSubTab(text, expanded)
-	return addSubTab(self.window, self, text, expanded)
+function Group:Layout(position, width)
+	self.position = position
+	self.size = Vector2.new(width, self:GetHeight())
+	writeProperty(self.drawings.frame, "Position", position)
+	writeProperty(self.drawings.frame, "Size", Vector2.new(width, 28))
+	writeProperty(self.drawings.outline, "Position", position)
+	writeProperty(self.drawings.outline, "Size", Vector2.new(width, 28))
+	writeProperty(self.drawings.marker, "Position", position + Vector2.new(10, 9))
+	writeProperty(self.drawings.text, "Position", position + Vector2.new(22, 7))
+	writeProperty(self.drawings.arrow, "Position", position + Vector2.new(width - 18, 7))
+	writeProperty(self.drawings.arrow, "Text", self.expanded and "v" or ">")
+
+	local childY = position.Y + 40
+	for _, item in ipairs(self.items) do
+		item.position = Vector2.new(position.X + 12, childY)
+		item.size = Vector2.new(width - 24, item:GetHeight())
+		if item.Layout ~= nil then
+			item:Layout(item.position, width - 24)
+		elseif item.layout ~= nil then
+			item:layout()
+		end
+		childY = childY + item:GetHeight() + self.app.density.groupGap
+	end
 end
 
-function Tab:AddButton(text, callback)
-	return addButton(self.window, self, text, callback)
+function Group:Step(mousePosition, dt)
+	self.expandAlpha = animateToward(self.expandAlpha, self.expanded and 1 or 0, getMotionDuration(self.app, "standard"), dt)
+	self.hovered = self:IsDisplayed() and pointInRect(mousePosition, self.position, Vector2.new(self.size.X, 28))
+	writeProperty(self.drawings.frame, "Color", self.hovered and self.app.theme.Panel or self.app.theme.PanelHeader)
+	writeProperty(self.drawings.outline, "Color", self.hovered and colorLerp(self.app.theme.Border, self.app.theme.AccentSoft, 0.22) or self.app.theme.Border)
+	if math.abs(self.expandAlpha - (self.expanded and 1 or 0)) > 0.001 then
+		self.app:MarkLayoutDirty()
+	end
+	for _, item in ipairs(self.items) do
+		setItemVisibility(item, self.expandAlpha > 0.02 and self:IsDisplayed())
+		if item.onStep then
+			item:onStep(mousePosition, true, dt)
+		end
+	end
 end
 
-function Tab:AddButtonRow(buttons)
-	return addButtonRow(self.window, self, buttons)
+function Group:hitTest(point)
+	return pointInRect(point, self.position, Vector2.new(self.size.X, 28))
 end
 
-function Tab:AddToggle(text, initialValue, callback)
-	return addToggle(self.window, self, text, initialValue, callback)
+function Group:onMouseDown(point)
+	if self:hitTest(point) then
+		self.pressing = true
+		return true
+	end
+	if not self.expanded then
+		return false
+	end
+	for _, item in ipairs(self.items) do
+		if item.hitTest ~= nil and item:hitTest(point) then
+			item:onMouseDown(point)
+			return true
+		end
+	end
+	return false
 end
 
-function Tab:AddSlider(text, minimum, maximum, initialValue, callback)
-	return addSlider(self.window, self, text, minimum, maximum, initialValue, callback)
+function Group:onMouseUp(point)
+	if self.pressing and self:hitTest(point) then
+		self.expanded = not self.expanded
+		self:MarkLayoutDirty()
+	end
+	self.pressing = false
+	for _, item in ipairs(self.items) do
+		if item.onMouseUp then
+			item:onMouseUp(point)
+		end
+	end
 end
 
-function Tab:AddDropdown(text, options, defaultValue, callback)
-	return addDropdown(self.window, self, text, options, defaultValue, callback)
+function Group:applyTheme()
+	writeProperty(self.drawings.frame, "Color", self.app.theme.PanelHeader)
+	writeProperty(self.drawings.outline, "Color", self.app.theme.Border)
+	writeProperty(self.drawings.marker, "Color", self.app.theme.Accent)
+	writeProperty(self.drawings.text, "Color", self.app.theme.HighlightText)
+	writeProperty(self.drawings.arrow, "Color", self.app.theme.SubText)
+	for _, item in ipairs(self.items) do
+		if item.applyTheme then
+			item:applyTheme()
+		end
+	end
 end
 
-function Tab:AddSearchDropdown(text, options, defaultValue, maxSizeOrCallback, callback)
-	return addSearchDropdown(self.window, self, text, options, defaultValue, maxSizeOrCallback, callback)
+function Group:setZIndex(z)
+	writeProperty(self.drawings.frame, "ZIndex", z)
+	writeProperty(self.drawings.outline, "ZIndex", z + 1)
+	writeProperty(self.drawings.marker, "ZIndex", z + 2)
+	writeProperty(self.drawings.text, "ZIndex", z + 2)
+	writeProperty(self.drawings.arrow, "ZIndex", z + 2)
+	local childZ = z + 4
+	for _, item in ipairs(self.items) do
+		if item.setZIndex then
+			item:setZIndex(childZ)
+			childZ = childZ + 10
+		end
+	end
 end
 
-function Tab:AddMultiDropdown(text, options, defaultValues, callback)
-	return addMultiDropdown(self.window, self, text, options, defaultValues, callback)
+function Group:destroy()
+	destroyDrawings(self.drawings)
+	for _, item in ipairs(self.items) do
+		if item.destroy then
+			item:destroy()
+		end
+	end
 end
 
-function Tab:AddColorPicker(text, defaultColor, callback)
-	return addColorPicker(self.window, self, text, defaultColor, callback)
+function Group:AddLabel(text)
+	return addLabel(self, text)
 end
 
-function Tab:AddTextbox(text, placeholder, callback)
-	return addTextbox(self.window, self, text, placeholder, callback)
+function Group:AddParagraph(title, text)
+	return addParagraph(self, title, text)
 end
 
-function Tab:AddKeybind(text, defaultKey, callback, changedCallback)
-	return addKeybind(self.window, self, text, defaultKey, callback, changedCallback)
+function Group:AddSection(text)
+	return addInlineSectionLabel(self, text)
 end
 
-function Tab:Select()
-	self.window:SetActiveTab(self)
+function Group:AddButton(text, callback)
+	return addButton(self, text, callback)
 end
 
-function Window:AddTab(name)
-	local tab = setmetatable({
-		window = self,
-		name = name,
-		controls = {},
-		position = Vector2.zero,
-		size = Vector2.zero,
-		drawings = {
-			background = createDrawing("Square", {
+function Group:AddButtonRow(buttons)
+	return addButtonRow(self, buttons)
+end
+
+function Group:AddToggle(text, initialValue, callback)
+	return addToggle(self, text, initialValue, callback)
+end
+
+function Group:AddSlider(text, minimum, maximum, initialValue, callback)
+	return addSlider(self, text, minimum, maximum, initialValue, callback)
+end
+
+function Group:AddDropdown(text, options, defaultValue, callback)
+	return addDropdown(self, text, options, defaultValue, callback)
+end
+
+function Group:AddSearchDropdown(text, options, defaultValue, maxSizeOrCallback, callback)
+	return addSearchDropdown(self, text, options, defaultValue, maxSizeOrCallback, callback)
+end
+
+function Group:AddMultiDropdown(text, options, defaultValues, callback)
+	return addMultiDropdown(self, text, options, defaultValues, callback)
+end
+
+function Group:AddColorPicker(text, defaultColor, callback)
+	return addColorPicker(self, text, defaultColor, callback)
+end
+
+function Group:AddTextbox(text, placeholder, callback)
+	return addTextbox(self, text, placeholder, callback)
+end
+
+function Group:AddKeybind(text, defaultKey, callback, changedCallback)
+	return addKeybind(self, text, defaultKey, callback, changedCallback)
+end
+
+function Section:IsDisplayed()
+	return self.visible and self.page == self.app.activePage
+end
+
+function Section:MarkLayoutDirty()
+	self.app:MarkLayoutDirty()
+end
+
+function Section:GetHeight()
+	local pad = self.app.density.cardPadding
+	local total = pad
+	if self.title ~= "" then
+		total = total + 22
+	end
+	if self.description ~= "" then
+		total = total + 18
+	end
+	if self.title ~= "" or self.description ~= "" then
+		total = total + 12
+	end
+	for index, item in ipairs(self.items) do
+		if item.visible then
+			total = total + item:GetHeight()
+			if index < #self.items then
+				total = total + getItemGap(self)
+			end
+		end
+	end
+	total = total + pad
+	return total
+end
+
+function Section:Layout(position, size, viewport, index)
+	self.position = position
+	self.size = size
+	self.viewport = viewport
+	self.index = index
+	writeProperty(self.drawings.shadow, "Position", position + Vector2.new(0, 3))
+	writeProperty(self.drawings.shadow, "Size", size)
+	writeProperty(self.drawings.frame, "Position", position)
+	writeProperty(self.drawings.frame, "Size", size)
+	writeProperty(self.drawings.outline, "Position", position)
+	writeProperty(self.drawings.outline, "Size", size)
+	writeProperty(self.drawings.topBand, "Position", position)
+	writeProperty(self.drawings.topBand, "Size", Vector2.new(size.X, 3))
+
+	local pad = self.app.density.cardPadding
+	local currentY = position.Y + pad
+	if self.title ~= "" then
+		writeProperty(self.drawings.title, "Visible", true)
+		writeProperty(self.drawings.title, "Position", Vector2.new(position.X + pad, currentY))
+		currentY = currentY + 20
+	else
+		writeProperty(self.drawings.title, "Visible", false)
+	end
+	if self.description ~= "" then
+		writeProperty(self.drawings.description, "Visible", true)
+		local lines = wrapText(self.description, math.max(18, math.floor((size.X - (pad * 2)) / 7.2)))
+		writeProperty(self.drawings.description, "Text", table.concat(lines, "\n"))
+		writeProperty(self.drawings.description, "Position", Vector2.new(position.X + pad, currentY))
+		currentY = currentY + self.drawings.description.TextBounds.Y + 10
+	else
+		writeProperty(self.drawings.description, "Visible", false)
+	end
+
+	local contentWidth = size.X - (pad * 2)
+	for _, item in ipairs(self.items) do
+		item.position = Vector2.new(position.X + pad, currentY)
+		item.size = Vector2.new(contentWidth, item:GetHeight())
+		if item.Layout ~= nil then
+			item:Layout(item.position, contentWidth)
+		elseif item.layout ~= nil then
+			item:layout()
+		end
+		currentY = currentY + item:GetHeight() + getItemGap(self)
+	end
+end
+
+function Section:Step(mousePosition, dt)
+	local targetAlpha = self.page == self.app.activePage and 1 or 0
+	self.revealAlpha = animateToward(self.revealAlpha, targetAlpha, getMotionDuration(self.app, "emphasized"), dt)
+	local visible = self:IsDisplayed() and self.revealAlpha > 0.01
+	local viewportRect = makeRect(self.viewport.position, self.viewport.size)
+	local onScreen = visible and (
+		self.position.Y + self.size.Y >= viewportRect.position.Y - 30
+		and self.position.Y <= viewportRect.position.Y + viewportRect.size.Y + 30
+	)
+	local displayOffset = shouldUseTranslation(self.app) and (1 - self.revealAlpha) * 6 or 0
+	writeProperty(self.drawings.shadow, "Visible", onScreen)
+	writeProperty(self.drawings.frame, "Visible", onScreen)
+	writeProperty(self.drawings.outline, "Visible", onScreen)
+	writeProperty(self.drawings.topBand, "Visible", onScreen)
+	writeProperty(self.drawings.title, "Visible", onScreen and self.title ~= "")
+	writeProperty(self.drawings.description, "Visible", onScreen and self.description ~= "")
+
+	if onScreen then
+		writeProperty(self.drawings.shadow, "Position", Vector2.new(self.position.X, self.position.Y + 3 - displayOffset))
+		writeProperty(self.drawings.frame, "Position", Vector2.new(self.position.X, self.position.Y - displayOffset))
+		writeProperty(self.drawings.outline, "Position", Vector2.new(self.position.X, self.position.Y - displayOffset))
+		writeProperty(self.drawings.topBand, "Position", Vector2.new(self.position.X, self.position.Y - displayOffset))
+		self.hovered = pointInRect(mousePosition, Vector2.new(self.position.X, self.position.Y - displayOffset), self.size)
+		writeProperty(self.drawings.frame, "Color", self.hovered and self.app.theme.CardHover or self.app.theme.Card)
+		writeProperty(self.drawings.outline, "Color", self.hovered and colorLerp(self.app.theme.Border, self.app.theme.AccentSoft, 0.26) or self.app.theme.Border)
+		for _, item in ipairs(self.items) do
+			setItemVisibility(item, true)
+			if item.Step ~= nil then
+				item:Step(mousePosition, dt)
+			elseif item.onStep ~= nil then
+				item:onStep(mousePosition, true, dt)
+			end
+		end
+	else
+		for _, item in ipairs(self.items) do
+			setItemVisibility(item, false)
+		end
+	end
+end
+
+function Section:HitTest(point)
+	if not self:IsDisplayed() then
+		return nil
+	end
+	for _, item in ipairs(self.items) do
+		if item.hitTest ~= nil and item:hitTest(point) then
+			return item
+		end
+		if item.items ~= nil and item.expanded ~= nil then
+			if item:hitTest(point) then
+				return item
+			end
+			for _, child in ipairs(item.items) do
+				if child.hitTest ~= nil and child:hitTest(point) then
+					return child
+				end
+			end
+		end
+	end
+	return nil
+end
+
+function Section:HandleMouseDown(point)
+	for _, item in ipairs(self.items) do
+		if item.hitTest ~= nil and item:hitTest(point) then
+			item:onMouseDown(point)
+			return true
+		end
+		if item.items ~= nil and item:onMouseDown(point) then
+			return true
+		end
+	end
+	return false
+end
+
+function Section:HandleMouseUp(point)
+	for _, item in ipairs(self.items) do
+		if item.onMouseUp ~= nil then
+			item:onMouseUp(point)
+		end
+	end
+end
+
+function Section:applyTheme()
+	writeProperty(self.drawings.shadow, "Color", self.app.theme.Shadow)
+	writeProperty(self.drawings.frame, "Color", self.app.theme.Card)
+	writeProperty(self.drawings.outline, "Color", self.app.theme.Border)
+	writeProperty(self.drawings.topBand, "Color", self.app.theme.AccentSoft)
+	writeProperty(self.drawings.title, "Color", self.app.theme.Text)
+	writeProperty(self.drawings.description, "Color", self.app.theme.SubText)
+	for _, item in ipairs(self.items) do
+		if item.applyTheme then
+			item:applyTheme()
+		end
+	end
+end
+
+function Section:setZIndex(z)
+	writeProperty(self.drawings.shadow, "ZIndex", z)
+	writeProperty(self.drawings.frame, "ZIndex", z + 1)
+	writeProperty(self.drawings.outline, "ZIndex", z + 2)
+	writeProperty(self.drawings.topBand, "ZIndex", z + 3)
+	writeProperty(self.drawings.title, "ZIndex", z + 4)
+	writeProperty(self.drawings.description, "ZIndex", z + 4)
+	local childZ = z + 8
+	for _, item in ipairs(self.items) do
+		if item.setZIndex then
+			item:setZIndex(childZ)
+			childZ = childZ + 16
+		end
+	end
+end
+
+function Section:destroy()
+	destroyDrawings(self.drawings)
+	for _, item in ipairs(self.items) do
+		if item.destroy then
+			item:destroy()
+		end
+	end
+end
+
+function Section:AddGroup(options, maybeExpanded)
+	local settings
+	if type(options) == "table" then
+		settings = options
+	else
+		settings = {
+			title = tostring(options or "Group"),
+			collapsible = true,
+			defaultOpen = maybeExpanded ~= false,
+		}
+	end
+
+	local group = setmetatable({
+		app = self.app,
+		page = self.page,
+		host = self,
+		items = {},
+		title = tostring(settings.title or "Group"),
+		collapsible = settings.collapsible ~= false,
+		expanded = settings.defaultOpen ~= false,
+		expandAlpha = settings.defaultOpen == false and 0 or 1,
+		visible = true,
+		drawings = {},
+	}, Group)
+
+	group.drawings.frame = createDrawing("Square", {
+		Visible = true,
+		Filled = true,
+		Color = self.app.theme.PanelHeader,
+		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
+	})
+	group.drawings.outline = createDrawing("Square", {
+		Visible = true,
+		Filled = false,
+		Color = self.app.theme.Border,
+		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
+	})
+	group.drawings.marker = createDrawing("Square", {
+		Visible = true,
+		Filled = true,
+		Color = self.app.theme.Accent,
+		Position = Vector2.zero,
+		Size = Vector2.new(6, 6),
+		Transparency = 1,
+	})
+	group.drawings.text = createDrawing("Text", {
+		Visible = true,
+		Color = self.app.theme.HighlightText,
+		Size = self.app.theme.TextSize,
+		Font = self.app.theme.Font,
+		Text = group.title,
+		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
+	})
+	group.drawings.arrow = createDrawing("Text", {
+		Visible = true,
+		Color = self.app.theme.SubText,
+		Size = self.app.theme.SmallTextSize,
+		Font = self.app.theme.Font,
+		Text = group.expanded and "v" or ">",
+		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
+	})
+
+	return addHostChild(self, group)
+end
+
+function Section:AddLabel(text)
+	return addLabel(self, text)
+end
+
+function Section:AddParagraph(title, text)
+	return addParagraph(self, title, text)
+end
+
+function Section:AddSection(text)
+	return addInlineSectionLabel(self, text)
+end
+
+function Section:AddButton(text, callback)
+	return addButton(self, text, callback)
+end
+
+function Section:AddButtonRow(buttons)
+	return addButtonRow(self, buttons)
+end
+
+function Section:AddToggle(text, initialValue, callback)
+	return addToggle(self, text, initialValue, callback)
+end
+
+function Section:AddSlider(text, minimum, maximum, initialValue, callback)
+	return addSlider(self, text, minimum, maximum, initialValue, callback)
+end
+
+function Section:AddDropdown(text, options, defaultValue, callback)
+	return addDropdown(self, text, options, defaultValue, callback)
+end
+
+function Section:AddSearchDropdown(text, options, defaultValue, maxSizeOrCallback, callback)
+	return addSearchDropdown(self, text, options, defaultValue, maxSizeOrCallback, callback)
+end
+
+function Section:AddMultiDropdown(text, options, defaultValues, callback)
+	return addMultiDropdown(self, text, options, defaultValues, callback)
+end
+
+function Section:AddColorPicker(text, defaultColor, callback)
+	return addColorPicker(self, text, defaultColor, callback)
+end
+
+function Section:AddTextbox(text, placeholder, callback)
+	return addTextbox(self, text, placeholder, callback)
+end
+
+function Section:AddKeybind(text, defaultKey, callback, changedCallback)
+	return addKeybind(self, text, defaultKey, callback, changedCallback)
+end
+
+local function makeSection(app, page, options)
+	local settings = type(options) == "table" and options or { title = tostring(options or "") }
+	local section = setmetatable({
+		app = app,
+		page = page,
+		items = {},
+		title = tostring(settings.title or ""),
+		description = tostring(settings.description or ""),
+		columnSpan = clamp(tonumber(settings.columnSpan) or 12, 1, 12),
+		variant = settings.variant or "card",
+		visible = settings.visible ~= false,
+		revealAlpha = page == app.activePage and 1 or 0,
+		drawings = {},
+	}, Section)
+
+	section.drawings.shadow = createDrawing("Square", {
+		Visible = true,
+		Filled = true,
+		Color = app.theme.Shadow,
+		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 0.45,
+	})
+	section.drawings.frame = createDrawing("Square", {
+		Visible = true,
+		Filled = true,
+		Color = app.theme.Card,
+		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
+	})
+	section.drawings.outline = createDrawing("Square", {
+		Visible = true,
+		Filled = false,
+		Color = app.theme.Border,
+		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
+	})
+	section.drawings.topBand = createDrawing("Square", {
+		Visible = true,
+		Filled = true,
+		Color = app.theme.AccentSoft,
+		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
+	})
+	section.drawings.title = createDrawing("Text", {
+		Visible = true,
+		Color = app.theme.Text,
+		Size = app.theme.SectionTitleSize,
+		Font = app.theme.Font,
+		Text = section.title,
+		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
+	})
+	section.drawings.description = createDrawing("Text", {
+		Visible = true,
+		Color = app.theme.SubText,
+		Size = app.theme.TextSize,
+		Font = app.theme.Font,
+		Text = section.description,
+		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
+	})
+
+	return section
+end
+
+local function makePage(app, options)
+	local settings = type(options) == "table" and options or {
+		id = tostring(options or "page"),
+		label = tostring(options or "Page"),
+	}
+
+	local page = setmetatable({
+		app = app,
+		id = tostring(settings.id or settings.label or ("page-" .. tostring(#app.pages + 1))),
+		label = tostring(settings.label or settings.id or "Page"),
+		icon = tostring(settings.icon or string.sub(tostring(settings.label or settings.id or "P"), 1, 1)),
+		badge = settings.badge,
+		description = tostring(settings.description or ""),
+		sections = {},
+		asideSections = {},
+		scrollOffset = 0,
+		asideScrollOffset = 0,
+		defaultSection = nil,
+		navHoverAlpha = 0,
+		drawings = {},
+	}, Page)
+
+	page.drawings.frame = createDrawing("Square", {
+		Visible = true,
+		Filled = true,
+		Color = app.theme.Nav,
+		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
+	})
+	page.drawings.activePill = createDrawing("Square", {
+		Visible = true,
+		Filled = true,
+		Color = app.theme.NavActive,
+		Position = Vector2.zero,
+		Size = Vector2.zero,
+		Transparency = 1,
+	})
+	page.drawings.icon = createDrawing("Text", {
+		Visible = true,
+		Color = app.theme.NavText,
+		Size = app.theme.TextSize,
+		Font = app.theme.TitleFont,
+		Text = page.icon,
+		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
+	})
+	page.drawings.text = createDrawing("Text", {
+		Visible = true,
+		Color = app.theme.NavText,
+		Size = app.theme.TextSize,
+		Font = app.theme.Font,
+		Text = page.label,
+		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
+	})
+	page.drawings.badge = createDrawing("Text", {
+		Visible = settings.badge ~= nil,
+		Color = app.theme.HighlightText,
+		Size = app.theme.SmallTextSize,
+		Font = app.theme.Font,
+		Text = settings.badge ~= nil and tostring(settings.badge) or "",
+		Position = Vector2.zero,
+		Outline = false,
+		Transparency = 1,
+	})
+
+	return page
+end
+
+local function makeContainerHost(app, page, sectionList)
+	local host = {}
+	function host:AddSection(options)
+		local section = makeSection(app, page, options)
+		table.insert(sectionList, section)
+		app:MarkLayoutDirty()
+		return section
+	end
+	function host:AddGroup(options, expanded)
+		local section = self:AddSection({ title = "" })
+		return section:AddGroup(options, expanded)
+	end
+	return host
+end
+
+function Page:EnsureDefaultSection()
+	if self.defaultSection == nil then
+		self.defaultSection = self:AddSection({
+			title = "",
+			description = "",
+			columnSpan = 12,
+		})
+	end
+	return self.defaultSection
+end
+
+function Page:AddSection(options)
+	if type(options) ~= "table" then
+		return self:EnsureDefaultSection():AddSection(options)
+	end
+	local section = makeSection(self.app, self, options)
+	table.insert(self.sections, section)
+	self.app:MarkLayoutDirty()
+	return section
+end
+
+function Page:AddAsideSection(options)
+	local section = makeSection(self.app, self, options)
+	table.insert(self.asideSections, section)
+	self.app:MarkLayoutDirty()
+	return section
+end
+
+function Page:SetAside(builder)
+	self.asideSections = {}
+	if type(builder) == "function" then
+		builder(makeContainerHost(self.app, self, self.asideSections))
+	end
+	self.app:MarkLayoutDirty()
+	return self
+end
+
+function Page:AddGroup(options, expanded)
+	return self:EnsureDefaultSection():AddGroup(options, expanded)
+end
+
+function Page:AddLabel(text)
+	return self:EnsureDefaultSection():AddLabel(text)
+end
+
+function Page:AddParagraph(title, text)
+	return self:EnsureDefaultSection():AddParagraph(title, text)
+end
+
+function Page:AddButton(text, callback)
+	return self:EnsureDefaultSection():AddButton(text, callback)
+end
+
+function Page:AddButtonRow(buttons)
+	return self:EnsureDefaultSection():AddButtonRow(buttons)
+end
+
+function Page:AddToggle(text, initialValue, callback)
+	return self:EnsureDefaultSection():AddToggle(text, initialValue, callback)
+end
+
+function Page:AddSlider(text, minimum, maximum, initialValue, callback)
+	return self:EnsureDefaultSection():AddSlider(text, minimum, maximum, initialValue, callback)
+end
+
+function Page:AddDropdown(text, options, defaultValue, callback)
+	return self:EnsureDefaultSection():AddDropdown(text, options, defaultValue, callback)
+end
+
+function Page:AddSearchDropdown(text, options, defaultValue, maxSizeOrCallback, callback)
+	return self:EnsureDefaultSection():AddSearchDropdown(text, options, defaultValue, maxSizeOrCallback, callback)
+end
+
+function Page:AddMultiDropdown(text, options, defaultValues, callback)
+	return self:EnsureDefaultSection():AddMultiDropdown(text, options, defaultValues, callback)
+end
+
+function Page:AddColorPicker(text, defaultColor, callback)
+	return self:EnsureDefaultSection():AddColorPicker(text, defaultColor, callback)
+end
+
+function Page:AddTextbox(text, placeholder, callback)
+	return self:EnsureDefaultSection():AddTextbox(text, placeholder, callback)
+end
+
+function Page:AddKeybind(text, defaultKey, callback, changedCallback)
+	return self:EnsureDefaultSection():AddKeybind(text, defaultKey, callback, changedCallback)
+end
+
+function Page:Select()
+	self.app:SetActivePage(self)
+end
+
+local function createShellDrawings(app)
+	app.drawings = {
+		shadow = createDrawing("Square", {
+			Visible = app.visible,
+			Filled = true,
+			Color = app.theme.Shadow,
+			Position = Vector2.zero,
+			Size = Vector2.zero,
+			Transparency = 0.35,
+		}),
+		frame = createDrawing("Square", {
+			Visible = app.visible,
+			Filled = true,
+			Color = app.theme.WindowBackground,
+			Position = Vector2.zero,
+			Size = Vector2.zero,
+			Transparency = 1,
+		}),
+		outline = createDrawing("Square", {
+			Visible = app.visible,
+			Filled = false,
+			Color = app.theme.Border,
+			Position = Vector2.zero,
+			Size = Vector2.zero,
+			Transparency = 1,
+		}),
+		sidebar = createDrawing("Square", {
+			Visible = app.visible,
+			Filled = true,
+			Color = app.theme.SidebarBackground,
+			Position = Vector2.zero,
+			Size = Vector2.zero,
+			Transparency = 1,
+		}),
+		header = createDrawing("Square", {
+			Visible = app.visible,
+			Filled = true,
+			Color = app.theme.HeaderBackground,
+			Position = Vector2.zero,
+			Size = Vector2.zero,
+			Transparency = 1,
+		}),
+		canvas = createDrawing("Square", {
+			Visible = app.visible,
+			Filled = true,
+			Color = app.theme.CanvasBackground,
+			Position = Vector2.zero,
+			Size = Vector2.zero,
+			Transparency = 1,
+		}),
+		aside = createDrawing("Square", {
+			Visible = false,
+			Filled = true,
+			Color = app.theme.AsideBackground,
+			Position = Vector2.zero,
+			Size = Vector2.zero,
+			Transparency = 1,
+		}),
+		sidebarDivider = createDrawing("Line", {
+			Visible = app.visible,
+			Color = app.theme.InnerBorder,
+			From = Vector2.zero,
+			To = Vector2.zero,
+			Thickness = 1,
+			Transparency = 1,
+		}),
+		headerDivider = createDrawing("Line", {
+			Visible = app.visible,
+			Color = app.theme.InnerBorder,
+			From = Vector2.zero,
+			To = Vector2.zero,
+			Thickness = 1,
+			Transparency = 1,
+		}),
+		asideDivider = createDrawing("Line", {
+			Visible = false,
+			Color = app.theme.InnerBorder,
+			From = Vector2.zero,
+			To = Vector2.zero,
+			Thickness = 1,
+			Transparency = 1,
+		}),
+		identity = createDrawing("Text", {
+			Visible = app.visible,
+			Color = app.theme.Text,
+			Size = app.theme.AppTitleSize,
+			Font = app.theme.TitleFont,
+			Text = app.title,
+			Position = Vector2.zero,
+			Outline = false,
+			Transparency = 1,
+		}),
+		identitySub = createDrawing("Text", {
+			Visible = app.visible,
+			Color = app.theme.Muted,
+			Size = app.theme.SmallTextSize,
+			Font = app.theme.Font,
+			Text = "Control deck",
+			Position = Vector2.zero,
+			Outline = false,
+			Transparency = 1,
+		}),
+		pageTitle = createDrawing("Text", {
+			Visible = app.visible,
+			Color = app.theme.Text,
+			Size = app.theme.TitleSize,
+			Font = app.theme.TitleFont,
+			Text = app.title,
+			Position = Vector2.zero,
+			Outline = false,
+			Transparency = 1,
+		}),
+		pageSubtitle = createDrawing("Text", {
+			Visible = app.visible,
+			Color = app.theme.SubText,
+			Size = app.theme.TextSize,
+			Font = app.theme.Font,
+			Text = app.subtitle,
+			Position = Vector2.zero,
+			Outline = false,
+			Transparency = 1,
+		}),
+		searchChip = createDrawing("Square", {
+			Visible = app.visible,
+			Filled = true,
+			Color = app.theme.Panel,
+			Position = Vector2.zero,
+			Size = Vector2.zero,
+			Transparency = 1,
+		}),
+		searchChipOutline = createDrawing("Square", {
+			Visible = app.visible,
+			Filled = false,
+			Color = app.theme.SoftBorder,
+			Position = Vector2.zero,
+			Size = Vector2.zero,
+			Transparency = 1,
+		}),
+		searchChipText = createDrawing("Text", {
+			Visible = app.visible,
+			Color = app.theme.SubText,
+			Size = app.theme.SmallTextSize,
+			Font = app.theme.Font,
+			Text = "Quick Jump",
+			Position = Vector2.zero,
+			Outline = false,
+			Transparency = 1,
+		}),
+		contentScrollbar = createDrawing("Square", {
+			Visible = false,
+			Filled = true,
+			Color = app.theme.AccentSoft,
+			Position = Vector2.zero,
+			Size = Vector2.zero,
+			Transparency = 0.85,
+		}),
+		asideScrollbar = createDrawing("Square", {
+			Visible = false,
+			Filled = true,
+			Color = app.theme.AccentSoft,
+			Position = Vector2.zero,
+			Size = Vector2.zero,
+			Transparency = 0.85,
+		}),
+	}
+end
+
+function App:MarkLayoutDirty()
+	self.layoutDirty = true
+end
+
+function App:MarkPaintDirty()
+	self.paintDirty = true
+end
+
+function App:GetActiveSections()
+	if self.activePage == nil then
+		return {}
+	end
+	return self.activePage.sections
+end
+
+function App:GetActiveAsideSections()
+	if self.activePage == nil then
+		return {}
+	end
+	local sections = {}
+	for _, section in ipairs(self.sharedAsideSections) do
+		table.insert(sections, section)
+	end
+	for _, section in ipairs(self.activePage.asideSections) do
+		table.insert(sections, section)
+	end
+	return sections
+end
+
+function App:HasAside()
+	return #self:GetActiveAsideSections() > 0
+end
+
+function App:CloseOverlay(except)
+	if self.openOverlay ~= nil and self.openOverlay ~= except then
+		self.openOverlay.open = false
+	end
+	if except == nil then
+		self.openOverlay = nil
+	end
+	if activeTextbox ~= nil and activeTextbox.app == self and activeTextbox ~= except then
+		clearTextboxFocus(false)
+	end
+end
+
+function App:OpenOverlay(control)
+	if self.openOverlay ~= nil and self.openOverlay ~= control then
+		self.openOverlay.open = false
+	end
+	self.openOverlay = control
+	control.open = true
+end
+
+function App:GetConfigId()
+	return sanitizeFileName(self.configId or self.title)
+end
+
+function App:GetConfigFolder()
+	return (self.configRoot or "drawing-ui-lib-configs") .. "/" .. self:GetConfigId()
+end
+
+function App:EnsureConfigFolder()
+	if not hasFilesystem() then
+		return false
+	end
+	local folder = self:GetConfigFolder()
+	if not isfolder(folder) then
+		local ok = pcall(makefolder, folder)
+		if not ok then
+			return false
+		end
+	end
+	return true
+end
+
+function App:BuildConfig()
+	local data = {}
+	for _, page in ipairs(self.pages) do
+		for _, section in ipairs(page.sections) do
+			for _, item in ipairs(section.items) do
+				if item.configKey ~= nil and item.GetConfigValue ~= nil then
+					data[item.configKey] = item:GetConfigValue()
+				elseif item.items ~= nil then
+					for _, child in ipairs(item.items) do
+						if child.configKey ~= nil and child.GetConfigValue ~= nil then
+							data[child.configKey] = child:GetConfigValue()
+						end
+					end
+				end
+			end
+		end
+	end
+	return data
+end
+
+function App:ApplyConfig(config, fireCallbacks)
+	for _, page in ipairs(self.pages) do
+		for _, section in ipairs(page.sections) do
+			for _, item in ipairs(section.items) do
+				if item.configKey ~= nil and item.ApplyConfigValue ~= nil and config[item.configKey] ~= nil then
+					item:ApplyConfigValue(config[item.configKey], fireCallbacks)
+				elseif item.items ~= nil then
+					for _, child in ipairs(item.items) do
+						if child.configKey ~= nil and child.ApplyConfigValue ~= nil and config[child.configKey] ~= nil then
+							child:ApplyConfigValue(config[child.configKey], fireCallbacks)
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+function App:ListConfigs()
+	if not self:EnsureConfigFolder() then
+		return {}
+	end
+	local names = {}
+	local ok, files = pcall(listfiles, self:GetConfigFolder())
+	if not ok or type(files) ~= "table" then
+		return {}
+	end
+	for _, path in ipairs(files) do
+		local name = path:match("([^\\/]+)%.json$")
+		if name ~= nil then
+			table.insert(names, name)
+		end
+	end
+	table.sort(names)
+	return names
+end
+
+function App:SaveConfig(name)
+	if not self:EnsureConfigFolder() then
+		return false, "filesystem unavailable"
+	end
+	local safeName = sanitizeFileName(name)
+	local path = self:GetConfigFolder() .. "/" .. safeName .. ".json"
+	local encodedOk, encoded = pcall(HttpService.JSONEncode, HttpService, self:BuildConfig())
+	if not encodedOk then
+		return false, "encode failed"
+	end
+	local writeOk = pcall(writefile, path, encoded)
+	if not writeOk then
+		return false, "write failed"
+	end
+	return true, safeName
+end
+
+function App:LoadConfig(name, fireCallbacks)
+	if not self:EnsureConfigFolder() then
+		return false, "filesystem unavailable"
+	end
+	local safeName = sanitizeFileName(name)
+	local path = self:GetConfigFolder() .. "/" .. safeName .. ".json"
+	if typeof(isfile) ~= "function" or not isfile(path) then
+		return false, "missing file"
+	end
+	local readOk, contents = pcall(readfile, path)
+	if not readOk then
+		return false, "read failed"
+	end
+	local decodedOk, decoded = pcall(HttpService.JSONDecode, HttpService, contents)
+	if not decodedOk or type(decoded) ~= "table" then
+		return false, "invalid json"
+	end
+	self:ApplyConfig(decoded, fireCallbacks)
+	return true, safeName
+end
+
+function App:DeleteConfig(name)
+	if not self:EnsureConfigFolder() then
+		return false, "filesystem unavailable"
+	end
+	local safeName = sanitizeFileName(name)
+	local path = self:GetConfigFolder() .. "/" .. safeName .. ".json"
+	if typeof(delfile) ~= "function" then
+		return false, "delete unavailable"
+	end
+	if typeof(isfile) ~= "function" or not isfile(path) then
+		return false, "missing file"
+	end
+	local ok = pcall(delfile, path)
+	if not ok then
+		return false, "delete failed"
+	end
+	return true, safeName
+end
+
+function App:GetResizeMode(point)
+	local edge = SHELL.ResizeEdge
+	local right = self.position.X + self.size.X
+	local bottom = self.position.Y + self.size.Y
+	local onRight = math.abs(point.X - right) <= edge and point.Y >= self.position.Y and point.Y <= bottom
+	local onBottom = math.abs(point.Y - bottom) <= edge and point.X >= self.position.X and point.X <= right
+	if onRight and onBottom then
+		return "corner"
+	elseif onRight then
+		return "right"
+	elseif onBottom then
+		return "bottom"
+	end
+	return nil
+end
+
+function App:HasPoint(point)
+	if pointInRect(point, self.position, self.size) then
+		return true
+	end
+	if self.openOverlay ~= nil and self.openOverlay.overlayHitTest ~= nil and self.openOverlay:overlayHitTest(point) then
+		return true
+	end
+	return false
+end
+
+function App:IsPointInHeader(point)
+	return pointInRect(point, Vector2.new(self.chrome.header.position.X, self.chrome.header.position.Y), self.chrome.header.size)
+end
+
+function App:GetNavAt(point)
+	for _, page in ipairs(self.pages) do
+		if pointInRect(point, page.navPosition, page.navSize) then
+			return page
+		end
+	end
+	return nil
+end
+
+function App:GetHeaderActionAt(point)
+	for index, action in ipairs(self.header.actions) do
+		if pointInRect(point, action.position, action.size) then
+			return index, action
+		end
+	end
+	return nil
+end
+
+function App:GetControlAt(point)
+	for _, section in ipairs(self:GetActiveSections()) do
+		local item = section:HitTest(point)
+		if item ~= nil then
+			return item
+		end
+	end
+	for _, section in ipairs(self:GetActiveAsideSections()) do
+		local item = section:HitTest(point)
+		if item ~= nil then
+			return item
+		end
+	end
+	return nil
+end
+
+function App:GetPageById(id)
+	for _, page in ipairs(self.pages) do
+		if page.id == id or page.label == id then
+			return page
+		end
+	end
+	return nil
+end
+
+function App:SetActivePage(pageOrId)
+	local page = type(pageOrId) == "table" and pageOrId or self:GetPageById(pageOrId)
+	if page == nil then
+		return
+	end
+	self.activePage = page
+	self.pageTransitionAlpha = 0
+	self:CloseOverlay(nil)
+	clearKeybindListening()
+	self:MarkLayoutDirty()
+end
+
+function App:SetHeader(options)
+	local settings = options or {}
+	self.header.title = tostring(settings.title or self.header.title or self.title)
+	self.header.subtitle = tostring(settings.subtitle or self.header.subtitle or self.subtitle)
+	self.header.status = tostring(settings.status or self.header.status or "")
+	for _, action in ipairs(self.header.actions) do
+		destroyDrawing(action.frame)
+		destroyDrawing(action.outline)
+		destroyDrawing(action.textDrawing)
+	end
+	self.header.actions = {}
+	for _, action in ipairs(settings.actions or {}) do
+		table.insert(self.header.actions, {
+			text = tostring(action.text or "Action"),
+			callback = action.callback or function() end,
+			position = Vector2.zero,
+			size = Vector2.zero,
+			frame = createDrawing("Square", {
 				Visible = self.visible,
 				Filled = true,
-				Color = self.theme.Tab,
-				Thickness = 1,
+				Color = self.theme.Panel,
 				Position = Vector2.zero,
 				Size = Vector2.zero,
+				Transparency = 1,
 			}),
 			outline = createDrawing("Square", {
 				Visible = self.visible,
 				Filled = false,
-				Color = self.theme.Border,
-				Thickness = 1,
+				Color = self.theme.SoftBorder,
 				Position = Vector2.zero,
 				Size = Vector2.zero,
+				Transparency = 1,
 			}),
-			text = createDrawing("Text", {
+			textDrawing = createDrawing("Text", {
 				Visible = self.visible,
-				Color = self.theme.SubText,
-				Size = 13,
-				Font = FONT,
-				Outline = false,
-				Text = name,
+				Color = self.theme.Text,
+				Size = self.theme.SmallTextSize,
+				Font = self.theme.Font,
+				Text = tostring(action.text or "Action"),
 				Position = Vector2.zero,
+				Outline = false,
+				Transparency = 1,
 			}),
-			accent = createDrawing("Line", {
-				Visible = self.visible,
-				Color = self.theme.Accent,
-				Thickness = 1,
-				From = Vector2.zero,
-				To = Vector2.zero,
-			}),
-		},
-	}, Tab)
+			hoverAlpha = 0,
+		})
+	end
+	self:MarkLayoutDirty()
+end
 
-	table.insert(self.tabs, tab)
+function App:SetAside(builder)
+	self.sharedAsideSections = {}
+	if type(builder) == "function" then
+		builder(makeContainerHost(self, self.activePage or self.pages[1], self.sharedAsideSections))
+	end
+	self:MarkLayoutDirty()
+end
 
-	if self.activeTab == nil then
-		self.activeTab = tab
+function App:SetDensity(density)
+	self.densityName = density == "compact" and "compact" or "comfortable"
+	self.density = DENSITY[self.densityName]
+	self:MarkLayoutDirty()
+end
+
+function App:SetMotion(mode)
+	self.motionMode = mode == "off" and "off" or mode == "reduced" and "reduced" or "full"
+	self:MarkPaintDirty()
+end
+
+function App:SetTheme(themeOverrides)
+	self.theme = mergeTheme(themeOverrides or {})
+	destroyDrawings(self.drawings)
+	createShellDrawings(self)
+	for _, page in ipairs(self.pages) do
+		writeProperty(page.drawings.frame, "Color", self.theme.Nav)
+		writeProperty(page.drawings.activePill, "Color", self.theme.NavActive)
+		writeProperty(page.drawings.icon, "Color", self.theme.NavText)
+		writeProperty(page.drawings.text, "Color", self.theme.NavText)
+		writeProperty(page.drawings.badge, "Color", self.theme.HighlightText)
+		for _, section in ipairs(page.sections) do
+			section:applyTheme()
+		end
+		for _, section in ipairs(page.asideSections) do
+			section:applyTheme()
+		end
+	end
+	for _, section in ipairs(self.sharedAsideSections) do
+		section:applyTheme()
+	end
+	for _, action in ipairs(self.header.actions) do
+		writeProperty(action.frame, "Color", self.theme.Panel)
+		writeProperty(action.outline, "Color", self.theme.SoftBorder)
+		writeProperty(action.textDrawing, "Color", self.theme.Text)
+	end
+	self:MarkLayoutDirty()
+end
+
+function App:SetTitle(text)
+	self.title = tostring(text or "")
+	self.header.title = self.title
+	writeProperty(self.drawings.identity, "Text", self.title)
+	writeProperty(self.drawings.pageTitle, "Text", self.title)
+	self:MarkLayoutDirty()
+end
+
+function App:SetSubtitle(text)
+	self.subtitle = tostring(text or "")
+	self.header.subtitle = self.subtitle
+	self:MarkLayoutDirty()
+end
+
+function App:SetVisible(isVisible)
+	self.visible = isVisible == true
+	if not self.visible then
+		if activeTextbox ~= nil and activeTextbox.app == self then
+			clearTextboxFocus(false)
+		end
+		if listeningKeybind ~= nil and listeningKeybind.app == self then
+			clearKeybindListening()
+		end
+		self:CloseOverlay(nil)
+		for _, page in ipairs(self.pages) do
+			for _, section in ipairs(page.sections) do
+				setItemVisibility(section, false)
+			end
+			for _, section in ipairs(page.asideSections) do
+				setItemVisibility(section, false)
+			end
+		end
+		for _, section in ipairs(self.sharedAsideSections) do
+			setItemVisibility(section, false)
+		end
+	end
+	self:MarkPaintDirty()
+end
+
+function App:SetPosition(position)
+	self.position = position
+	self:MarkLayoutDirty()
+end
+
+function App:SetSize(size)
+	self.size = Vector2.new(math.max(size.X, self.minimumSize.X), math.max(size.Y, self.minimumSize.Y))
+	self:MarkLayoutDirty()
+end
+
+function App:ClampToViewport()
+	local viewport = getViewportSize()
+	local maxWidth = math.max(self.minimumSize.X, viewport.X - 16)
+	local maxHeight = math.max(self.minimumSize.Y, viewport.Y - 16)
+	self.size = Vector2.new(
+		clamp(self.size.X, self.minimumSize.X, maxWidth),
+		clamp(self.size.Y, self.minimumSize.Y, maxHeight)
+	)
+	self.position = Vector2.new(
+		clamp(self.position.X, 8, viewport.X - self.size.X - 8),
+		clamp(self.position.Y, 8, viewport.Y - self.size.Y - 8)
+	)
+end
+
+function App:RefreshZIndex()
+	local z = self.zBase
+	writeProperty(self.drawings.shadow, "ZIndex", z)
+	writeProperty(self.drawings.frame, "ZIndex", z + 1)
+	writeProperty(self.drawings.sidebar, "ZIndex", z + 2)
+	writeProperty(self.drawings.header, "ZIndex", z + 2)
+	writeProperty(self.drawings.canvas, "ZIndex", z + 2)
+	writeProperty(self.drawings.aside, "ZIndex", z + 2)
+	writeProperty(self.drawings.outline, "ZIndex", z + 3)
+	writeProperty(self.drawings.sidebarDivider, "ZIndex", z + 4)
+	writeProperty(self.drawings.headerDivider, "ZIndex", z + 4)
+	writeProperty(self.drawings.asideDivider, "ZIndex", z + 4)
+	writeProperty(self.drawings.identity, "ZIndex", z + 5)
+	writeProperty(self.drawings.identitySub, "ZIndex", z + 5)
+	writeProperty(self.drawings.pageTitle, "ZIndex", z + 5)
+	writeProperty(self.drawings.pageSubtitle, "ZIndex", z + 5)
+	writeProperty(self.drawings.searchChip, "ZIndex", z + 6)
+	writeProperty(self.drawings.searchChipOutline, "ZIndex", z + 7)
+	writeProperty(self.drawings.searchChipText, "ZIndex", z + 8)
+	writeProperty(self.drawings.contentScrollbar, "ZIndex", z + 10)
+	writeProperty(self.drawings.asideScrollbar, "ZIndex", z + 10)
+	for index, page in ipairs(self.pages) do
+		local base = z + 20 + (index * 8)
+		writeProperty(page.drawings.frame, "ZIndex", base)
+		writeProperty(page.drawings.activePill, "ZIndex", base + 1)
+		writeProperty(page.drawings.icon, "ZIndex", base + 2)
+		writeProperty(page.drawings.text, "ZIndex", base + 2)
+		writeProperty(page.drawings.badge, "ZIndex", base + 3)
+	end
+	for _, action in ipairs(self.header.actions) do
+		writeProperty(action.frame, "ZIndex", z + 30)
+		writeProperty(action.outline, "ZIndex", z + 31)
+		writeProperty(action.textDrawing, "ZIndex", z + 32)
+	end
+	local sectionZ = z + 60
+	for _, page in ipairs(self.pages) do
+		for _, section in ipairs(page.sections) do
+			section:setZIndex(sectionZ)
+			sectionZ = sectionZ + 80
+		end
+		for _, section in ipairs(page.asideSections) do
+			section:setZIndex(sectionZ)
+			sectionZ = sectionZ + 80
+		end
+	end
+	for _, section in ipairs(self.sharedAsideSections) do
+		section:setZIndex(sectionZ)
+		sectionZ = sectionZ + 80
+	end
+end
+
+function App:UpdateChrome()
+	self:ClampToViewport()
+	local chrome = {}
+	chrome.sidebarWidth = self.size.X < 900 and SHELL.SidebarCollapsedWidth or SHELL.SidebarWidth
+	chrome.showAside = self:HasAside() and self.size.X >= 1100 and self.asideCollapsed ~= true
+	chrome.asideWidth = chrome.showAside and SHELL.AsideWidth or 0
+	chrome.frame = makeRect(self.position, self.size)
+	chrome.sidebar = makeRect(self.position, Vector2.new(chrome.sidebarWidth, self.size.Y))
+	chrome.header = makeRect(self.position + Vector2.new(chrome.sidebarWidth, 0), Vector2.new(self.size.X - chrome.sidebarWidth, SHELL.HeaderHeight))
+	chrome.canvas = makeRect(self.position + Vector2.new(chrome.sidebarWidth, SHELL.HeaderHeight), Vector2.new(self.size.X - chrome.sidebarWidth - chrome.asideWidth, self.size.Y - SHELL.HeaderHeight))
+	chrome.contentViewport = makeRect(chrome.canvas.position, chrome.canvas.size)
+	chrome.contentInner = makeRect(chrome.canvas.position + Vector2.new(SHELL.OuterPadding, SHELL.OuterPadding), chrome.canvas.size - Vector2.new(SHELL.OuterPadding * 2, SHELL.OuterPadding * 2))
+	chrome.aside = makeRect(self.position + Vector2.new(self.size.X - chrome.asideWidth, SHELL.HeaderHeight), Vector2.new(chrome.asideWidth, self.size.Y - SHELL.HeaderHeight))
+	self.chrome = chrome
+
+	writeProperty(self.drawings.shadow, "Position", self.position + Vector2.new(0, 6))
+	writeProperty(self.drawings.shadow, "Size", self.size)
+	writeProperty(self.drawings.frame, "Position", self.position)
+	writeProperty(self.drawings.frame, "Size", self.size)
+	writeProperty(self.drawings.outline, "Position", self.position)
+	writeProperty(self.drawings.outline, "Size", self.size)
+	writeProperty(self.drawings.sidebar, "Position", chrome.sidebar.position)
+	writeProperty(self.drawings.sidebar, "Size", chrome.sidebar.size)
+	writeProperty(self.drawings.header, "Position", chrome.header.position)
+	writeProperty(self.drawings.header, "Size", chrome.header.size)
+	writeProperty(self.drawings.canvas, "Position", chrome.canvas.position)
+	writeProperty(self.drawings.canvas, "Size", chrome.canvas.size)
+	setDrawingVisibility(self.drawings.aside, chrome.showAside, 1)
+	setDrawingVisibility(self.drawings.asideDivider, chrome.showAside, 1)
+	if chrome.showAside then
+		writeProperty(self.drawings.aside, "Position", chrome.aside.position)
+		writeProperty(self.drawings.aside, "Size", chrome.aside.size)
+		writeProperty(self.drawings.asideDivider, "From", Vector2.new(chrome.aside.position.X, chrome.aside.position.Y))
+		writeProperty(self.drawings.asideDivider, "To", Vector2.new(chrome.aside.position.X, chrome.aside.position.Y + chrome.aside.size.Y))
+	end
+	writeProperty(self.drawings.sidebarDivider, "From", Vector2.new(chrome.sidebar.position.X + chrome.sidebar.size.X, chrome.sidebar.position.Y))
+	writeProperty(self.drawings.sidebarDivider, "To", Vector2.new(chrome.sidebar.position.X + chrome.sidebar.size.X, chrome.sidebar.position.Y + chrome.sidebar.size.Y))
+	writeProperty(self.drawings.headerDivider, "From", Vector2.new(chrome.header.position.X, chrome.header.position.Y + chrome.header.size.Y))
+	writeProperty(self.drawings.headerDivider, "To", Vector2.new(chrome.header.position.X + chrome.header.size.X, chrome.header.position.Y + chrome.header.size.Y))
+
+	local sidebarCollapsed = chrome.sidebarWidth == SHELL.SidebarCollapsedWidth
+	writeProperty(self.drawings.identity, "Text", sidebarCollapsed and string.sub(self.title, 1, 1) or self.title)
+	writeProperty(self.drawings.identity, "Position", chrome.sidebar.position + Vector2.new(18, 20))
+	setDrawingVisibility(self.drawings.identitySub, not sidebarCollapsed, 1)
+	if not sidebarCollapsed then
+		writeProperty(self.drawings.identitySub, "Position", chrome.sidebar.position + Vector2.new(18, 44))
 	end
 
-	self:UpdateLayout()
+	local activePage = self.activePage or self.pages[1]
+	writeProperty(self.drawings.pageTitle, "Text", self.header.title ~= "" and self.header.title or (activePage and activePage.label or self.title))
+	writeProperty(self.drawings.pageSubtitle, "Text", self.header.subtitle)
+	writeProperty(self.drawings.pageTitle, "Position", chrome.header.position + Vector2.new(24, 14))
+	writeProperty(self.drawings.pageSubtitle, "Position", chrome.header.position + Vector2.new(24, 34))
+
+	local searchSize = Vector2.new(118, SHELL.TopActionHeight)
+	local searchPosition = chrome.header.position + Vector2.new(chrome.header.size.X - searchSize.X - 24, 13)
+	writeProperty(self.drawings.searchChip, "Position", searchPosition)
+	writeProperty(self.drawings.searchChip, "Size", searchSize)
+	writeProperty(self.drawings.searchChipOutline, "Position", searchPosition)
+	writeProperty(self.drawings.searchChipOutline, "Size", searchSize)
+	writeProperty(self.drawings.searchChipText, "Position", searchPosition + Vector2.new(12, 8))
+
+	local nextActionX = searchPosition.X - 12
+	for _, action in ipairs(self.header.actions) do
+		action.size = Vector2.new(84, SHELL.TopActionHeight)
+		action.position = Vector2.new(nextActionX - action.size.X, 13 + chrome.header.position.Y)
+		nextActionX = nextActionX - action.size.X - 8
+		writeProperty(action.frame, "Position", action.position)
+		writeProperty(action.frame, "Size", action.size)
+		writeProperty(action.outline, "Position", action.position)
+		writeProperty(action.outline, "Size", action.size)
+		writeProperty(action.textDrawing, "Position", action.position + Vector2.new(10, 8))
+	end
+
+	local navY = chrome.sidebar.position.Y + 96
+	for _, page in ipairs(self.pages) do
+		page.navPosition = Vector2.new(chrome.sidebar.position.X + 14, navY)
+		page.navSize = Vector2.new(chrome.sidebar.size.X - 28, SHELL.NavItemHeight)
+		navY = navY + SHELL.NavItemHeight + 8
+		writeProperty(page.drawings.frame, "Position", page.navPosition)
+		writeProperty(page.drawings.frame, "Size", page.navSize)
+		writeProperty(page.drawings.activePill, "Position", page.navPosition)
+		writeProperty(page.drawings.activePill, "Size", page.navSize)
+		writeProperty(page.drawings.icon, "Position", page.navPosition + Vector2.new(10, 11))
+		writeProperty(page.drawings.text, "Position", page.navPosition + Vector2.new(34, 11))
+		writeProperty(page.drawings.badge, "Position", page.navPosition + Vector2.new(page.navSize.X - 18, 12))
+		setDrawingVisibility(page.drawings.text, not sidebarCollapsed, 1)
+		setDrawingVisibility(page.drawings.badge, not sidebarCollapsed and page.badge ~= nil, 1)
+	end
+end
+
+function App:LayoutSections()
+	local sections = self:GetActiveSections()
+	local inner = self.chrome.contentInner
+	local columns = self.size.X < 900 and 1 or 12
+	local gutter = SHELL.GridGap
+	local colWidth = columns == 1 and inner.size.X or ((inner.size.X - (gutter * (columns - 1))) / columns)
+	local scrollOffset = self.activePage and self.activePage.scrollOffset or 0
+	local cursorCol = 1
+	local currentY = inner.position.Y - scrollOffset
+	local rowHeight = 0
+	local rowSections = {}
+	local sectionIndex = 0
+
+	local function flushRow()
+		if #rowSections == 0 then
+			return
+		end
+		for _, entry in ipairs(rowSections) do
+			entry.section:Layout(entry.position, Vector2.new(entry.sizeX, rowHeight), self.chrome.contentViewport, entry.index)
+		end
+		currentY = currentY + rowHeight + self.density.cardGap
+		rowHeight = 0
+		cursorCol = 1
+		table.clear(rowSections)
+	end
+
+	for _, section in ipairs(sections) do
+		local span = columns == 1 and 1 or clamp(section.columnSpan, 1, 12)
+		if columns ~= 1 and cursorCol + span - 1 > 12 then
+			flushRow()
+		end
+		sectionIndex = sectionIndex + 1
+		local x = inner.position.X + ((cursorCol - 1) * (colWidth + gutter))
+		local width = columns == 1 and inner.size.X or ((colWidth * span) + (gutter * (span - 1)))
+		local height = section:GetHeight()
+		table.insert(rowSections, {
+			section = section,
+			position = Vector2.new(x, currentY),
+			sizeX = width,
+			index = sectionIndex,
+		})
+		rowHeight = math.max(rowHeight, height)
+		cursorCol = cursorCol + span
+	end
+
+	flushRow()
+
+	local contentHeight = math.max(0, currentY - inner.position.Y + scrollOffset)
+	self.activePage.maxScroll = math.max(0, contentHeight - self.chrome.contentViewport.size.Y + SHELL.OuterPadding)
+	self.activePage.scrollOffset = clamp(self.activePage.scrollOffset, 0, self.activePage.maxScroll)
+	if self.activePage.maxScroll > 0 then
+		local trackHeight = self.chrome.contentViewport.size.Y - 48
+		local thumbHeight = math.max(36, trackHeight * (self.chrome.contentViewport.size.Y / math.max(self.chrome.contentViewport.size.Y, contentHeight + 1)))
+		local scrollAlpha = self.activePage.scrollOffset / math.max(1, self.activePage.maxScroll)
+		setDrawingVisibility(self.drawings.contentScrollbar, true, 0.75)
+		writeProperty(self.drawings.contentScrollbar, "Position", Vector2.new(self.chrome.contentViewport.position.X + self.chrome.contentViewport.size.X - 6, self.chrome.contentViewport.position.Y + 24 + ((trackHeight - thumbHeight) * scrollAlpha)))
+		writeProperty(self.drawings.contentScrollbar, "Size", Vector2.new(3, thumbHeight))
+	else
+		setDrawingVisibility(self.drawings.contentScrollbar, false, 1)
+	end
+end
+
+function App:LayoutAside()
+	local asideSections = self:GetActiveAsideSections()
+	if not self.chrome.showAside then
+		setDrawingVisibility(self.drawings.asideScrollbar, false, 1)
+		return
+	end
+	local viewport = makeRect(self.chrome.aside.position, self.chrome.aside.size)
+	local inner = makeRect(self.chrome.aside.position + Vector2.new(18, 18), self.chrome.aside.size - Vector2.new(36, 36))
+	local page = self.activePage
+	local scrollOffset = page.asideScrollOffset or 0
+	local currentY = inner.position.Y - scrollOffset
+	local totalHeight = 0
+	for index, section in ipairs(asideSections) do
+		local height = section:GetHeight()
+		section:Layout(Vector2.new(inner.position.X, currentY), Vector2.new(inner.size.X, height), viewport, index)
+		currentY = currentY + height + self.density.cardGap
+		totalHeight = totalHeight + height + self.density.cardGap
+	end
+	page.maxAsideScroll = math.max(0, totalHeight - viewport.size.Y + 16)
+	page.asideScrollOffset = clamp(page.asideScrollOffset, 0, page.maxAsideScroll)
+	if page.maxAsideScroll > 0 then
+		local trackHeight = viewport.size.Y - 40
+		local thumbHeight = math.max(32, trackHeight * (viewport.size.Y / math.max(viewport.size.Y, totalHeight)))
+		local scrollAlpha = page.asideScrollOffset / math.max(1, page.maxAsideScroll)
+		setDrawingVisibility(self.drawings.asideScrollbar, true, 0.75)
+		writeProperty(self.drawings.asideScrollbar, "Position", Vector2.new(viewport.position.X + viewport.size.X - 6, viewport.position.Y + 20 + ((trackHeight - thumbHeight) * scrollAlpha)))
+		writeProperty(self.drawings.asideScrollbar, "Size", Vector2.new(3, thumbHeight))
+	else
+		setDrawingVisibility(self.drawings.asideScrollbar, false, 1)
+	end
+end
+
+function App:UpdateLayout()
+	self:UpdateChrome()
+	if self.activePage ~= nil then
+		self:LayoutSections()
+		self:LayoutAside()
+	end
+	self.layoutDirty = false
 	self:RefreshZIndex()
-
-	return tab
 end
 
-function Window:AddLabel(text)
-	return addLabel(self, nil, text)
-end
-
-function Window:AddParagraph(title, text)
-	return addParagraph(self, nil, title, text)
-end
-
-function Window:AddSection(text)
-	return addSection(self, nil, text)
-end
-
-function Window:AddSubTab(text, expanded)
-	return addSubTab(self, nil, text, expanded)
-end
-
-function Window:AddButton(text, callback)
-	return addButton(self, nil, text, callback)
-end
-
-function Window:AddButtonRow(buttons)
-	return addButtonRow(self, nil, buttons)
-end
-
-function Window:AddToggle(text, initialValue, callback)
-	return addToggle(self, nil, text, initialValue, callback)
-end
-
-function Window:AddSlider(text, minimum, maximum, initialValue, callback)
-	return addSlider(self, nil, text, minimum, maximum, initialValue, callback)
-end
-
-function Window:AddDropdown(text, options, defaultValue, callback)
-	return addDropdown(self, nil, text, options, defaultValue, callback)
-end
-
-function Window:AddSearchDropdown(text, options, defaultValue, maxSizeOrCallback, callback)
-	return addSearchDropdown(self, nil, text, options, defaultValue, maxSizeOrCallback, callback)
-end
-
-function Window:AddMultiDropdown(text, options, defaultValues, callback)
-	return addMultiDropdown(self, nil, text, options, defaultValues, callback)
-end
-
-function Window:AddColorPicker(text, defaultColor, callback)
-	return addColorPicker(self, nil, text, defaultColor, callback)
-end
-
-function Window:AddTextbox(text, placeholder, callback)
-	return addTextbox(self, nil, text, placeholder, callback)
-end
-
-function Window:AddKeybind(text, defaultKey, callback, changedCallback)
-	return addKeybind(self, nil, text, defaultKey, callback, changedCallback)
-end
-
-function DrawingUI.new(options)
-	local config = {}
-
-	for key, value in pairs(DEFAULT_WINDOW) do
-		config[key] = value
+function App:UpdateShellVisuals(mousePosition, dt)
+	local sidebarCollapsed = self.chrome.sidebarWidth == SHELL.SidebarCollapsedWidth
+	for _, page in ipairs(self.pages) do
+		local hovered = self.visible and pointInRect(mousePosition, page.navPosition, page.navSize)
+		page.navHoverAlpha = animateToward(page.navHoverAlpha, hovered and 1 or 0, getMotionDuration(self, "fast"), dt)
+		local active = self.activePage == page
+		writeProperty(page.drawings.frame, "Color", active and self.theme.NavActive or colorLerp(self.theme.Nav, self.theme.NavHover, page.navHoverAlpha))
+		setDrawingVisibility(page.drawings.activePill, active, 1)
+		writeProperty(page.drawings.icon, "Color", active and self.theme.Text or colorLerp(self.theme.NavText, self.theme.Text, page.navHoverAlpha * 0.2))
+		writeProperty(page.drawings.text, "Color", active and self.theme.Text or self.theme.NavText)
+		writeProperty(page.drawings.badge, "Color", active and self.theme.HighlightText or self.theme.Muted)
+		if sidebarCollapsed then
+			setDrawingVisibility(page.drawings.text, false, 1)
+			setDrawingVisibility(page.drawings.badge, false, 1)
+		end
 	end
-
-	for key, value in pairs(options or {}) do
-		config[key] = value
+	for _, action in ipairs(self.header.actions) do
+		local hovered = pointInRect(mousePosition, action.position, action.size)
+		action.hoverAlpha = animateToward(action.hoverAlpha, hovered and 1 or 0, getMotionDuration(self, "fast"), dt)
+		writeProperty(action.frame, "Color", colorLerp(self.theme.Panel, self.theme.ButtonHover, action.hoverAlpha))
+		writeProperty(action.outline, "Color", action.hoverAlpha > 0.2 and self.theme.AccentSoft or self.theme.SoftBorder)
 	end
+end
 
-	local self = setmetatable({}, Window)
-	self.title = config.Title
-	self.subtitle = ""
-	self.position = config.Position
-	self.size = config.Size
-	self.minimumSize = config.MinSize or Vector2.new(config.Size.X, 220)
-	self.visible = config.Visible
-	self.dragAnywhere = config.DragAnywhere ~= false
-	self.configId = config.ConfigId
-	self.configRoot = config.ConfigRoot
-	self.theme = mergeTheme(config.Theme)
-	self.controls = {}
-	self.tabs = {}
-	self.activeTab = nil
+function App:HandleMouseWheel(point, delta)
+	if self.openOverlay ~= nil and self.openOverlay.overlayHitTest ~= nil and self.openOverlay:overlayHitTest(point) then
+		if self.openOverlay.onOverlayMouseWheel ~= nil then
+			return self.openOverlay:onOverlayMouseWheel(delta) == true
+		end
+		return false
+	end
+	if pointInBounds(point, self.chrome.contentViewport) then
+		self.activePage.scrollOffset = clamp(self.activePage.scrollOffset - (delta * 30), 0, self.activePage.maxScroll or 0)
+		self:MarkLayoutDirty()
+		return true
+	end
+	if self.chrome.showAside and pointInBounds(point, self.chrome.aside) then
+		self.activePage.asideScrollOffset = clamp(self.activePage.asideScrollOffset - (delta * 30), 0, self.activePage.maxAsideScroll or 0)
+		self:MarkLayoutDirty()
+		return true
+	end
+	return false
+end
+
+function App:HandleMouseDown(point)
+	if self.openOverlay ~= nil and self.openOverlay.overlayHitTest ~= nil and self.openOverlay:overlayHitTest(point) then
+		self.openOverlay:onOverlayMouseDown(point)
+		return
+	end
+	local resizeMode = self:GetResizeMode(point)
+	if resizeMode ~= nil then
+		self.resizing = resizeMode
+		self.resizeStart = { mouse = point, size = self.size, position = self.position }
+		return
+	end
+	local page = self:GetNavAt(point)
+	if page ~= nil then
+		self:SetActivePage(page)
+		return
+	end
+	local actionIndex, action = self:GetHeaderActionAt(point)
+	if actionIndex ~= nil then
+		self.pressedHeaderAction = action
+		return
+	end
+	if self:IsPointInHeader(point) then
+		self.dragging = true
+		self.dragOffset = point - self.position
+		return
+	end
+	local control = self:GetControlAt(point)
+	if control ~= nil then
+		if not control.acceptsTextInput then
+			clearTextboxFocus(true)
+		end
+		if not control.capturesBindings then
+			clearKeybindListening()
+		end
+		if not control.isDropdown and self.openOverlay ~= control then
+			self:CloseOverlay(nil)
+		end
+		control:onMouseDown(point)
+	else
+		clearTextboxFocus(true)
+		clearKeybindListening()
+		self:CloseOverlay(nil)
+	end
+end
+
+function App:HandleMouseUp(point)
 	self.dragging = false
-	self.pendingDrag = false
-	self.dragOffset = Vector2.zero
-	self.targetHeight = config.Size.Y
-	self.heightInitialized = false
-	self.zBase = 100 + (#windows * 24)
-
-	self.drawings = {
-		frame = createDrawing("Square", {
-			Visible = self.visible,
-			Filled = true,
-			Color = self.theme.WindowBackground,
-			Thickness = 1,
-			Position = Vector2.zero,
-			Size = Vector2.zero,
-		}),
-		outline = createDrawing("Square", {
-			Visible = self.visible,
-			Filled = false,
-			Color = self.theme.Border,
-			Thickness = 1,
-			Position = Vector2.zero,
-			Size = Vector2.zero,
-		}),
-		header = createDrawing("Square", {
-			Visible = self.visible,
-			Filled = true,
-			Color = self.theme.HeaderBackground,
-			Thickness = 1,
-			Position = Vector2.zero,
-			Size = Vector2.zero,
-		}),
-		innerOutline = createDrawing("Square", {
-			Visible = self.visible,
-			Filled = false,
-			Color = self.theme.InnerBorder,
-			Thickness = 1,
-			Position = Vector2.zero,
-			Size = Vector2.zero,
-		}),
-		accent = createDrawing("Line", {
-			Visible = self.visible,
-			Color = self.theme.Accent,
-			Thickness = 2,
-			From = Vector2.zero,
-			To = Vector2.zero,
-		}),
-		title = createDrawing("Text", {
-			Visible = self.visible,
-			Color = self.theme.Text,
-			Size = 15,
-			Font = FONT,
-			Outline = false,
-			Text = self.title,
-			Position = Vector2.zero,
-		}),
-		subtitle = createDrawing("Text", {
-			Visible = self.visible,
-			Color = self.theme.Muted,
-			Size = 12,
-			Font = FONT,
-			Outline = false,
-			Text = self.subtitle,
-			Position = Vector2.zero,
-		}),
-	}
-
-	table.insert(windows, self)
-	ensureLoop()
-	bringWindowToFront(self)
-	updateInputBlocker()
-	self:UpdateLayout()
-
-	return self
+	self.resizing = nil
+	if self.openOverlay ~= nil and self.openOverlay.onOverlayMouseUp ~= nil then
+		self.openOverlay:onOverlayMouseUp(point)
+	end
+	if self.pressedHeaderAction ~= nil and pointInRect(point, self.pressedHeaderAction.position, self.pressedHeaderAction.size) then
+		self.pressedHeaderAction.callback()
+	end
+	self.pressedHeaderAction = nil
+	for _, section in ipairs(self:GetActiveSections()) do
+		section:HandleMouseUp(point)
+	end
+	for _, section in ipairs(self:GetActiveAsideSections()) do
+		section:HandleMouseUp(point)
+	end
 end
 
-DrawingUI.CreateWindow = DrawingUI.new
-DrawingUI.CreateTheme = mergeTheme
+function App:Step(mousePosition, dt)
+	if not self.visible then
+		for _, drawing in pairs(self.drawings) do
+			writeProperty(drawing, "Visible", false)
+		end
+		for _, page in ipairs(self.pages) do
+			for _, drawing in pairs(page.drawings) do
+				writeProperty(drawing, "Visible", false)
+			end
+			for _, section in ipairs(page.sections) do
+				setItemVisibility(section, false)
+			end
+			for _, section in ipairs(page.asideSections) do
+				setItemVisibility(section, false)
+			end
+		end
+		for _, section in ipairs(self.sharedAsideSections) do
+			setItemVisibility(section, false)
+		end
+		return
+	end
+	for _, drawing in pairs(self.drawings) do
+		writeProperty(drawing, "Visible", true)
+	end
+	for _, page in ipairs(self.pages) do
+		for _, drawing in pairs(page.drawings) do
+			writeProperty(drawing, "Visible", true)
+		end
+	end
+	if self.dragging then
+		self.position = mousePosition - self.dragOffset
+		self:MarkLayoutDirty()
+	end
+	if self.resizing ~= nil and self.resizeStart ~= nil then
+		local delta = mousePosition - self.resizeStart.mouse
+		if self.resizing == "right" or self.resizing == "corner" then
+			self.size = Vector2.new(math.max(self.minimumSize.X, self.resizeStart.size.X + delta.X), self.size.Y)
+		end
+		if self.resizing == "bottom" or self.resizing == "corner" then
+			self.size = Vector2.new(self.size.X, math.max(self.minimumSize.Y, self.resizeStart.size.Y + delta.Y))
+		end
+		self:MarkLayoutDirty()
+	end
+	self.openAlpha = animateToward(self.openAlpha, 1, getMotionDuration(self, "open"), dt)
+	if self.layoutDirty then
+		self:UpdateLayout()
+	end
+	self.pageTransitionAlpha = animateToward(self.pageTransitionAlpha, 1, getMotionDuration(self, "fast"), dt)
+	self:UpdateShellVisuals(mousePosition, dt)
+	for _, section in ipairs(self:GetActiveSections()) do
+		section:Step(mousePosition, dt)
+	end
+	for _, section in ipairs(self:GetActiveAsideSections()) do
+		section:Step(mousePosition, dt)
+	end
+	if self.openOverlay ~= nil and self.openOverlay.onStep ~= nil then
+		self.openOverlay:onStep(mousePosition, true, dt)
+	end
+end
+
+function App:Destroy()
+	if activeTextbox ~= nil and activeTextbox.app == self then
+		clearTextboxFocus(false)
+	end
+	if listeningKeybind ~= nil and listeningKeybind.app == self then
+		clearKeybindListening()
+	end
+	self:CloseOverlay(nil)
+	for _, page in ipairs(self.pages) do
+		destroyDrawings(page.drawings)
+		for _, section in ipairs(page.sections) do
+			section:destroy()
+		end
+		for _, section in ipairs(page.asideSections) do
+			section:destroy()
+		end
+	end
+	for _, section in ipairs(self.sharedAsideSections) do
+		section:destroy()
+	end
+	for _, action in ipairs(self.header.actions) do
+		destroyDrawing(action.frame)
+		destroyDrawing(action.outline)
+		destroyDrawing(action.textDrawing)
+	end
+	destroyDrawings(self.drawings)
+	for index, app in ipairs(apps) do
+		if app == self then
+			table.remove(apps, index)
+			break
+		end
+	end
+	if #apps == 0 then
+		if frameConnection ~= nil then
+			frameConnection:Disconnect()
+			frameConnection = nil
+		end
+		if inputBeganConnection ~= nil then
+			inputBeganConnection:Disconnect()
+			inputBeganConnection = nil
+		end
+		if inputChangedConnection ~= nil then
+			inputChangedConnection:Disconnect()
+			inputChangedConnection = nil
+		end
+		if inputEndedConnection ~= nil then
+			inputEndedConnection:Disconnect()
+			inputEndedConnection = nil
+		end
+	end
+end
+
+function App:AddPage(options)
+	local page = makePage(self, options)
+	table.insert(self.pages, page)
+	if self.activePage == nil then
+		self.activePage = page
+	end
+	self:MarkLayoutDirty()
+	return page
+end
+
+function App:EnsureDefaultPage()
+	if self.defaultPage == nil then
+		self.defaultPage = self:AddPage({ id = "overview", label = "Overview", icon = "O" })
+	end
+	return self.defaultPage
+end
+
+function App:AddLabel(text)
+	return self:EnsureDefaultPage():AddLabel(text)
+end
+function App:AddParagraph(title, text)
+	return self:EnsureDefaultPage():AddParagraph(title, text)
+end
+function App:AddSection(value)
+	if type(value) == "table" then
+		return self:EnsureDefaultPage():AddSection(value)
+	end
+	return self:EnsureDefaultPage():AddSection(value)
+end
+function App:AddSubTab(text, expanded)
+	return self:EnsureDefaultPage():AddGroup({ title = text, collapsible = true, defaultOpen = expanded ~= false })
+end
+function App:AddButton(text, callback)
+	return self:EnsureDefaultPage():AddButton(text, callback)
+end
+function App:AddButtonRow(buttons)
+	return self:EnsureDefaultPage():AddButtonRow(buttons)
+end
+function App:AddToggle(text, initialValue, callback)
+	return self:EnsureDefaultPage():AddToggle(text, initialValue, callback)
+end
+function App:AddSlider(text, minimum, maximum, initialValue, callback)
+	return self:EnsureDefaultPage():AddSlider(text, minimum, maximum, initialValue, callback)
+end
+function App:AddDropdown(text, options, defaultValue, callback)
+	return self:EnsureDefaultPage():AddDropdown(text, options, defaultValue, callback)
+end
+function App:AddSearchDropdown(text, options, defaultValue, maxSizeOrCallback, callback)
+	return self:EnsureDefaultPage():AddSearchDropdown(text, options, defaultValue, maxSizeOrCallback, callback)
+end
+function App:AddMultiDropdown(text, options, defaultValues, callback)
+	return self:EnsureDefaultPage():AddMultiDropdown(text, options, defaultValues, callback)
+end
+function App:AddColorPicker(text, defaultColor, callback)
+	return self:EnsureDefaultPage():AddColorPicker(text, defaultColor, callback)
+end
+function App:AddTextbox(text, placeholder, callback)
+	return self:EnsureDefaultPage():AddTextbox(text, placeholder, callback)
+end
+function App:AddKeybind(text, defaultKey, callback, changedCallback)
+	return self:EnsureDefaultPage():AddKeybind(text, defaultKey, callback, changedCallback)
+end
+function App:AddTab(name)
+	return self:AddPage({ id = sanitizeFileName(name), label = tostring(name or "Page"), icon = string.sub(tostring(name or "P"), 1, 1) })
+end
+function App:SetActiveTab(nameOrTab)
+	self:SetActivePage(nameOrTab)
+end
+
+local function ensureLoop()
+	if frameConnection == nil then
+		frameConnection = RunService.RenderStepped:Connect(function(dt)
+			local mousePosition = getMousePosition()
+			for _, app in ipairs(apps) do
+				app:Step(mousePosition, dt)
+			end
+		end)
+	end
+	if inputBeganConnection == nil then
+		inputBeganConnection = UserInputService.InputBegan:Connect(function(input, processed)
+			if input.UserInputType == Enum.UserInputType.Keyboard and activeTextbox ~= nil then
+				activeTextbox:HandleKeyboardInput(input)
+				return
+			end
+			if listeningKeybind ~= nil then
+				listeningKeybind:CaptureInput(input)
+				return
+			end
+			if processed then
+				return
+			end
+			for _, app in ipairs(apps) do
+				for _, control in ipairs(app.boundControls) do
+					if control.kind == "Keybind" and bindingMatchesInput(control.binding, input) then
+						control.callback(control.binding)
+					elseif control.kind == "Button" and control.activationBinding ~= nil and bindingMatchesInput(control.activationBinding, input) then
+						control:TriggerActivation()
+					end
+				end
+			end
+			if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+				return
+			end
+			local point = getMousePosition()
+			local app = topAppAt(point)
+			if app == nil then
+				clearTextboxFocus(true)
+				clearKeybindListening()
+				return
+			end
+			bringAppToFront(app)
+			app:HandleMouseDown(point)
+		end)
+	end
+	if inputChangedConnection == nil then
+		inputChangedConnection = UserInputService.InputChanged:Connect(function(input, processed)
+			if processed then
+				return
+			end
+			if input.UserInputType == Enum.UserInputType.MouseWheel then
+				local point = getMousePosition()
+				local app = topAppAt(point)
+				if app ~= nil then
+					app:HandleMouseWheel(point, input.Position.Z > 0 and 1 or -1)
+				end
+			end
+		end)
+	end
+	if inputEndedConnection == nil then
+		inputEndedConnection = UserInputService.InputEnded:Connect(function(input)
+			if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+				return
+			end
+			local point = getMousePosition()
+			for _, app in ipairs(apps) do
+				app:HandleMouseUp(point)
+			end
+		end)
+	end
+end
+
+function DrawingUI.CreateTheme(overrides)
+	return mergeTheme(overrides)
+end
+
+function DrawingUI.CreateApp(options)
+	local settings = shallowCopy(DEFAULT_OPTIONS)
+	for key, value in pairs(options or {}) do
+		settings[key] = value
+	end
+	local size = settings.Size or computeDefaultSize()
+	local position = settings.Position or computeDefaultPosition(size)
+	local theme = type(settings.Theme) == "table" and mergeTheme(settings.Theme) or mergeTheme(DEFAULT_THEME)
+	local app = setmetatable({
+		title = tostring(settings.Title or "Drawing UI"),
+		subtitle = "",
+		position = position,
+		size = size,
+		minimumSize = settings.MinSize or Vector2.new(SHELL.MinWidth, SHELL.MinHeight),
+		visible = settings.Visible ~= false,
+		configRoot = settings.ConfigRoot,
+		configId = settings.ConfigId,
+		theme = theme,
+		densityName = settings.Density == "compact" and "compact" or "comfortable",
+		density = DENSITY[settings.Density == "compact" and "compact" or "comfortable"],
+		motionMode = settings.MotionMode == "reduced" and "reduced" or settings.MotionMode == "off" and "off" or "full",
+		layoutDirty = true,
+		paintDirty = true,
+		openAlpha = 0,
+		pageTransitionAlpha = 1,
+		header = { title = tostring(settings.Title or "Drawing UI"), subtitle = "", status = "", actions = {} },
+		pages = {},
+		sharedAsideSections = {},
+		activePage = nil,
+		defaultPage = nil,
+		openOverlay = nil,
+		asideCollapsed = false,
+		zBase = 100,
+		boundControls = {},
+		dragAnywhere = settings.DragAnywhere == true,
+	}, App)
+	createShellDrawings(app)
+	app:SetHeader({ title = app.title, subtitle = "", actions = {} })
+	table.insert(apps, app)
+	bringAppToFront(app)
+	ensureLoop()
+	app:UpdateLayout()
+	return app
+end
+
+function DrawingUI.CreateWindow(options)
+	local app = DrawingUI.CreateApp(options)
+	app.compatWindow = true
+	return app
+end
+
+DrawingUI.new = DrawingUI.CreateWindow
 DrawingUI.Version = VERSION
 DrawingUI.Themes = {
-	Default = mergeTheme(),
-	Amber = mergeTheme({
-		Accent = Color3.fromRGB(255, 155, 66),
-		ToggleEnabled = Color3.fromRGB(255, 155, 66),
-		SliderFill = Color3.fromRGB(255, 155, 66),
-		HeaderBackground = Color3.fromRGB(30, 24, 18),
-		WindowBackground = Color3.fromRGB(20, 18, 16),
-		Panel = Color3.fromRGB(24, 19, 17),
-		PanelHeader = Color3.fromRGB(37, 28, 20),
-		InnerBorder = Color3.fromRGB(90, 69, 47),
-		HighlightText = Color3.fromRGB(255, 214, 112),
-		ButtonHover = Color3.fromRGB(54, 42, 31),
-	}),
-	Midnight = mergeTheme({
-		Accent = Color3.fromRGB(102, 187, 255),
-		ToggleEnabled = Color3.fromRGB(102, 187, 255),
-		SliderFill = Color3.fromRGB(102, 187, 255),
-		HeaderBackground = Color3.fromRGB(19, 25, 38),
-		WindowBackground = Color3.fromRGB(14, 18, 27),
-	}),
-	Circuit = mergeTheme({
-		Accent = Color3.fromRGB(196, 104, 255),
-		ToggleEnabled = Color3.fromRGB(196, 104, 255),
-		SliderFill = Color3.fromRGB(196, 104, 255),
-		WindowBackground = Color3.fromRGB(22, 22, 24),
-		HeaderBackground = Color3.fromRGB(30, 28, 34),
-		Border = Color3.fromRGB(160, 110, 214),
-		InnerBorder = Color3.fromRGB(76, 66, 92),
-		Button = Color3.fromRGB(31, 31, 35),
-		ButtonHover = Color3.fromRGB(44, 41, 50),
-		Input = Color3.fromRGB(18, 18, 20),
-		InputHover = Color3.fromRGB(31, 30, 36),
-		InputFocused = Color3.fromRGB(37, 34, 44),
-		Tab = Color3.fromRGB(29, 28, 33),
-		TabHover = Color3.fromRGB(40, 37, 46),
-		TabActive = Color3.fromRGB(54, 42, 66),
-		Panel = Color3.fromRGB(20, 20, 22),
-		PanelHeader = Color3.fromRGB(35, 32, 40),
-		SectionLine = Color3.fromRGB(124, 88, 168),
-		HighlightText = Color3.fromRGB(255, 228, 116),
-		Text = Color3.fromRGB(243, 240, 248),
-		SubText = Color3.fromRGB(194, 184, 208),
-		Muted = Color3.fromRGB(137, 127, 152),
-		Toggle = Color3.fromRGB(57, 49, 67),
-		SliderTrack = Color3.fromRGB(52, 44, 62),
-	}),
+	Default = mergeTheme(THEMES.Default),
+	Amber = mergeTheme(THEMES.Amber),
+	Midnight = mergeTheme(THEMES.Midnight),
+	Circuit = mergeTheme(THEMES.Circuit),
 }
 
 function DrawingUI.ClearAll()
-	for index = #windows, 1, -1 do
-		windows[index]:Destroy()
+	while #apps > 0 do
+		apps[#apps]:Destroy()
 	end
-
 	if typeof(cleardrawcache) == "function" then
-		cleardrawcache()
+		pcall(cleardrawcache)
 	end
 end
 
