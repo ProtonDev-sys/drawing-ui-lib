@@ -11,7 +11,7 @@ Small drawing-based UI library for Roblox Luau environments that expose `Drawing
 ## Loadstring Usage
 
 ```lua
-local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua"))()
+local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.8.0"))()
 ```
 
 ## Included
@@ -25,8 +25,9 @@ local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Pro
 - Section headers
 - Buttons
 - Switch-style toggles
-- Sliders
+- Sliders with animated visual catch-up
 - Dropdowns
+- Searchable dropdowns
 - Multi-select dropdowns
 - Color picker control
 - Textboxes
@@ -49,6 +50,7 @@ See `examples/example_ui.lua`.
 - `window:AddToggle(text, initialValue, callback)`
 - `window:AddSlider(text, min, max, initialValue, callback)`
 - `window:AddDropdown(text, options, defaultValue, callback)`
+- `window:AddSearchDropdown(text, options, defaultValue, callback)`
 - `window:AddMultiDropdown(text, options, defaultValues, callback)`
 - `window:AddColorPicker(text, defaultColor, callback)`
 - `window:AddTextbox(text, placeholder, callback)`
@@ -72,6 +74,7 @@ See `examples/example_ui.lua`.
 - `tab:AddToggle(text, initialValue, callback)`
 - `tab:AddSlider(text, min, max, initialValue, callback)`
 - `tab:AddDropdown(text, options, defaultValue, callback)`
+- `tab:AddSearchDropdown(text, options, defaultValue, callback)`
 - `tab:AddMultiDropdown(text, options, defaultValues, callback)`
 - `tab:AddColorPicker(text, defaultColor, callback)`
 - `tab:AddTextbox(text, placeholder, callback)`
@@ -84,6 +87,7 @@ See `examples/example_ui.lua`.
 - `DrawingUI.Themes.Default`
 - `DrawingUI.Themes.Amber`
 - `DrawingUI.Themes.Midnight`
+- `DrawingUI.Version`
 
 Useful theme keys include `Accent`, `WindowBackground`, `HeaderBackground`, `Button`, `ButtonHover`, `Input`, `InputHover`, `InputFocused`, `ToggleEnabled`, `SliderFill`, `Border`, `Text`, `SubText`, `Muted`, `Font`, `TitleSize`, `TextSize`, and `SmallTextSize`.
 

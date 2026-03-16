@@ -1,4 +1,4 @@
-local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.7.0"))()
+local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.8.0"))()
 
 local state = {
 	enabled = false,
@@ -9,7 +9,9 @@ local state = {
 	fov = 140,
 	smoothness = 0.2,
 	targetPart = "Head",
+	searchTarget = "Head",
 	profileName = "Legit",
+	clanTag = "ORBIT",
 	menuBind = {
 		kind = "Keyboard",
 		code = Enum.KeyCode.RightShift,
@@ -76,6 +78,11 @@ combatTab:AddDropdown("Target Part", { "Head", "Torso", "Closest" }, state.targe
 	window:SetSubtitle("targeting " .. string.lower(value))
 end)
 
+combatTab:AddSearchDropdown("Search Target", { "Head", "Torso", "UpperTorso", "LowerTorso", "HumanoidRootPart", "Closest" }, state.searchTarget, function(value)
+	state.searchTarget = value
+	window:SetSubtitle("search " .. string.lower(value))
+end)
+
 visualsTab:AddSection("ESP")
 
 local visualsLabel = visualsTab:AddLabel("Draw helpers for targets")
@@ -130,6 +137,10 @@ local bindLabel = configTab:AddLabel("Menu Bind: " .. formatBinding(state.menuBi
 configTab:AddTextbox("Profile Name", "Type a profile name...", function(value)
 	state.profileName = value ~= "" and value or "Legit"
 	profileLabel:SetText("Profile: " .. state.profileName)
+end)
+
+configTab:AddTextbox("Clan Tag", "Optional clan tag...", function(value)
+	state.clanTag = value ~= "" and value or "ORBIT"
 end)
 
 configTab:AddDropdown("Theme Preset", { "Amber", "Midnight", "Default" }, "Amber", function(value)
