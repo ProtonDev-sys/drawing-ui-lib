@@ -19,11 +19,16 @@ local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Pro
 - Draggable window container
 - Viewport clamping so the window stays on-screen while dragging
 - Tabs
+- Paragraph text blocks
 - Labels
 - Section headers
 - Buttons
 - Switch-style toggles
 - Sliders
+- Dropdowns
+- Textboxes
+- Keybind controls
+- Theme presets and theme override tables
 - Window mutators for title, subtitle, position, size, and visibility
 - Full drawing cleanup through `:Destroy()` and `DrawingUI.ClearAll()`
 
@@ -36,11 +41,16 @@ See `examples/example_ui.lua`.
 - `DrawingUI.CreateWindow(options)`
 - `window:AddSection(text)`
 - `window:AddLabel(text)`
+- `window:AddParagraph(title, text)`
 - `window:AddButton(text, callback)`
 - `window:AddToggle(text, initialValue, callback)`
 - `window:AddSlider(text, min, max, initialValue, callback)`
+- `window:AddDropdown(text, options, defaultValue, callback)`
+- `window:AddTextbox(text, placeholder, callback)`
+- `window:AddKeybind(text, defaultKey, callback, changedCallback?)`
 - `window:AddTab(name)`
 - `window:SetActiveTab(nameOrTab)`
+- `window:SetTheme(themeOverrides)`
 - `window:SetTitle(text)`
 - `window:SetSubtitle(text)`
 - `window:SetPosition(Vector2)`
@@ -52,10 +62,23 @@ See `examples/example_ui.lua`.
 
 - `tab:AddSection(text)`
 - `tab:AddLabel(text)`
+- `tab:AddParagraph(title, text)`
 - `tab:AddButton(text, callback)`
 - `tab:AddToggle(text, initialValue, callback)`
 - `tab:AddSlider(text, min, max, initialValue, callback)`
+- `tab:AddDropdown(text, options, defaultValue, callback)`
+- `tab:AddTextbox(text, placeholder, callback)`
+- `tab:AddKeybind(text, defaultKey, callback, changedCallback?)`
 - `tab:Select()`
+
+## Theme API
+
+- `DrawingUI.CreateTheme(overrides)`
+- `DrawingUI.Themes.Default`
+- `DrawingUI.Themes.Amber`
+- `DrawingUI.Themes.Midnight`
+
+Useful theme keys include `Accent`, `WindowBackground`, `HeaderBackground`, `Button`, `ButtonHover`, `Input`, `InputHover`, `InputFocused`, `ToggleEnabled`, `SliderFill`, `Border`, `Text`, `SubText`, `Muted`, `Font`, `TitleSize`, `TextSize`, and `SmallTextSize`.
 
 ## Note
 
