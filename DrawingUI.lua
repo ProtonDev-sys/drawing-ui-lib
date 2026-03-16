@@ -4,6 +4,7 @@ local Workspace = game:GetService("Workspace")
 
 local DrawingUI = {}
 DrawingUI.__index = DrawingUI
+local VERSION = "0.7.0"
 
 local DEFAULT_THEME = {
 	WindowBackground = Color3.fromRGB(19, 22, 28),
@@ -42,17 +43,17 @@ local DEFAULT_WINDOW = {
 }
 
 local FONT = 1
-local HEADER_HEIGHT = 32
-local TAB_HEIGHT = 24
+local HEADER_HEIGHT = 34
+local TAB_HEIGHT = 26
 local TAB_GAP = 6
-local PADDING = 12
-local CONTENT_GAP = 10
+local PADDING = 14
+local CONTENT_GAP = 12
 local ROW_HEIGHT = 24
-local ROW_GAP = 8
-local BUTTON_HEIGHT = 28
+local ROW_GAP = 10
+local BUTTON_HEIGHT = 30
 local TOGGLE_HEIGHT = 24
-local SECTION_HEIGHT = 18
-local SLIDER_HEIGHT = 38
+local SECTION_HEIGHT = 20
+local SLIDER_HEIGHT = 40
 local INPUT_HEIGHT = 28
 local DROPDOWN_OPTION_HEIGHT = 24
 local LABELED_INPUT_HEIGHT = 44
@@ -314,7 +315,7 @@ local function addControl(window, tab, control)
 end
 
 local function getTabWidth(name)
-	return clamp(24 + (#name * 7), 66, 140)
+	return clamp(30 + (#name * 7), 72, 150)
 end
 
 local function bringWindowToFront(window)
@@ -563,8 +564,8 @@ function Window:UpdateChrome()
 	writeProperty(self.drawings.header, "Size", Vector2.new(size.X, HEADER_HEIGHT))
 	writeProperty(self.drawings.accent, "From", position + Vector2.new(0, HEADER_HEIGHT))
 	writeProperty(self.drawings.accent, "To", position + Vector2.new(size.X, HEADER_HEIGHT))
-	writeProperty(self.drawings.title, "Position", position + Vector2.new(PADDING, 7))
-	writeProperty(self.drawings.subtitle, "Position", position + Vector2.new(size.X - 100, 9))
+	writeProperty(self.drawings.title, "Position", position + Vector2.new(PADDING, 6))
+	writeProperty(self.drawings.subtitle, "Position", position + Vector2.new(size.X - 112, 8))
 	writeProperty(self.drawings.title, "Font", self.theme.Font)
 	writeProperty(self.drawings.subtitle, "Font", self.theme.Font)
 	writeProperty(self.drawings.title, "Size", self.theme.TitleSize)
@@ -585,7 +586,7 @@ function Window:LayoutTabs()
 		writeProperty(tab.drawings.background, "Size", tab.size)
 		writeProperty(tab.drawings.outline, "Position", tab.position)
 		writeProperty(tab.drawings.outline, "Size", tab.size)
-		writeProperty(tab.drawings.text, "Position", tab.position + Vector2.new(10, 5))
+		writeProperty(tab.drawings.text, "Position", tab.position + Vector2.new(12, 5))
 		writeProperty(tab.drawings.background, "Visible", self.visible)
 		writeProperty(tab.drawings.outline, "Visible", self.visible)
 		writeProperty(tab.drawings.text, "Visible", self.visible)
@@ -1113,7 +1114,7 @@ local function addButton(window, tab, text, callback)
 		writeProperty(self.drawings.frame, "Size", self.size)
 		writeProperty(self.drawings.outline, "Position", self.position)
 		writeProperty(self.drawings.outline, "Size", self.size)
-		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(10, 5))
+		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(12, 6))
 	end
 
 	function control:applyTheme()
@@ -1437,7 +1438,7 @@ local function addSlider(window, tab, text, minimum, maximum, initialValue, call
 
 	function control:layout()
 		writeProperty(self.drawings.label, "Position", self.position)
-		writeProperty(self.drawings.value, "Position", self.position + Vector2.new(self.size.X - 52, 1))
+		writeProperty(self.drawings.value, "Position", self.position + Vector2.new(self.size.X - 56, 1))
 		self:updateVisuals()
 	end
 
@@ -2991,6 +2992,7 @@ end
 
 DrawingUI.CreateWindow = DrawingUI.new
 DrawingUI.CreateTheme = mergeTheme
+DrawingUI.Version = VERSION
 DrawingUI.Themes = {
 	Default = mergeTheme(),
 	Amber = mergeTheme({

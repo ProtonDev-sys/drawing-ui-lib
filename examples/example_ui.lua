@@ -1,4 +1,4 @@
-local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=tabfix4"))()
+local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.7.0"))()
 
 local state = {
 	enabled = false,
@@ -35,7 +35,7 @@ local function formatBinding(binding)
 end
 
 local window = DrawingUI.CreateWindow({
-	Title = "Example Hub",
+	Title = "Example Hub v" .. (DrawingUI.Version or "dev"),
 	Position = Vector2.new(140, 90),
 	Size = Vector2.new(510, 350),
 	Theme = DrawingUI.Themes.Amber,
