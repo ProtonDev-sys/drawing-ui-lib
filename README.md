@@ -1,57 +1,5 @@
 # DrawingUI
 
-`DrawingUI` is a drawing-based UI library for Roblox Luau environments that expose `Drawing.new(...)`.
-
-It is intended for executor-style environments with Drawing API support, not standard Roblox Studio GUI development. The library provides a draggable window system, tabs, grouped sections, themed controls, keybind support, and optional config persistence on top of `Drawing`, `UserInputService`, and `RunService`.
-
-## Highlights
-
-- Draggable window container with viewport clamping
-- Optional drag-anywhere or header-only dragging
-- Tabs and expandable subtabs
-- Labels, sections, paragraphs, buttons, and button rows
-- Toggles, sliders, dropdowns, searchable dropdowns, and multi-select dropdowns
-- Textboxes, color pickers, and keybind controls
-- Built-in theme presets plus custom theme overrides
-- Window mutators for title, subtitle, position, size, theme, tab selection, and visibility
-- Optional config save/load helpers for supported executor filesystems
-- Full cleanup through `window:Destroy()` and `DrawingUI.ClearAll()`
-
-## Repository Layout
-
-- `DrawingUI.lua`: main library
-- `examples/example_ui.lua`: current showcase using the public API
-- `README.md`: library documentation
-
-## Requirements
-
-- A Roblox Luau environment that supports `Drawing.new(...)`
-- Access to services such as `UserInputService`, `RunService`, `Workspace`, and `HttpService`
-
-For config persistence, your environment must also provide the usual executor filesystem functions:
-
-- `isfolder`
-- `makefolder`
-- `listfiles`
-- `writefile`
-- `readfile`
-- `isfile`
-- `delfile`
-
-If your environment does not expose the Drawing API, the library will not run.
-
-## Loading The Library
-
-### Remote `loadstring`
-
-```lua
-local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.11.1"))()
-```
-
-### Local Usage
-
-If you ship the file yourself, load `DrawingUI.lua` however your environment expects.
-
 ## Quick Start
 
 ```lua
@@ -414,8 +362,5 @@ DrawingUI.ClearAll()
 
 `DrawingUI.ClearAll()` also calls `cleardrawcache()` when that function exists in the current environment.
 
-## Version Notes
-
-The current library version in this repository is `0.11.1`.
 
 If you load directly from the raw GitHub URL, consumers only receive changes after they are committed and pushed to `main`.
