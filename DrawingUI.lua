@@ -6,7 +6,7 @@ local HttpService = game:GetService("HttpService")
 
 local DrawingUI = {}
 DrawingUI.__index = DrawingUI
-local VERSION = "0.10.3"
+local VERSION = "0.10.4"
 
 local DEFAULT_THEME = {
 	WindowBackground = Color3.fromRGB(19, 22, 28),
@@ -332,6 +332,29 @@ local function addControl(window, tab, control)
 	window:RefreshZIndex()
 
 	return control
+end
+
+local function removeControlReference(list, control)
+	for index, candidate in ipairs(list) do
+		if candidate == control then
+			table.remove(list, index)
+			return
+		end
+	end
+end
+
+local function isGroupAncestor(group, control)
+	local current = control.parentGroup
+
+	while current ~= nil do
+		if current == group then
+			return true
+		end
+
+		current = current.parentGroup
+	end
+
+	return false
 end
 
 local function getTabWidth(name)
@@ -1382,6 +1405,48 @@ local function addSubTab(window, tab, text, expanded)
 	function group:addChild(control)
 		control.parentGroup = self
 		table.insert(self.children, control)
+
+		removeControlReference(self.window.controls, control)
+		if self.tab and self.tab.controls then
+			removeControlReference(self.tab.controls, control)
+		end
+
+		local insertIndex = 1
+
+		for index, candidate in ipairs(self.window.controls) do
+			if candidate == self then
+				insertIndex = index + 1
+
+				while insertIndex <= #self.window.controls and isGroupAncestor(self, self.window.controls[insertIndex]) do
+					insertIndex += 1
+				end
+
+				break
+			end
+		end
+
+		table.insert(self.window.controls, insertIndex, control)
+
+		if self.tab and self.tab.controls then
+			local tabInsertIndex = 1
+
+			for index, candidate in ipairs(self.tab.controls) do
+				if candidate == self then
+					tabInsertIndex = index + 1
+
+					while tabInsertIndex <= #self.tab.controls and isGroupAncestor(self, self.tab.controls[tabInsertIndex]) do
+						tabInsertIndex += 1
+					end
+
+					break
+				end
+			end
+
+			table.insert(self.tab.controls, tabInsertIndex, control)
+		end
+
+		self.window:UpdateLayout()
+		self.window:RefreshZIndex()
 		return control
 	end
 
