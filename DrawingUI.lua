@@ -6,7 +6,7 @@ local HttpService = game:GetService("HttpService")
 
 local DrawingUI = {}
 DrawingUI.__index = DrawingUI
-local VERSION = "0.10.7"
+local VERSION = "0.10.8"
 
 local DEFAULT_THEME = {
 	WindowBackground = Color3.fromRGB(19, 22, 28),
@@ -39,6 +39,7 @@ local DEFAULT_WINDOW = {
 	Title = "Drawing UI",
 	Position = Vector2.new(200, 160),
 	Size = Vector2.new(470, 360),
+	MinSize = nil,
 	Visible = true,
 	DragAnywhere = true,
 	Theme = {},
@@ -631,8 +632,10 @@ function Window:ClampToViewport()
 	local maxWidth = math.max(280, viewport.X - (WINDOW_MARGIN * 2))
 	local maxHeight = math.max(220, viewport.Y - (WINDOW_MARGIN * 2))
 	local width = clamp(self.size.X, self.minimumSize.X, maxWidth)
+	local targetHeight = clamp(self.targetHeight or self.size.Y, self.minimumSize.Y, maxHeight)
 	local height = clamp(self.size.Y, self.minimumSize.Y, maxHeight)
 
+	self.targetHeight = targetHeight
 	self.size = Vector2.new(width, height)
 end
 
@@ -732,8 +735,14 @@ function Window:UpdateTabVisuals(mousePosition)
 end
 
 function Window:UpdateLayout()
-	self.size = Vector2.new(self.size.X, self:GetRequiredHeight())
+	self.targetHeight = self:GetRequiredHeight()
 	self:ClampToViewport()
+
+	if not self.heightInitialized then
+		self.size = Vector2.new(self.size.X, self.targetHeight)
+		self.heightInitialized = true
+	end
+
 	self:UpdateChrome()
 
 	local y = self:LayoutTabs()
@@ -836,8 +845,10 @@ function Window:SetPosition(position)
 end
 
 function Window:SetSize(size)
-	self.minimumSize = size
+	self.minimumSize = Vector2.new(size.X, self.minimumSize.Y)
 	self.size = size
+	self.targetHeight = size.Y
+	self.heightInitialized = false
 	self:UpdateLayout()
 end
 
@@ -1083,6 +1094,14 @@ end
 function Window:Step(mousePosition)
 	if not self.visible then
 		return
+	end
+
+	if self.targetHeight ~= nil and math.abs(self.size.Y - self.targetHeight) > 0.5 then
+		self.size = Vector2.new(self.size.X, lerp(self.size.Y, self.targetHeight, 0.22))
+		self:UpdateChrome()
+	elseif self.targetHeight ~= nil then
+		self.size = Vector2.new(self.size.X, self.targetHeight)
+		self:UpdateChrome()
 	end
 
 	if self.dragging then
@@ -4187,7 +4206,7 @@ function DrawingUI.new(options)
 	self.subtitle = "drag me"
 	self.position = config.Position
 	self.size = config.Size
-	self.minimumSize = config.Size
+	self.minimumSize = config.MinSize or Vector2.new(config.Size.X, 220)
 	self.visible = config.Visible
 	self.dragAnywhere = config.DragAnywhere ~= false
 	self.configId = config.ConfigId
@@ -4199,6 +4218,8 @@ function DrawingUI.new(options)
 	self.dragging = false
 	self.pendingDrag = false
 	self.dragOffset = Vector2.zero
+	self.targetHeight = config.Size.Y
+	self.heightInitialized = false
 	self.zBase = 100 + (#windows * 24)
 
 	self.drawings = {
