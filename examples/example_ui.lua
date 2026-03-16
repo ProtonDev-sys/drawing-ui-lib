@@ -5,11 +5,16 @@ local state = {
 	showFov = true,
 	showBoxes = false,
 	showNames = true,
+	flags = { "Box", "Name" },
 	fov = 140,
 	smoothness = 0.2,
 	targetPart = "Head",
 	profileName = "Legit",
-	menuKey = Enum.KeyCode.RightShift,
+	menuBind = {
+		kind = "Keyboard",
+		code = Enum.KeyCode.RightShift,
+	},
+	accentColor = Color3.fromRGB(255, 155, 66),
 	status = "Idle",
 }
 
@@ -17,10 +22,22 @@ local function formatNumber(value)
 	return string.format("%.2f", value)
 end
 
+local function formatBinding(binding)
+	if binding == nil then
+		return "NONE"
+	end
+
+	if binding.kind == "Keyboard" then
+		return binding.code.Name
+	end
+
+	return binding.kind
+end
+
 local window = DrawingUI.CreateWindow({
 	Title = "Example Hub",
 	Position = Vector2.new(140, 90),
-	Size = Vector2.new(490, 330),
+	Size = Vector2.new(510, 350),
 	Theme = DrawingUI.Themes.Amber,
 })
 
@@ -76,10 +93,24 @@ visualsTab:AddToggle("Names", state.showNames, function(value)
 	state.showNames = value
 end)
 
+visualsTab:AddMultiDropdown("ESP Flags", { "Box", "Name", "Health", "Distance", "Weapon" }, state.flags, function(values)
+	state.flags = values
+	visualsLabel:SetText(#values > 0 and ("Flags: " .. table.concat(values, ", ")) or "No flags selected")
+end)
+
+visualsTab:AddColorPicker("Accent Color", state.accentColor, function(color)
+	state.accentColor = color
+	window:SetTheme({
+		Accent = color,
+		ToggleEnabled = color,
+		SliderFill = color,
+	})
+end)
+
 configTab:AddSection("Configuration")
 
 local profileLabel = configTab:AddLabel("Profile: " .. state.profileName)
-local bindLabel = configTab:AddLabel("Menu Bind: " .. state.menuKey.Name)
+local bindLabel = configTab:AddLabel("Menu Bind: " .. formatBinding(state.menuBind))
 
 configTab:AddTextbox("Profile Name", "Type a profile name...", function(value)
 	state.profileName = value ~= "" and value or "Legit"
@@ -96,11 +127,11 @@ configTab:AddDropdown("Theme Preset", { "Amber", "Midnight", "Default" }, "Amber
 	end
 end)
 
-configTab:AddKeybind("Menu Bind", state.menuKey, function()
+configTab:AddKeybind("Menu Bind", state.menuBind, function()
 	window:SetVisible(not window.visible)
-end, function(keyCode)
-	state.menuKey = keyCode
-	bindLabel:SetText("Menu Bind: " .. keyCode.Name)
+end, function(binding)
+	state.menuBind = binding
+	bindLabel:SetText("Menu Bind: " .. formatBinding(binding))
 end)
 
 miscTab:AddSection("Actions")

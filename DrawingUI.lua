@@ -26,10 +26,10 @@ local DEFAULT_THEME = {
 	SliderTrack = Color3.fromRGB(45, 50, 62),
 	SliderFill = Color3.fromRGB(63, 161, 255),
 	SectionLine = Color3.fromRGB(53, 59, 72),
-	Font = 2,
-	TitleSize = 15,
-	TextSize = 13,
-	SmallTextSize = 12,
+	Font = 1,
+	TitleSize = 16,
+	TextSize = 14,
+	SmallTextSize = 13,
 }
 
 local DEFAULT_WINDOW = {
@@ -37,10 +37,11 @@ local DEFAULT_WINDOW = {
 	Position = Vector2.new(200, 160),
 	Size = Vector2.new(470, 360),
 	Visible = true,
+	DragAnywhere = true,
 	Theme = {},
 }
 
-local FONT = 2
+local FONT = 1
 local HEADER_HEIGHT = 32
 local TAB_HEIGHT = 24
 local TAB_GAP = 6
@@ -185,6 +186,61 @@ local function formatKeyCode(keyCode)
 	return name
 end
 
+local function formatInputBinding(binding)
+	if binding == nil then
+		return "NONE"
+	end
+
+	if binding.kind == "Keyboard" then
+		return formatKeyCode(binding.code)
+	elseif binding.kind == "MouseButton1" then
+		return "Mouse1"
+	elseif binding.kind == "MouseButton2" then
+		return "Mouse2"
+	elseif binding.kind == "MouseButton3" then
+		return "Mouse3"
+	end
+
+	return tostring(binding.kind)
+end
+
+local function makeBindingFromInput(input)
+	if input.UserInputType == Enum.UserInputType.Keyboard then
+		return {
+			kind = "Keyboard",
+			code = input.KeyCode,
+		}
+	elseif input.UserInputType == Enum.UserInputType.MouseButton1 then
+		return { kind = "MouseButton1" }
+	elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+		return { kind = "MouseButton2" }
+	elseif input.UserInputType == Enum.UserInputType.MouseButton3 then
+		return { kind = "MouseButton3" }
+	end
+
+	return nil
+end
+
+local function bindingMatchesInput(binding, input)
+	if binding == nil then
+		return false
+	end
+
+	if binding.kind == "Keyboard" then
+		return input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == binding.code
+	end
+
+	if binding.kind == "MouseButton1" then
+		return input.UserInputType == Enum.UserInputType.MouseButton1
+	elseif binding.kind == "MouseButton2" then
+		return input.UserInputType == Enum.UserInputType.MouseButton2
+	elseif binding.kind == "MouseButton3" then
+		return input.UserInputType == Enum.UserInputType.MouseButton3
+	end
+
+	return false
+end
+
 local function getCharacterForInput(input)
 	if input.KeyCode == Enum.KeyCode.Space then
 		return " "
@@ -305,7 +361,7 @@ local function clearKeybindListening()
 	end
 end
 
-local function handleKeyboardInput(input)
+local function handleBoundInput(input)
 	if activeTextbox ~= nil then
 		activeTextbox:HandleKeyboardInput(input)
 		return
@@ -318,8 +374,8 @@ local function handleKeyboardInput(input)
 
 	for _, window in ipairs(windows) do
 		for _, control in ipairs(window.controls) do
-			if control.kind == "Keybind" and control.keyCode == input.KeyCode then
-				control.callback(control.keyCode)
+			if control.kind == "Keybind" and bindingMatchesInput(control.binding, input) then
+				control.callback(control.binding)
 			end
 		end
 	end
@@ -343,8 +399,20 @@ local function ensureLoop()
 			return
 		end
 
+		if listeningKeybind ~= nil then
+			listeningKeybind:CaptureInput(input)
+			return
+		end
+
+		if input.UserInputType == Enum.UserInputType.Keyboard
+			or input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.MouseButton2
+			or input.UserInputType == Enum.UserInputType.MouseButton3
+		then
+			handleBoundInput(input)
+		end
+
 		if input.UserInputType == Enum.UserInputType.Keyboard then
-			handleKeyboardInput(input)
 			return
 		end
 
@@ -654,7 +722,17 @@ function Window:SetSize(size)
 end
 
 function Window:SetTheme(themeOverrides)
-	self.theme = mergeTheme(themeOverrides)
+	local mergedTheme = {}
+
+	for key, value in pairs(self.theme) do
+		mergedTheme[key] = value
+	end
+
+	for key, value in pairs(themeOverrides or {}) do
+		mergedTheme[key] = value
+	end
+
+	self.theme = mergeTheme(mergedTheme)
 	writeProperty(self.drawings.frame, "Color", self.theme.WindowBackground)
 	writeProperty(self.drawings.header, "Color", self.theme.HeaderBackground)
 	writeProperty(self.drawings.accent, "Color", self.theme.Accent)
@@ -720,6 +798,11 @@ function Window:SetActiveTab(nameOrTab)
 end
 
 function Window:HandleMouseDown(point)
+	if self.dragAnywhere or self:IsPointInHeader(point) then
+		self.pendingDrag = true
+		self.dragOffset = point - self.position
+	end
+
 	if self:IsPointInHeader(point) then
 		self.dragging = true
 		self.dragOffset = point - self.position
@@ -736,6 +819,10 @@ function Window:HandleMouseDown(point)
 	local control = self:GetControlAt(point)
 
 	if control ~= nil and control.onMouseDown then
+		if control.blocksWindowDrag then
+			self.pendingDrag = false
+		end
+
 		if control.kind ~= "Textbox" then
 			clearTextboxFocus(true)
 		end
@@ -758,6 +845,7 @@ end
 
 function Window:HandleMouseUp(point)
 	self.dragging = false
+	self.pendingDrag = false
 
 	for _, control in ipairs(self.controls) do
 		if control.onMouseUp then
@@ -775,6 +863,8 @@ function Window:Step(mousePosition)
 		self.position = mousePosition - self.dragOffset
 		self:ClampToViewport()
 		self:UpdateLayout()
+	elseif self.pendingDrag and (mousePosition - (self.position + self.dragOffset)).Magnitude > 4 then
+		self.dragging = true
 	end
 
 	self:UpdateTabVisuals(mousePosition)
@@ -988,6 +1078,7 @@ local function addButton(window, tab, text, callback)
 	local control = makeBaseControl(window, tab, "Button", BUTTON_HEIGHT)
 	control.text = text
 	control.callback = callback or function() end
+	control.blocksWindowDrag = true
 
 	control.drawings.frame = createDrawing("Square", {
 		Visible = window.visible,
@@ -1083,6 +1174,7 @@ local function addToggle(window, tab, text, initialValue, callback)
 	control.value = initialValue == true
 	control.callback = callback or function() end
 	control.toggleAlpha = control.value and 1 or 0
+	control.blocksWindowDrag = true
 
 	control.drawings.text = createDrawing("Text", {
 		Visible = window.visible,
@@ -1256,6 +1348,7 @@ local function addSlider(window, tab, text, minimum, maximum, initialValue, call
 	control.value = clamp(initialValue or minimum, minimum, maximum)
 	control.callback = callback or function() end
 	control.dragging = false
+	control.blocksWindowDrag = true
 
 	control.drawings.label = createDrawing("Text", {
 		Visible = window.visible,
@@ -1415,6 +1508,7 @@ local function addDropdown(window, tab, text, options, defaultValue, callback)
 	control.open = false
 	control.openAlpha = 0
 	control.hoverIndex = nil
+	control.blocksWindowDrag = true
 
 	control.drawings.label = createDrawing("Text", {
 		Visible = window.visible,
@@ -1735,6 +1829,7 @@ local function addTextbox(window, tab, text, placeholder, callback)
 	control.cursorVisible = true
 	control.lastBlink = os.clock()
 	control.maxLength = 64
+	control.blocksWindowDrag = true
 
 	control.drawings.label = createDrawing("Text", {
 		Visible = window.visible,
@@ -1896,13 +1991,347 @@ local function addTextbox(window, tab, text, placeholder, callback)
 	return addControl(window, tab, control)
 end
 
-local function addKeybind(window, tab, text, defaultKey, callback, changedCallback)
-	local control = makeBaseControl(window, tab, "Keybind", LABELED_INPUT_HEIGHT)
+local function addColorPicker(window, tab, text, defaultColor, callback)
+	local control = makeBaseControl(window, tab, "ColorPicker", 92)
 	control.text = text
-	control.keyCode = defaultKey or Enum.KeyCode.Unknown
 	control.callback = callback or function() end
-	control.changedCallback = changedCallback or function() end
-	control.listening = false
+	control.color = defaultColor or Color3.fromRGB(255, 255, 255)
+	control.hue = 0
+	control.sat = 1
+	control.val = 1
+	control.dragMode = nil
+	control.blocksWindowDrag = true
+
+	local hue, sat, val = control.color:ToHSV()
+	control.hue = hue
+	control.sat = sat
+	control.val = val
+
+	control.drawings.label = createDrawing("Text", {
+		Visible = window.visible,
+		Color = window.theme.Text,
+		Size = window.theme.TextSize,
+		Font = window.theme.Font,
+		Outline = true,
+		Text = text,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.preview = createDrawing("Square", {
+		Visible = window.visible,
+		Filled = true,
+		Color = control.color,
+		Thickness = 1,
+		Size = Vector2.zero,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.previewOutline = createDrawing("Square", {
+		Visible = window.visible,
+		Filled = false,
+		Color = window.theme.Border,
+		Thickness = 1,
+		Size = Vector2.zero,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.hex = createDrawing("Text", {
+		Visible = window.visible,
+		Color = window.theme.SubText,
+		Size = window.theme.SmallTextSize,
+		Font = window.theme.Font,
+		Outline = true,
+		Text = "#FFFFFF",
+		Position = Vector2.zero,
+	})
+
+	control.drawings.hueLabel = createDrawing("Text", {
+		Visible = window.visible,
+		Color = window.theme.SubText,
+		Size = window.theme.SmallTextSize,
+		Font = window.theme.Font,
+		Outline = true,
+		Text = "Hue",
+		Position = Vector2.zero,
+	})
+
+	control.drawings.satLabel = createDrawing("Text", {
+		Visible = window.visible,
+		Color = window.theme.SubText,
+		Size = window.theme.SmallTextSize,
+		Font = window.theme.Font,
+		Outline = true,
+		Text = "Sat",
+		Position = Vector2.zero,
+	})
+
+	control.drawings.valLabel = createDrawing("Text", {
+		Visible = window.visible,
+		Color = window.theme.SubText,
+		Size = window.theme.SmallTextSize,
+		Font = window.theme.Font,
+		Outline = true,
+		Text = "Val",
+		Position = Vector2.zero,
+	})
+
+	control.drawings.hueTrack = createDrawing("Square", {
+		Visible = window.visible,
+		Filled = true,
+		Color = window.theme.SliderTrack,
+		Thickness = 1,
+		Size = Vector2.zero,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.hueFill = createDrawing("Square", {
+		Visible = window.visible,
+		Filled = true,
+		Color = Color3.fromHSV(control.hue, 1, 1),
+		Thickness = 1,
+		Size = Vector2.zero,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.satTrack = createDrawing("Square", {
+		Visible = window.visible,
+		Filled = true,
+		Color = window.theme.SliderTrack,
+		Thickness = 1,
+		Size = Vector2.zero,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.satFill = createDrawing("Square", {
+		Visible = window.visible,
+		Filled = true,
+		Color = control.color,
+		Thickness = 1,
+		Size = Vector2.zero,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.valTrack = createDrawing("Square", {
+		Visible = window.visible,
+		Filled = true,
+		Color = window.theme.SliderTrack,
+		Thickness = 1,
+		Size = Vector2.zero,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.valFill = createDrawing("Square", {
+		Visible = window.visible,
+		Filled = true,
+		Color = control.color,
+		Thickness = 1,
+		Size = Vector2.zero,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.hueKnob = createDrawing("Circle", {
+		Visible = window.visible,
+		Filled = true,
+		Color = window.theme.Text,
+		Thickness = 1,
+		NumSides = 18,
+		Radius = 4,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.satKnob = createDrawing("Circle", {
+		Visible = window.visible,
+		Filled = true,
+		Color = window.theme.Text,
+		Thickness = 1,
+		NumSides = 18,
+		Radius = 4,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.valKnob = createDrawing("Circle", {
+		Visible = window.visible,
+		Filled = true,
+		Color = window.theme.Text,
+		Thickness = 1,
+		NumSides = 18,
+		Radius = 4,
+		Position = Vector2.zero,
+	})
+
+	function control:applyColor()
+		self.color = Color3.fromHSV(self.hue, self.sat, self.val)
+		writeProperty(self.drawings.preview, "Color", self.color)
+		writeProperty(self.drawings.hueFill, "Color", Color3.fromHSV(self.hue, 1, 1))
+		writeProperty(self.drawings.satFill, "Color", Color3.fromHSV(self.hue, self.sat, self.val))
+		writeProperty(self.drawings.valFill, "Color", self.color)
+		writeProperty(self.drawings.hex, "Text", string.format("#%02X%02X%02X", round(self.color.R * 255), round(self.color.G * 255), round(self.color.B * 255)))
+	end
+
+	function control:applyTheme()
+		local textDrawings = {
+			self.drawings.label,
+			self.drawings.hex,
+			self.drawings.hueLabel,
+			self.drawings.satLabel,
+			self.drawings.valLabel,
+		}
+
+		for _, drawing in ipairs(textDrawings) do
+			writeProperty(drawing, "Font", self.window.theme.Font)
+		end
+
+		writeProperty(self.drawings.label, "Color", self.window.theme.Text)
+		writeProperty(self.drawings.hex, "Color", self.window.theme.SubText)
+		writeProperty(self.drawings.hueLabel, "Color", self.window.theme.SubText)
+		writeProperty(self.drawings.satLabel, "Color", self.window.theme.SubText)
+		writeProperty(self.drawings.valLabel, "Color", self.window.theme.SubText)
+		writeProperty(self.drawings.label, "Size", self.window.theme.TextSize)
+		writeProperty(self.drawings.hex, "Size", self.window.theme.SmallTextSize)
+		writeProperty(self.drawings.hueLabel, "Size", self.window.theme.SmallTextSize)
+		writeProperty(self.drawings.satLabel, "Size", self.window.theme.SmallTextSize)
+		writeProperty(self.drawings.valLabel, "Size", self.window.theme.SmallTextSize)
+		writeProperty(self.drawings.previewOutline, "Color", self.window.theme.Border)
+	end
+
+	function control:getTrackInfo(mode)
+		local startX = self.position.X + 82
+		local width = self.size.X - 82
+		local yOffset = mode == "hue" and 18 or mode == "sat" and 40 or 62
+		return Vector2.new(startX, self.position.Y + yOffset), width
+	end
+
+	function control:setFromMouse(mode, mousePosition)
+		local trackPosition, width = self:getTrackInfo(mode)
+		local alpha = clamp((mousePosition.X - trackPosition.X) / width, 0, 1)
+
+		if mode == "hue" then
+			self.hue = alpha
+		elseif mode == "sat" then
+			self.sat = alpha
+		else
+			self.val = alpha
+		end
+
+		self:applyColor()
+		self:layout()
+		self.callback(self.color)
+	end
+
+	function control:layout()
+		writeProperty(self.drawings.label, "Position", self.position)
+		writeProperty(self.drawings.preview, "Position", self.position + Vector2.new(0, 18))
+		writeProperty(self.drawings.preview, "Size", Vector2.new(64, 56))
+		writeProperty(self.drawings.previewOutline, "Position", self.position + Vector2.new(0, 18))
+		writeProperty(self.drawings.previewOutline, "Size", Vector2.new(64, 56))
+		writeProperty(self.drawings.hex, "Position", self.position + Vector2.new(0, 78))
+
+		local huePosition, hueWidth = self:getTrackInfo("hue")
+		local satPosition, satWidth = self:getTrackInfo("sat")
+		local valPosition, valWidth = self:getTrackInfo("val")
+
+		writeProperty(self.drawings.hueLabel, "Position", Vector2.new(huePosition.X, huePosition.Y - 11))
+		writeProperty(self.drawings.satLabel, "Position", Vector2.new(satPosition.X, satPosition.Y - 11))
+		writeProperty(self.drawings.valLabel, "Position", Vector2.new(valPosition.X, valPosition.Y - 11))
+
+		writeProperty(self.drawings.hueTrack, "Position", huePosition)
+		writeProperty(self.drawings.hueTrack, "Size", Vector2.new(hueWidth, 6))
+		writeProperty(self.drawings.hueFill, "Position", huePosition)
+		writeProperty(self.drawings.hueFill, "Size", Vector2.new(round(hueWidth * self.hue), 6))
+
+		writeProperty(self.drawings.satTrack, "Position", satPosition)
+		writeProperty(self.drawings.satTrack, "Size", Vector2.new(satWidth, 6))
+		writeProperty(self.drawings.satFill, "Position", satPosition)
+		writeProperty(self.drawings.satFill, "Size", Vector2.new(round(satWidth * self.sat), 6))
+
+		writeProperty(self.drawings.valTrack, "Position", valPosition)
+		writeProperty(self.drawings.valTrack, "Size", Vector2.new(valWidth, 6))
+		writeProperty(self.drawings.valFill, "Position", valPosition)
+		writeProperty(self.drawings.valFill, "Size", Vector2.new(round(valWidth * self.val), 6))
+
+		writeProperty(self.drawings.hueKnob, "Position", huePosition + Vector2.new(round(hueWidth * self.hue), 3))
+		writeProperty(self.drawings.satKnob, "Position", satPosition + Vector2.new(round(satWidth * self.sat), 3))
+		writeProperty(self.drawings.valKnob, "Position", valPosition + Vector2.new(round(valWidth * self.val), 3))
+		self:applyColor()
+	end
+
+	function control:hitTest(point)
+		local previewRect = pointInRect(point, self.position + Vector2.new(0, 18), Vector2.new(64, 56))
+		local huePosition, hueWidth = self:getTrackInfo("hue")
+		local satPosition, satWidth = self:getTrackInfo("sat")
+		local valPosition, valWidth = self:getTrackInfo("val")
+
+		return previewRect
+			or pointInRect(point, huePosition, Vector2.new(hueWidth, 8))
+			or pointInRect(point, satPosition, Vector2.new(satWidth, 8))
+			or pointInRect(point, valPosition, Vector2.new(valWidth, 8))
+	end
+
+	function control:onMouseDown(point)
+		local huePosition, hueWidth = self:getTrackInfo("hue")
+		local satPosition, satWidth = self:getTrackInfo("sat")
+		local valPosition, valWidth = self:getTrackInfo("val")
+
+		if pointInRect(point, huePosition, Vector2.new(hueWidth, 8)) then
+			self.dragMode = "hue"
+		elseif pointInRect(point, satPosition, Vector2.new(satWidth, 8)) then
+			self.dragMode = "sat"
+		elseif pointInRect(point, valPosition, Vector2.new(valWidth, 8)) then
+			self.dragMode = "val"
+		end
+
+		if self.dragMode ~= nil then
+			self:setFromMouse(self.dragMode, point)
+		end
+	end
+
+	function control:onMouseUp()
+		self.dragMode = nil
+	end
+
+	function control:onStep(mousePosition, ownsHover)
+		if self.dragMode ~= nil then
+			self:setFromMouse(self.dragMode, mousePosition)
+		end
+
+		local hovered = ownsHover and self:hitTest(mousePosition)
+		writeProperty(self.drawings.hueKnob, "Color", self.dragMode == "hue" and self.window.theme.Accent or hovered and self.window.theme.Text or self.window.theme.Text)
+		writeProperty(self.drawings.satKnob, "Color", self.dragMode == "sat" and self.window.theme.Accent or self.window.theme.Text)
+		writeProperty(self.drawings.valKnob, "Color", self.dragMode == "val" and self.window.theme.Accent or self.window.theme.Text)
+	end
+
+	function control:setZIndex(z)
+		for _, key in ipairs({ "label", "preview", "previewOutline", "hex", "hueLabel", "satLabel", "valLabel", "hueTrack", "hueFill", "satTrack", "satFill", "valTrack", "valFill", "hueKnob", "satKnob", "valKnob" }) do
+			writeProperty(self.drawings[key], "ZIndex", z)
+		end
+	end
+
+	function control:destroy()
+		for _, drawing in pairs(self.drawings) do
+			destroyDrawing(drawing)
+		end
+	end
+
+	control:applyTheme()
+	control:applyColor()
+	return addControl(window, tab, control)
+end
+
+local function addMultiDropdown(window, tab, text, options, defaultValues, callback)
+	local control = makeBaseControl(window, tab, "MultiDropdown", LABELED_INPUT_HEIGHT)
+	control.text = text
+	control.options = table.clone(options or {})
+	control.values = {}
+	control.selected = {}
+	control.callback = callback or function() end
+	control.open = false
+	control.openAlpha = 0
+	control.blocksWindowDrag = true
+
+	for _, value in ipairs(defaultValues or {}) do
+		control.selected[value] = true
+		table.insert(control.values, value)
+	end
 
 	control.drawings.label = createDrawing("Text", {
 		Visible = window.visible,
@@ -1938,7 +2367,327 @@ local function addKeybind(window, tab, text, defaultKey, callback, changedCallba
 		Size = window.theme.SmallTextSize,
 		Font = window.theme.Font,
 		Outline = true,
-		Text = formatKeyCode(control.keyCode),
+		Text = "None",
+		Position = Vector2.zero,
+	})
+
+	control.drawings.arrow = createDrawing("Text", {
+		Visible = window.visible,
+		Color = window.theme.SubText,
+		Size = window.theme.SmallTextSize,
+		Font = window.theme.Font,
+		Outline = true,
+		Text = "v",
+		Position = Vector2.zero,
+	})
+
+	control.optionDrawings = {}
+
+	for _, option in ipairs(control.options) do
+		table.insert(control.optionDrawings, {
+			frame = createDrawing("Square", {
+				Visible = false,
+				Filled = true,
+				Color = window.theme.Input,
+				Thickness = 1,
+				Size = Vector2.zero,
+				Position = Vector2.zero,
+			}),
+			outline = createDrawing("Square", {
+				Visible = false,
+				Filled = false,
+				Color = window.theme.Border,
+				Thickness = 1,
+				Size = Vector2.zero,
+				Position = Vector2.zero,
+			}),
+			check = createDrawing("Text", {
+				Visible = false,
+				Color = window.theme.Accent,
+				Size = window.theme.SmallTextSize,
+				Font = window.theme.Font,
+				Outline = true,
+				Text = "+",
+				Position = Vector2.zero,
+			}),
+			text = createDrawing("Text", {
+				Visible = false,
+				Color = window.theme.Text,
+				Size = window.theme.SmallTextSize,
+				Font = window.theme.Font,
+				Outline = true,
+				Text = tostring(option),
+				Position = Vector2.zero,
+			}),
+		})
+	end
+
+	function control:GetHeight()
+		return LABELED_INPUT_HEIGHT + round((#self.options * DROPDOWN_OPTION_HEIGHT) * self.openAlpha)
+	end
+
+	function control:getDisplayText()
+		if #self.values == 0 then
+			return "None"
+		end
+
+		local joined = table.concat(self.values, ", ")
+
+		if #joined > 26 then
+			return tostring(#self.values) .. " selected"
+		end
+
+		return joined
+	end
+
+	function control:applyTheme()
+		writeProperty(self.drawings.label, "Color", self.window.theme.Text)
+		writeProperty(self.drawings.value, "Color", self.window.theme.SubText)
+		writeProperty(self.drawings.arrow, "Color", self.window.theme.SubText)
+		writeProperty(self.drawings.label, "Font", self.window.theme.Font)
+		writeProperty(self.drawings.value, "Font", self.window.theme.Font)
+		writeProperty(self.drawings.arrow, "Font", self.window.theme.Font)
+		writeProperty(self.drawings.label, "Size", self.window.theme.TextSize)
+		writeProperty(self.drawings.value, "Size", self.window.theme.SmallTextSize)
+		writeProperty(self.drawings.arrow, "Size", self.window.theme.SmallTextSize)
+
+		for _, drawingSet in ipairs(self.optionDrawings) do
+			writeProperty(drawingSet.outline, "Color", self.window.theme.Border)
+			writeProperty(drawingSet.text, "Color", self.window.theme.Text)
+			writeProperty(drawingSet.check, "Color", self.window.theme.Accent)
+			writeProperty(drawingSet.text, "Font", self.window.theme.Font)
+			writeProperty(drawingSet.check, "Font", self.window.theme.Font)
+			writeProperty(drawingSet.text, "Size", self.window.theme.SmallTextSize)
+			writeProperty(drawingSet.check, "Size", self.window.theme.SmallTextSize)
+		end
+	end
+
+	function control:SetOpen(isOpen)
+		self.open = isOpen and #self.options > 0
+		if self.open then
+			self.window:CloseDropdowns(self)
+		end
+	end
+
+	function control:getBaseRect()
+		local basePosition = self.position + Vector2.new(0, 16)
+		return basePosition, Vector2.new(self.size.X, INPUT_HEIGHT)
+	end
+
+	function control:getOptionIndex(point)
+		local basePosition = self.position + Vector2.new(0, 16 + INPUT_HEIGHT)
+
+		for index = 1, #self.options do
+			local rowPosition = basePosition + Vector2.new(0, (index - 1) * DROPDOWN_OPTION_HEIGHT)
+
+			if pointInRect(point, rowPosition, Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT)) then
+				return index
+			end
+		end
+
+		return nil
+	end
+
+	function control:toggleValue(option)
+		if self.selected[option] then
+			self.selected[option] = nil
+
+			for index, value in ipairs(self.values) do
+				if value == option then
+					table.remove(self.values, index)
+					break
+				end
+			end
+		else
+			self.selected[option] = true
+			table.insert(self.values, option)
+		end
+
+		self.callback(table.clone(self.values))
+	end
+
+	function control:layout()
+		local basePosition = self.position + Vector2.new(0, 16)
+		local baseSize = Vector2.new(self.size.X, INPUT_HEIGHT)
+		local visibleCount = round(#self.options * self.openAlpha)
+
+		writeProperty(self.drawings.label, "Position", self.position)
+		writeProperty(self.drawings.frame, "Position", basePosition)
+		writeProperty(self.drawings.frame, "Size", baseSize)
+		writeProperty(self.drawings.outline, "Position", basePosition)
+		writeProperty(self.drawings.outline, "Size", baseSize)
+		writeProperty(self.drawings.value, "Position", basePosition + Vector2.new(10, 6))
+		writeProperty(self.drawings.value, "Text", self:getDisplayText())
+		writeProperty(self.drawings.arrow, "Position", basePosition + Vector2.new(baseSize.X - 16, 6))
+		writeProperty(self.drawings.arrow, "Text", self.openAlpha > 0.5 and "^" or "v")
+
+		for index, option in ipairs(self.options) do
+			local drawingSet = self.optionDrawings[index]
+			local rowPosition = basePosition + Vector2.new(0, INPUT_HEIGHT + ((index - 1) * DROPDOWN_OPTION_HEIGHT))
+			local isVisible = self.window:IsControlDisplayed(self) and index <= visibleCount and self.openAlpha > 0.02
+
+			writeProperty(drawingSet.frame, "Position", rowPosition)
+			writeProperty(drawingSet.frame, "Size", Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT))
+			writeProperty(drawingSet.outline, "Position", rowPosition)
+			writeProperty(drawingSet.outline, "Size", Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT))
+			writeProperty(drawingSet.check, "Position", rowPosition + Vector2.new(8, 5))
+			writeProperty(drawingSet.check, "Text", self.selected[option] and "+" or "-")
+			writeProperty(drawingSet.text, "Position", rowPosition + Vector2.new(24, 5))
+			writeProperty(drawingSet.text, "Text", tostring(option))
+			writeProperty(drawingSet.frame, "Visible", isVisible)
+			writeProperty(drawingSet.outline, "Visible", isVisible)
+			writeProperty(drawingSet.check, "Visible", isVisible)
+			writeProperty(drawingSet.text, "Visible", isVisible)
+		end
+	end
+
+	function control:refreshVisibility(shouldShow)
+		for _, drawing in pairs(self.drawings) do
+			writeProperty(drawing, "Visible", shouldShow)
+		end
+
+		for index, drawingSet in ipairs(self.optionDrawings) do
+			local rowVisible = shouldShow and self.openAlpha > 0.02 and (index <= round(#self.options * self.openAlpha))
+			writeProperty(drawingSet.frame, "Visible", rowVisible)
+			writeProperty(drawingSet.outline, "Visible", rowVisible)
+			writeProperty(drawingSet.check, "Visible", rowVisible)
+			writeProperty(drawingSet.text, "Visible", rowVisible)
+		end
+	end
+
+	function control:hitTest(point)
+		local basePosition, baseSize = self:getBaseRect()
+
+		if pointInRect(point, basePosition, baseSize) then
+			return true
+		end
+
+		return self.openAlpha > 0.02 and self:getOptionIndex(point) ~= nil
+	end
+
+	function control:onMouseDown(point)
+		local basePosition, baseSize = self:getBaseRect()
+
+		if pointInRect(point, basePosition, baseSize) then
+			self:SetOpen(not self.open)
+			return
+		end
+
+		local optionIndex = self:getOptionIndex(point)
+
+		if optionIndex ~= nil then
+			self:toggleValue(self.options[optionIndex])
+		end
+	end
+
+	function control:onStep(mousePosition, ownsHover)
+		local basePosition, baseSize = self:getBaseRect()
+		local targetAlpha = self.open and 1 or 0
+		local nextAlpha = lerp(self.openAlpha, targetAlpha, 0.25)
+		local needsLayout = false
+
+		if math.abs(nextAlpha - self.openAlpha) > 0.001 then
+			self.openAlpha = nextAlpha
+			needsLayout = true
+		else
+			self.openAlpha = targetAlpha
+		end
+
+		self.hovered = ownsHover and pointInRect(mousePosition, basePosition, baseSize)
+		writeProperty(self.drawings.frame, "Color", self.hovered and self.window.theme.InputHover or self.window.theme.Input)
+		writeProperty(self.drawings.outline, "Color", self.open and self.window.theme.Accent or self.window.theme.Border)
+
+		for index, drawingSet in ipairs(self.optionDrawings) do
+			local option = self.options[index]
+			local hoveredOption = ownsHover and self:getOptionIndex(mousePosition) == index
+			local selected = self.selected[option]
+			local rowColor = selected and self.window.theme.TabActive or hoveredOption and self.window.theme.InputHover or self.window.theme.Input
+
+			writeProperty(drawingSet.frame, "Color", rowColor)
+		end
+
+		return needsLayout
+	end
+
+	function control:setZIndex(z)
+		writeProperty(self.drawings.label, "ZIndex", z)
+		writeProperty(self.drawings.frame, "ZIndex", z)
+		writeProperty(self.drawings.outline, "ZIndex", z + 1)
+		writeProperty(self.drawings.value, "ZIndex", z + 2)
+		writeProperty(self.drawings.arrow, "ZIndex", z + 2)
+
+		for index, drawingSet in ipairs(self.optionDrawings) do
+			writeProperty(drawingSet.frame, "ZIndex", z + 3 + index)
+			writeProperty(drawingSet.outline, "ZIndex", z + 4 + index)
+			writeProperty(drawingSet.check, "ZIndex", z + 5 + index)
+			writeProperty(drawingSet.text, "ZIndex", z + 5 + index)
+		end
+	end
+
+	function control:destroy()
+		for _, drawing in pairs(self.drawings) do
+			destroyDrawing(drawing)
+		end
+
+		for _, drawingSet in ipairs(self.optionDrawings) do
+			destroyDrawing(drawingSet.frame)
+			destroyDrawing(drawingSet.outline)
+			destroyDrawing(drawingSet.check)
+			destroyDrawing(drawingSet.text)
+		end
+	end
+
+	control:applyTheme()
+	return addControl(window, tab, control)
+end
+
+local function addKeybind(window, tab, text, defaultKey, callback, changedCallback)
+	local control = makeBaseControl(window, tab, "Keybind", LABELED_INPUT_HEIGHT)
+	control.text = text
+	control.binding = typeof(defaultKey) == "EnumItem" and {
+		kind = "Keyboard",
+		code = defaultKey,
+	} or defaultKey
+	control.callback = callback or function() end
+	control.changedCallback = changedCallback or function() end
+	control.listening = false
+	control.blocksWindowDrag = true
+
+	control.drawings.label = createDrawing("Text", {
+		Visible = window.visible,
+		Color = window.theme.Text,
+		Size = window.theme.TextSize,
+		Font = window.theme.Font,
+		Outline = true,
+		Text = text,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.frame = createDrawing("Square", {
+		Visible = window.visible,
+		Filled = true,
+		Color = window.theme.Input,
+		Thickness = 1,
+		Size = Vector2.zero,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.outline = createDrawing("Square", {
+		Visible = window.visible,
+		Filled = false,
+		Color = window.theme.Border,
+		Thickness = 1,
+		Size = Vector2.zero,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.value = createDrawing("Text", {
+		Visible = window.visible,
+		Color = window.theme.SubText,
+		Size = window.theme.SmallTextSize,
+		Font = window.theme.Font,
+		Outline = true,
+		Text = formatInputBinding(control.binding),
 		Position = Vector2.zero,
 	})
 
@@ -1960,7 +2709,7 @@ local function addKeybind(window, tab, text, defaultKey, callback, changedCallba
 		writeProperty(self.drawings.outline, "Position", basePosition)
 		writeProperty(self.drawings.outline, "Size", Vector2.new(self.size.X, INPUT_HEIGHT))
 		writeProperty(self.drawings.value, "Position", basePosition + Vector2.new(10, 6))
-		writeProperty(self.drawings.value, "Text", self.listening and "Press a key..." or formatKeyCode(self.keyCode))
+		writeProperty(self.drawings.value, "Text", self.listening and "Press a key..." or formatInputBinding(self.binding))
 	end
 
 	function control:hitTest(point)
@@ -1973,15 +2722,21 @@ local function addKeybind(window, tab, text, defaultKey, callback, changedCallba
 	end
 
 	function control:CaptureInput(input)
-		if input.KeyCode == Enum.KeyCode.Escape then
-			self.keyCode = Enum.KeyCode.Unknown
+		if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.Escape then
+			self.binding = nil
 		else
-			self.keyCode = input.KeyCode
+			local nextBinding = makeBindingFromInput(input)
+
+			if nextBinding == nil then
+				return
+			end
+
+			self.binding = nextBinding
 		end
 
 		self:SetListening(false)
 		listeningKeybind = nil
-		self.changedCallback(self.keyCode)
+		self.changedCallback(self.binding)
 	end
 
 	function control:onMouseDown()
@@ -2044,6 +2799,14 @@ end
 
 function Tab:AddDropdown(text, options, defaultValue, callback)
 	return addDropdown(self.window, self, text, options, defaultValue, callback)
+end
+
+function Tab:AddMultiDropdown(text, options, defaultValues, callback)
+	return addMultiDropdown(self.window, self, text, options, defaultValues, callback)
+end
+
+function Tab:AddColorPicker(text, defaultColor, callback)
+	return addColorPicker(self.window, self, text, defaultColor, callback)
 end
 
 function Tab:AddTextbox(text, placeholder, callback)
@@ -2134,6 +2897,14 @@ function Window:AddDropdown(text, options, defaultValue, callback)
 	return addDropdown(self, nil, text, options, defaultValue, callback)
 end
 
+function Window:AddMultiDropdown(text, options, defaultValues, callback)
+	return addMultiDropdown(self, nil, text, options, defaultValues, callback)
+end
+
+function Window:AddColorPicker(text, defaultColor, callback)
+	return addColorPicker(self, nil, text, defaultColor, callback)
+end
+
 function Window:AddTextbox(text, placeholder, callback)
 	return addTextbox(self, nil, text, placeholder, callback)
 end
@@ -2160,11 +2931,13 @@ function DrawingUI.new(options)
 	self.size = config.Size
 	self.minimumSize = config.Size
 	self.visible = config.Visible
+	self.dragAnywhere = config.DragAnywhere ~= false
 	self.theme = mergeTheme(config.Theme)
 	self.controls = {}
 	self.tabs = {}
 	self.activeTab = nil
 	self.dragging = false
+	self.pendingDrag = false
 	self.dragOffset = Vector2.zero
 	self.zBase = 100 + (#windows * 24)
 

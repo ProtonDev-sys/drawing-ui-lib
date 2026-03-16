@@ -18,6 +18,7 @@ local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Pro
 
 - Draggable window container
 - Viewport clamping so the window stays on-screen while dragging
+- Drag-anywhere window movement by default
 - Tabs
 - Paragraph text blocks
 - Labels
@@ -26,6 +27,8 @@ local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Pro
 - Switch-style toggles
 - Sliders
 - Dropdowns
+- Multi-select dropdowns
+- Color picker control
 - Textboxes
 - Keybind controls
 - Theme presets and theme override tables
@@ -46,6 +49,8 @@ See `examples/example_ui.lua`.
 - `window:AddToggle(text, initialValue, callback)`
 - `window:AddSlider(text, min, max, initialValue, callback)`
 - `window:AddDropdown(text, options, defaultValue, callback)`
+- `window:AddMultiDropdown(text, options, defaultValues, callback)`
+- `window:AddColorPicker(text, defaultColor, callback)`
 - `window:AddTextbox(text, placeholder, callback)`
 - `window:AddKeybind(text, defaultKey, callback, changedCallback?)`
 - `window:AddTab(name)`
@@ -67,6 +72,8 @@ See `examples/example_ui.lua`.
 - `tab:AddToggle(text, initialValue, callback)`
 - `tab:AddSlider(text, min, max, initialValue, callback)`
 - `tab:AddDropdown(text, options, defaultValue, callback)`
+- `tab:AddMultiDropdown(text, options, defaultValues, callback)`
+- `tab:AddColorPicker(text, defaultColor, callback)`
 - `tab:AddTextbox(text, placeholder, callback)`
 - `tab:AddKeybind(text, defaultKey, callback, changedCallback?)`
 - `tab:Select()`
@@ -79,6 +86,8 @@ See `examples/example_ui.lua`.
 - `DrawingUI.Themes.Midnight`
 
 Useful theme keys include `Accent`, `WindowBackground`, `HeaderBackground`, `Button`, `ButtonHover`, `Input`, `InputHover`, `InputFocused`, `ToggleEnabled`, `SliderFill`, `Border`, `Text`, `SubText`, `Muted`, `Font`, `TitleSize`, `TextSize`, and `SmallTextSize`.
+
+`CreateWindow` also accepts `DragAnywhere = false` if you want classic titlebar-only dragging.
 
 ## Note
 
