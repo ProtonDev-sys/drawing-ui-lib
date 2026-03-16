@@ -1461,7 +1461,7 @@ local function addSlider(window, tab, text, minimum, maximum, initialValue, call
 	end
 
 	function control:hitTest(point)
-		return pointInRect(point, self.position + Vector2.new(0, 18), Vector2.new(self.size.X, 14))
+		return pointInRect(point, self.position, self.size)
 	end
 
 	function control:onMouseDown(point)
@@ -1992,7 +1992,7 @@ local function addTextbox(window, tab, text, placeholder, callback)
 end
 
 local function addColorPicker(window, tab, text, defaultColor, callback)
-	local control = makeBaseControl(window, tab, "ColorPicker", 92)
+	local control = makeBaseControl(window, tab, "ColorPicker", 126)
 	control.text = text
 	control.callback = callback or function() end
 	control.color = defaultColor or Color3.fromRGB(255, 255, 255)
@@ -2001,6 +2001,8 @@ local function addColorPicker(window, tab, text, defaultColor, callback)
 	control.val = 1
 	control.dragMode = nil
 	control.blocksWindowDrag = true
+	control.wheelSegments = {}
+	control.svCells = {}
 
 	local hue, sat, val = control.color:ToHSV()
 	control.hue = hue
@@ -2045,243 +2047,179 @@ local function addColorPicker(window, tab, text, defaultColor, callback)
 		Position = Vector2.zero,
 	})
 
-	control.drawings.hueLabel = createDrawing("Text", {
+	control.drawings.hueMarker = createDrawing("Circle", {
 		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = window.theme.SmallTextSize,
-		Font = window.theme.Font,
-		Outline = true,
-		Text = "Hue",
-		Position = Vector2.zero,
-	})
-
-	control.drawings.satLabel = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = window.theme.SmallTextSize,
-		Font = window.theme.Font,
-		Outline = true,
-		Text = "Sat",
-		Position = Vector2.zero,
-	})
-
-	control.drawings.valLabel = createDrawing("Text", {
-		Visible = window.visible,
-		Color = window.theme.SubText,
-		Size = window.theme.SmallTextSize,
-		Font = window.theme.Font,
-		Outline = true,
-		Text = "Val",
-		Position = Vector2.zero,
-	})
-
-	control.drawings.hueTrack = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = true,
-		Color = window.theme.SliderTrack,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.hueFill = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = true,
-		Color = Color3.fromHSV(control.hue, 1, 1),
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.satTrack = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = true,
-		Color = window.theme.SliderTrack,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.satFill = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = true,
-		Color = control.color,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.valTrack = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = true,
-		Color = window.theme.SliderTrack,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.valFill = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = true,
-		Color = control.color,
-		Thickness = 1,
-		Size = Vector2.zero,
-		Position = Vector2.zero,
-	})
-
-	control.drawings.hueKnob = createDrawing("Circle", {
-		Visible = window.visible,
-		Filled = true,
+		Filled = false,
 		Color = window.theme.Text,
-		Thickness = 1,
+		Thickness = 2,
+		NumSides = 18,
+		Radius = 5,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.svMarker = createDrawing("Circle", {
+		Visible = window.visible,
+		Filled = false,
+		Color = window.theme.Text,
+		Thickness = 2,
 		NumSides = 18,
 		Radius = 4,
 		Position = Vector2.zero,
 	})
 
-	control.drawings.satKnob = createDrawing("Circle", {
-		Visible = window.visible,
-		Filled = true,
-		Color = window.theme.Text,
-		Thickness = 1,
-		NumSides = 18,
-		Radius = 4,
-		Position = Vector2.zero,
-	})
+	for index = 1, 48 do
+		control.wheelSegments[index] = createDrawing("Line", {
+			Visible = window.visible,
+			Color = Color3.fromHSV((index - 1) / 48, 1, 1),
+			Thickness = 4,
+			From = Vector2.zero,
+			To = Vector2.zero,
+		})
+	end
 
-	control.drawings.valKnob = createDrawing("Circle", {
-		Visible = window.visible,
-		Filled = true,
-		Color = window.theme.Text,
-		Thickness = 1,
-		NumSides = 18,
-		Radius = 4,
-		Position = Vector2.zero,
-	})
+	for index = 1, 64 do
+		control.svCells[index] = createDrawing("Square", {
+			Visible = window.visible,
+			Filled = true,
+			Color = Color3.new(1, 1, 1),
+			Thickness = 0,
+			Size = Vector2.zero,
+			Position = Vector2.zero,
+		})
+	end
+
+	function control:getCenter()
+		return self.position + Vector2.new(56, 54)
+	end
+
+	function control:getSvBox()
+		local center = self:getCenter()
+		local size = 34
+		return center - Vector2.new(size / 2, size / 2), size
+	end
 
 	function control:applyColor()
 		self.color = Color3.fromHSV(self.hue, self.sat, self.val)
 		writeProperty(self.drawings.preview, "Color", self.color)
-		writeProperty(self.drawings.hueFill, "Color", Color3.fromHSV(self.hue, 1, 1))
-		writeProperty(self.drawings.satFill, "Color", Color3.fromHSV(self.hue, self.sat, self.val))
-		writeProperty(self.drawings.valFill, "Color", self.color)
 		writeProperty(self.drawings.hex, "Text", string.format("#%02X%02X%02X", round(self.color.R * 255), round(self.color.G * 255), round(self.color.B * 255)))
 	end
 
 	function control:applyTheme()
-		local textDrawings = {
-			self.drawings.label,
-			self.drawings.hex,
-			self.drawings.hueLabel,
-			self.drawings.satLabel,
-			self.drawings.valLabel,
-		}
-
-		for _, drawing in ipairs(textDrawings) do
-			writeProperty(drawing, "Font", self.window.theme.Font)
-		end
-
 		writeProperty(self.drawings.label, "Color", self.window.theme.Text)
 		writeProperty(self.drawings.hex, "Color", self.window.theme.SubText)
-		writeProperty(self.drawings.hueLabel, "Color", self.window.theme.SubText)
-		writeProperty(self.drawings.satLabel, "Color", self.window.theme.SubText)
-		writeProperty(self.drawings.valLabel, "Color", self.window.theme.SubText)
+		writeProperty(self.drawings.label, "Font", self.window.theme.Font)
+		writeProperty(self.drawings.hex, "Font", self.window.theme.Font)
 		writeProperty(self.drawings.label, "Size", self.window.theme.TextSize)
 		writeProperty(self.drawings.hex, "Size", self.window.theme.SmallTextSize)
-		writeProperty(self.drawings.hueLabel, "Size", self.window.theme.SmallTextSize)
-		writeProperty(self.drawings.satLabel, "Size", self.window.theme.SmallTextSize)
-		writeProperty(self.drawings.valLabel, "Size", self.window.theme.SmallTextSize)
 		writeProperty(self.drawings.previewOutline, "Color", self.window.theme.Border)
+		writeProperty(self.drawings.hueMarker, "Color", self.window.theme.Text)
+		writeProperty(self.drawings.svMarker, "Color", self.window.theme.Text)
 	end
 
-	function control:getTrackInfo(mode)
-		local startX = self.position.X + 82
-		local width = self.size.X - 82
-		local yOffset = mode == "hue" and 18 or mode == "sat" and 40 or 62
-		return Vector2.new(startX, self.position.Y + yOffset), width
-	end
+	function control:updateWheel()
+		local center = self:getCenter()
+		local outerRadius = 32
+		local innerRadius = 24
+		local midRadius = (outerRadius + innerRadius) / 2
 
-	function control:setFromMouse(mode, mousePosition)
-		local trackPosition, width = self:getTrackInfo(mode)
-		local alpha = clamp((mousePosition.X - trackPosition.X) / width, 0, 1)
+		for index, segment in ipairs(self.wheelSegments) do
+			local angleA = ((index - 1) / #self.wheelSegments) * math.pi * 2
+			local angleB = (index / #self.wheelSegments) * math.pi * 2
+			local pointA = center + Vector2.new(math.cos(angleA) * midRadius, math.sin(angleA) * midRadius)
+			local pointB = center + Vector2.new(math.cos(angleB) * midRadius, math.sin(angleB) * midRadius)
 
-		if mode == "hue" then
-			self.hue = alpha
-		elseif mode == "sat" then
-			self.sat = alpha
-		else
-			self.val = alpha
+			writeProperty(segment, "From", pointA)
+			writeProperty(segment, "To", pointB)
+			writeProperty(segment, "Thickness", outerRadius - innerRadius)
+			writeProperty(segment, "Color", Color3.fromHSV((index - 1) / #self.wheelSegments, 1, 1))
 		end
 
-		self:applyColor()
-		self:layout()
-		self.callback(self.color)
+		local hueAngle = self.hue * math.pi * 2
+		local markerRadius = midRadius
+		writeProperty(self.drawings.hueMarker, "Position", center + Vector2.new(math.cos(hueAngle) * markerRadius, math.sin(hueAngle) * markerRadius))
+	end
+
+	function control:updateSvBox()
+		local boxPosition, boxSize = self:getSvBox()
+		local cellSize = boxSize / 8
+
+		for row = 0, 7 do
+			for column = 0, 7 do
+				local index = (row * 8) + column + 1
+				local cell = self.svCells[index]
+				local sat = column / 7
+				local val = 1 - (row / 7)
+
+				writeProperty(cell, "Position", boxPosition + Vector2.new(column * cellSize, row * cellSize))
+				writeProperty(cell, "Size", Vector2.new(cellSize + 1, cellSize + 1))
+				writeProperty(cell, "Color", Color3.fromHSV(self.hue, sat, val))
+			end
+		end
+
+		writeProperty(self.drawings.svMarker, "Position", boxPosition + Vector2.new(self.sat * boxSize, (1 - self.val) * boxSize))
+	end
+
+	function control:setHueFromMouse(mousePosition)
+		local center = self:getCenter()
+		local direction = mousePosition - center
+		local angle = math.atan2(direction.Y, direction.X)
+
+		if angle < 0 then
+			angle += math.pi * 2
+		end
+
+		self.hue = angle / (math.pi * 2)
+	end
+
+	function control:setSvFromMouse(mousePosition)
+		local boxPosition, boxSize = self:getSvBox()
+		self.sat = clamp((mousePosition.X - boxPosition.X) / boxSize, 0, 1)
+		self.val = 1 - clamp((mousePosition.Y - boxPosition.Y) / boxSize, 0, 1)
 	end
 
 	function control:layout()
+		local center = self:getCenter()
+		local previewPosition = self.position + Vector2.new(96, 24)
+
 		writeProperty(self.drawings.label, "Position", self.position)
-		writeProperty(self.drawings.preview, "Position", self.position + Vector2.new(0, 18))
-		writeProperty(self.drawings.preview, "Size", Vector2.new(64, 56))
-		writeProperty(self.drawings.previewOutline, "Position", self.position + Vector2.new(0, 18))
-		writeProperty(self.drawings.previewOutline, "Size", Vector2.new(64, 56))
-		writeProperty(self.drawings.hex, "Position", self.position + Vector2.new(0, 78))
+		writeProperty(self.drawings.preview, "Position", previewPosition)
+		writeProperty(self.drawings.preview, "Size", Vector2.new(34, 34))
+		writeProperty(self.drawings.previewOutline, "Position", previewPosition)
+		writeProperty(self.drawings.previewOutline, "Size", Vector2.new(34, 34))
+		writeProperty(self.drawings.hex, "Position", self.position + Vector2.new(96, 64))
 
-		local huePosition, hueWidth = self:getTrackInfo("hue")
-		local satPosition, satWidth = self:getTrackInfo("sat")
-		local valPosition, valWidth = self:getTrackInfo("val")
-
-		writeProperty(self.drawings.hueLabel, "Position", Vector2.new(huePosition.X, huePosition.Y - 11))
-		writeProperty(self.drawings.satLabel, "Position", Vector2.new(satPosition.X, satPosition.Y - 11))
-		writeProperty(self.drawings.valLabel, "Position", Vector2.new(valPosition.X, valPosition.Y - 11))
-
-		writeProperty(self.drawings.hueTrack, "Position", huePosition)
-		writeProperty(self.drawings.hueTrack, "Size", Vector2.new(hueWidth, 6))
-		writeProperty(self.drawings.hueFill, "Position", huePosition)
-		writeProperty(self.drawings.hueFill, "Size", Vector2.new(round(hueWidth * self.hue), 6))
-
-		writeProperty(self.drawings.satTrack, "Position", satPosition)
-		writeProperty(self.drawings.satTrack, "Size", Vector2.new(satWidth, 6))
-		writeProperty(self.drawings.satFill, "Position", satPosition)
-		writeProperty(self.drawings.satFill, "Size", Vector2.new(round(satWidth * self.sat), 6))
-
-		writeProperty(self.drawings.valTrack, "Position", valPosition)
-		writeProperty(self.drawings.valTrack, "Size", Vector2.new(valWidth, 6))
-		writeProperty(self.drawings.valFill, "Position", valPosition)
-		writeProperty(self.drawings.valFill, "Size", Vector2.new(round(valWidth * self.val), 6))
-
-		writeProperty(self.drawings.hueKnob, "Position", huePosition + Vector2.new(round(hueWidth * self.hue), 3))
-		writeProperty(self.drawings.satKnob, "Position", satPosition + Vector2.new(round(satWidth * self.sat), 3))
-		writeProperty(self.drawings.valKnob, "Position", valPosition + Vector2.new(round(valWidth * self.val), 3))
+		self:updateWheel()
+		self:updateSvBox()
 		self:applyColor()
 	end
 
-	function control:hitTest(point)
-		local previewRect = pointInRect(point, self.position + Vector2.new(0, 18), Vector2.new(64, 56))
-		local huePosition, hueWidth = self:getTrackInfo("hue")
-		local satPosition, satWidth = self:getTrackInfo("sat")
-		local valPosition, valWidth = self:getTrackInfo("val")
+	function control:isInHueRing(point)
+		local center = self:getCenter()
+		local distance = (point - center).Magnitude
+		return distance >= 24 and distance <= 32
+	end
 
-		return previewRect
-			or pointInRect(point, huePosition, Vector2.new(hueWidth, 8))
-			or pointInRect(point, satPosition, Vector2.new(satWidth, 8))
-			or pointInRect(point, valPosition, Vector2.new(valWidth, 8))
+	function control:isInSvBox(point)
+		local boxPosition, boxSize = self:getSvBox()
+		return pointInRect(point, boxPosition, Vector2.new(boxSize, boxSize))
+	end
+
+	function control:hitTest(point)
+		return self:isInHueRing(point) or self:isInSvBox(point)
 	end
 
 	function control:onMouseDown(point)
-		local huePosition, hueWidth = self:getTrackInfo("hue")
-		local satPosition, satWidth = self:getTrackInfo("sat")
-		local valPosition, valWidth = self:getTrackInfo("val")
-
-		if pointInRect(point, huePosition, Vector2.new(hueWidth, 8)) then
+		if self:isInHueRing(point) then
 			self.dragMode = "hue"
-		elseif pointInRect(point, satPosition, Vector2.new(satWidth, 8)) then
-			self.dragMode = "sat"
-		elseif pointInRect(point, valPosition, Vector2.new(valWidth, 8)) then
-			self.dragMode = "val"
+			self:setHueFromMouse(point)
+		elseif self:isInSvBox(point) then
+			self.dragMode = "sv"
+			self:setSvFromMouse(point)
 		end
 
 		if self.dragMode ~= nil then
-			self:setFromMouse(self.dragMode, point)
+			self:layout()
+			self.callback(self.color)
 		end
 	end
 
@@ -2290,25 +2228,49 @@ local function addColorPicker(window, tab, text, defaultColor, callback)
 	end
 
 	function control:onStep(mousePosition, ownsHover)
-		if self.dragMode ~= nil then
-			self:setFromMouse(self.dragMode, mousePosition)
+		if self.dragMode == "hue" then
+			self:setHueFromMouse(mousePosition)
+			self:layout()
+			self.callback(self.color)
+		elseif self.dragMode == "sv" then
+			self:setSvFromMouse(mousePosition)
+			self:layout()
+			self.callback(self.color)
 		end
 
 		local hovered = ownsHover and self:hitTest(mousePosition)
-		writeProperty(self.drawings.hueKnob, "Color", self.dragMode == "hue" and self.window.theme.Accent or hovered and self.window.theme.Text or self.window.theme.Text)
-		writeProperty(self.drawings.satKnob, "Color", self.dragMode == "sat" and self.window.theme.Accent or self.window.theme.Text)
-		writeProperty(self.drawings.valKnob, "Color", self.dragMode == "val" and self.window.theme.Accent or self.window.theme.Text)
+		writeProperty(self.drawings.hueMarker, "Color", self.dragMode == "hue" and self.window.theme.Accent or hovered and self.window.theme.Text or self.window.theme.Text)
+		writeProperty(self.drawings.svMarker, "Color", self.dragMode == "sv" and self.window.theme.Accent or self.window.theme.Text)
 	end
 
 	function control:setZIndex(z)
-		for _, key in ipairs({ "label", "preview", "previewOutline", "hex", "hueLabel", "satLabel", "valLabel", "hueTrack", "hueFill", "satTrack", "satFill", "valTrack", "valFill", "hueKnob", "satKnob", "valKnob" }) do
-			writeProperty(self.drawings[key], "ZIndex", z)
+		writeProperty(self.drawings.label, "ZIndex", z)
+		writeProperty(self.drawings.preview, "ZIndex", z)
+		writeProperty(self.drawings.previewOutline, "ZIndex", z + 1)
+		writeProperty(self.drawings.hex, "ZIndex", z + 1)
+		writeProperty(self.drawings.hueMarker, "ZIndex", z + 2)
+		writeProperty(self.drawings.svMarker, "ZIndex", z + 2)
+
+		for _, segment in ipairs(self.wheelSegments) do
+			writeProperty(segment, "ZIndex", z)
+		end
+
+		for _, cell in ipairs(self.svCells) do
+			writeProperty(cell, "ZIndex", z)
 		end
 	end
 
 	function control:destroy()
 		for _, drawing in pairs(self.drawings) do
 			destroyDrawing(drawing)
+		end
+
+		for _, segment in ipairs(self.wheelSegments) do
+			destroyDrawing(segment)
+		end
+
+		for _, cell in ipairs(self.svCells) do
+			destroyDrawing(cell)
 		end
 	end
 
