@@ -6,7 +6,7 @@ local HttpService = game:GetService("HttpService")
 
 local DrawingUI = {}
 DrawingUI.__index = DrawingUI
-local VERSION = "0.11.0"
+local VERSION = "0.11.1"
 
 local DEFAULT_THEME = {
 	WindowBackground = Color3.fromRGB(18, 21, 27),
@@ -29,7 +29,7 @@ local DEFAULT_THEME = {
 	SliderTrack = Color3.fromRGB(43, 49, 61),
 	SliderFill = Color3.fromRGB(78, 176, 255),
 	SectionLine = Color3.fromRGB(52, 58, 71),
-	Font = 2,
+	Font = 0,
 	TitleSize = 17,
 	TextSize = 15,
 	SmallTextSize = 13,
@@ -45,7 +45,7 @@ local DEFAULT_WINDOW = {
 	Theme = {},
 }
 
-local FONT = 2
+local FONT = 0
 local HEADER_HEIGHT = 38
 local TAB_HEIGHT = 28
 local TAB_GAP = 6
@@ -149,6 +149,40 @@ local function createDrawing(className, properties)
 	end
 
 	return drawing
+end
+
+local function fitDrawingText(drawing, text, maxWidth)
+	local value = tostring(text or "")
+
+	if maxWidth == nil then
+		writeProperty(drawing, "Text", value)
+		return value
+	end
+
+	if maxWidth <= 0 then
+		writeProperty(drawing, "Text", "")
+		return ""
+	end
+
+	writeProperty(drawing, "Text", value)
+
+	if drawing.TextBounds.X <= maxWidth then
+		return value
+	end
+
+	local ellipsis = "..."
+
+	for length = #value - 1, 0, -1 do
+		local candidate = string.sub(value, 1, length) .. ellipsis
+		writeProperty(drawing, "Text", candidate)
+
+		if drawing.TextBounds.X <= maxWidth then
+			return candidate
+		end
+	end
+
+	writeProperty(drawing, "Text", ellipsis)
+	return ellipsis
 end
 
 local function destroyDrawing(drawing)
@@ -716,21 +750,32 @@ end
 function Window:UpdateChrome()
 	local position = self.position
 	local size = self.size
+	local headerLeft = position.X + PADDING
+	local headerRight = position.X + size.X - PADDING
+	local subtitleVisible = self.subtitle ~= nil and self.subtitle ~= ""
+	local subtitleGap = subtitleVisible and 18 or 0
+	local subtitleMaxWidth = subtitleVisible and math.max(0, math.floor(size.X * 0.32)) or 0
 
-	writeProperty(self.drawings.shadow, "Position", position + Vector2.new(10, 12))
-	writeProperty(self.drawings.shadow, "Size", size + Vector2.new(4, 6))
 	writeProperty(self.drawings.frame, "Position", position)
 	writeProperty(self.drawings.frame, "Size", size)
 	writeProperty(self.drawings.header, "Position", position)
 	writeProperty(self.drawings.header, "Size", Vector2.new(size.X, HEADER_HEIGHT))
 	writeProperty(self.drawings.accent, "From", position + Vector2.new(0, HEADER_HEIGHT))
 	writeProperty(self.drawings.accent, "To", position + Vector2.new(size.X, HEADER_HEIGHT))
-	writeProperty(self.drawings.title, "Position", position + Vector2.new(PADDING, 8))
-	writeProperty(self.drawings.subtitle, "Position", position + Vector2.new(size.X - 118, 10))
 	writeProperty(self.drawings.title, "Font", self.theme.Font)
 	writeProperty(self.drawings.subtitle, "Font", self.theme.Font)
 	writeProperty(self.drawings.title, "Size", self.theme.TitleSize)
 	writeProperty(self.drawings.subtitle, "Size", self.theme.SmallTextSize)
+
+	local fittedSubtitle = subtitleVisible and fitDrawingText(self.drawings.subtitle, self.subtitle, subtitleMaxWidth) or fitDrawingText(self.drawings.subtitle, "", 0)
+	local subtitleWidth = subtitleVisible and self.drawings.subtitle.TextBounds.X or 0
+	local subtitleX = headerRight - subtitleWidth
+	local titleMaxWidth = math.max(0, (subtitleVisible and (subtitleX - subtitleGap) or headerRight) - headerLeft)
+
+	fitDrawingText(self.drawings.title, self.title, titleMaxWidth)
+	writeProperty(self.drawings.title, "Position", Vector2.new(headerLeft, position.Y + 8))
+	writeProperty(self.drawings.subtitle, "Position", Vector2.new(subtitleX, position.Y + 10))
+	writeProperty(self.drawings.subtitle, "Visible", self.visible and fittedSubtitle ~= "")
 end
 
 function Window:LayoutTabs()
@@ -811,20 +856,19 @@ end
 function Window:RefreshZIndex()
 	local z = self.zBase
 
-	writeProperty(self.drawings.shadow, "ZIndex", z)
-	writeProperty(self.drawings.frame, "ZIndex", z + 1)
-	writeProperty(self.drawings.header, "ZIndex", z + 2)
-	writeProperty(self.drawings.accent, "ZIndex", z + 3)
-	writeProperty(self.drawings.title, "ZIndex", z + 4)
-	writeProperty(self.drawings.subtitle, "ZIndex", z + 4)
+	writeProperty(self.drawings.frame, "ZIndex", z)
+	writeProperty(self.drawings.header, "ZIndex", z + 1)
+	writeProperty(self.drawings.accent, "ZIndex", z + 2)
+	writeProperty(self.drawings.title, "ZIndex", z + 3)
+	writeProperty(self.drawings.subtitle, "ZIndex", z + 3)
 
 	for _, tab in ipairs(self.tabs) do
-		writeProperty(tab.drawings.background, "ZIndex", z + 5)
-		writeProperty(tab.drawings.outline, "ZIndex", z + 6)
-		writeProperty(tab.drawings.text, "ZIndex", z + 7)
+		writeProperty(tab.drawings.background, "ZIndex", z + 4)
+		writeProperty(tab.drawings.outline, "ZIndex", z + 5)
+		writeProperty(tab.drawings.text, "ZIndex", z + 6)
 	end
 
-	local controlZ = z + 8
+	local controlZ = z + 7
 
 	for _, control in ipairs(self.controls) do
 		if control.setZIndex then
@@ -858,6 +902,7 @@ function Window:SetVisible(isVisible)
 		end
 	end
 
+	self:UpdateChrome()
 	self:SyncAllControlVisibility()
 end
 
@@ -870,13 +915,13 @@ function Window:CloseDropdowns(exceptControl)
 end
 
 function Window:SetTitle(text)
-	self.title = text
-	writeProperty(self.drawings.title, "Text", text)
+	self.title = tostring(text or "")
+	self:UpdateChrome()
 end
 
 function Window:SetSubtitle(text)
-	self.subtitle = text
-	writeProperty(self.drawings.subtitle, "Text", text)
+	self.subtitle = tostring(text or "")
+	self:UpdateChrome()
 end
 
 function Window:SetPosition(position)
@@ -4404,7 +4449,7 @@ function DrawingUI.new(options)
 
 	local self = setmetatable({}, Window)
 	self.title = config.Title
-	self.subtitle = "drag me"
+	self.subtitle = ""
 	self.position = config.Position
 	self.size = config.Size
 	self.minimumSize = config.MinSize or Vector2.new(config.Size.X, 220)
@@ -4424,15 +4469,6 @@ function DrawingUI.new(options)
 	self.zBase = 100 + (#windows * 24)
 
 	self.drawings = {
-		shadow = createDrawing("Square", {
-			Visible = self.visible,
-			Filled = true,
-			Color = Color3.fromRGB(7, 9, 12),
-			Transparency = 0.68,
-			Thickness = 1,
-			Position = Vector2.zero,
-			Size = Vector2.zero,
-		}),
 		frame = createDrawing("Square", {
 			Visible = self.visible,
 			Filled = true,
