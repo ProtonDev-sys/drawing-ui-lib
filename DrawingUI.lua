@@ -6,7 +6,7 @@ local HttpService = game:GetService("HttpService")
 
 local DrawingUI = {}
 DrawingUI.__index = DrawingUI
-local VERSION = "0.10.6"
+local VERSION = "0.10.7"
 
 local DEFAULT_THEME = {
 	WindowBackground = Color3.fromRGB(19, 22, 28),
@@ -1401,6 +1401,7 @@ local function addSubTab(window, tab, text, expanded)
 	function group:onMouseUp(point)
 		if self.pressing and self:hitTest(point) then
 			self.expanded = not self.expanded
+			self.window:UpdateLayout()
 		end
 		self.pressing = false
 	end
@@ -1412,11 +1413,12 @@ local function addSubTab(window, tab, text, expanded)
 		if math.abs(nextAlpha - self.expandAlpha) > 0.001 then
 			self.expandAlpha = nextAlpha
 			self.window:SyncAllControlVisibility()
-			return false
+			return true
 		end
 
+		local changed = self.expandAlpha ~= target
 		self.expandAlpha = target
-		return false
+		return changed
 	end
 
 	function group:refreshVisibility(shouldShow, alpha)
