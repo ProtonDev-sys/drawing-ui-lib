@@ -13,7 +13,7 @@ DrawingUI v2 rebuilds the library around a desktop-style workspace shell:
 ## Quick Start
 
 ```lua
-local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=2.0.0"))()
+local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/v2/DrawingUI.lua?v=2.0.0"))()
 
 local app = DrawingUI.CreateApp({
 	Title = "Example Hub",
