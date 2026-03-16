@@ -1,4 +1,4 @@
-local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=colorwheel2"))()
+local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=pickerlayout3"))()
 
 local state = {
 	enabled = false,
@@ -105,6 +105,21 @@ visualsTab:AddColorPicker("Accent Color", state.accentColor, function(color)
 		ToggleEnabled = color,
 		SliderFill = color,
 	})
+end)
+
+visualsTab:AddButton("Random Accent", function()
+	local color = Color3.fromHSV(math.random(), 0.8, 1)
+	state.accentColor = color
+	window:SetTheme({
+		Accent = color,
+		ToggleEnabled = color,
+		SliderFill = color,
+	})
+end)
+
+visualsTab:AddButton("Reset Accent", function()
+	state.accentColor = Color3.fromRGB(255, 155, 66)
+	window:SetTheme(DrawingUI.Themes.Amber)
 end)
 
 configTab:AddSection("Configuration")
