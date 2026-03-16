@@ -37,9 +37,9 @@ local state = {
 	fov = 140,
 	smoothness = 0.2,
 	targetPart = "Head",
-	themePreset = "Amber",
-	accentColor = Color3.fromRGB(255, 155, 66),
-	espColor = Color3.fromRGB(255, 170, 90),
+	themePreset = "Circuit",
+	accentColor = Color3.fromRGB(196, 104, 255),
+	espColor = Color3.fromRGB(210, 128, 255),
 	menuBind = {
 		kind = "Keyboard",
 		code = Enum.KeyCode.RightShift,
@@ -665,7 +665,7 @@ local window = DrawingUI.CreateWindow({
 	Position = Vector2.new(140, 90),
 	Size = Vector2.new(500, 350),
 	ConfigId = "drawingui-showcase",
-	Theme = DrawingUI.Themes.Amber,
+	Theme = DrawingUI.Themes.Circuit,
 })
 
 window:SetSubtitle("basic showcase")
@@ -743,7 +743,7 @@ local filesSubTab = configTab:AddSubTab("Config Files", true)
 
 local configStatusLabel = filesSubTab:AddLabel("Config Status: Ready")
 
-themeSubTab:AddDropdown("Theme Preset", { "Amber", "Midnight", "Default" }, state.themePreset, function(value)
+themeSubTab:AddDropdown("Theme Preset", { "Circuit", "Amber", "Midnight", "Default" }, state.themePreset, function(value)
 	applyThemePreset(value)
 end)
 
@@ -851,6 +851,8 @@ applyThemePreset = function(preset)
 
 	if preset == "Midnight" then
 		window:SetTheme(DrawingUI.Themes.Midnight)
+	elseif preset == "Circuit" then
+		window:SetTheme(DrawingUI.Themes.Circuit)
 	elseif preset == "Default" then
 		window:SetTheme(DrawingUI.Themes.Default)
 	else

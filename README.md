@@ -10,7 +10,7 @@ local window = DrawingUI.CreateWindow({
 	Position = Vector2.new(140, 90),
 	Size = Vector2.new(500, 350),
 	ConfigId = "example-hub",
-	Theme = DrawingUI.Themes.Amber,
+	Theme = DrawingUI.Themes.Circuit,
 })
 
 window:SetSubtitle("basic showcase")
@@ -95,6 +95,7 @@ Notes:
 - `DrawingUI.Themes.Default`
 - `DrawingUI.Themes.Amber`
 - `DrawingUI.Themes.Midnight`
+- `DrawingUI.Themes.Circuit`
 
 ## Window API
 
@@ -271,7 +272,7 @@ These mutators are part of the current public-facing implementation and are safe
 Use a built-in preset:
 
 ```lua
-window:SetTheme(DrawingUI.Themes.Amber)
+window:SetTheme(DrawingUI.Themes.Circuit)
 ```
 
 Or apply overrides:
@@ -303,17 +304,21 @@ Available theme keys:
 - `Tab`
 - `TabHover`
 - `TabActive`
+- `Panel`
+- `PanelHeader`
 - `Toggle`
 - `ToggleEnabled`
 - `SliderTrack`
 - `SliderFill`
 - `SectionLine`
+- `InnerBorder`
+- `HighlightText`
 - `Font`
 - `TitleSize`
 - `TextSize`
 - `SmallTextSize`
 
-`window:SetTheme(...)` merges into the current theme, not a fresh default. If you want a full theme switch, pass a complete preset such as `DrawingUI.Themes.Midnight` first, then apply smaller overrides if needed.
+`window:SetTheme(...)` merges into the current theme, not a fresh default. If you want a full theme switch, pass a complete preset such as `DrawingUI.Themes.Circuit` first, then apply smaller overrides if needed.
 
 ## Config Persistence
 

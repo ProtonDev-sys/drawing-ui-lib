@@ -12,10 +12,12 @@ local DEFAULT_THEME = {
 	WindowBackground = Color3.fromRGB(18, 21, 27),
 	HeaderBackground = Color3.fromRGB(24, 29, 37),
 	Border = Color3.fromRGB(72, 79, 94),
+	InnerBorder = Color3.fromRGB(42, 47, 57),
 	Accent = Color3.fromRGB(78, 176, 255),
 	Muted = Color3.fromRGB(126, 134, 149),
 	Text = Color3.fromRGB(240, 242, 245),
 	SubText = Color3.fromRGB(178, 184, 195),
+	HighlightText = Color3.fromRGB(255, 212, 104),
 	Button = Color3.fromRGB(29, 34, 42),
 	ButtonHover = Color3.fromRGB(37, 43, 53),
 	Input = Color3.fromRGB(22, 26, 33),
@@ -24,6 +26,8 @@ local DEFAULT_THEME = {
 	Tab = Color3.fromRGB(22, 27, 35),
 	TabHover = Color3.fromRGB(30, 36, 45),
 	TabActive = Color3.fromRGB(34, 41, 52),
+	Panel = Color3.fromRGB(21, 24, 31),
+	PanelHeader = Color3.fromRGB(27, 31, 39),
 	Toggle = Color3.fromRGB(46, 53, 66),
 	ToggleEnabled = Color3.fromRGB(78, 176, 255),
 	SliderTrack = Color3.fromRGB(43, 49, 61),
@@ -819,8 +823,12 @@ function Window:UpdateChrome()
 
 	writeProperty(self.drawings.frame, "Position", position)
 	writeProperty(self.drawings.frame, "Size", size)
+	writeProperty(self.drawings.outline, "Position", position)
+	writeProperty(self.drawings.outline, "Size", size)
 	writeProperty(self.drawings.header, "Position", position)
 	writeProperty(self.drawings.header, "Size", Vector2.new(size.X, HEADER_HEIGHT))
+	writeProperty(self.drawings.innerOutline, "Position", position + Vector2.new(4, 4))
+	writeProperty(self.drawings.innerOutline, "Size", Vector2.new(math.max(0, size.X - 8), math.max(0, size.Y - 8)))
 	writeProperty(self.drawings.accent, "From", position + Vector2.new(0, HEADER_HEIGHT))
 	writeProperty(self.drawings.accent, "To", position + Vector2.new(size.X, HEADER_HEIGHT))
 	writeProperty(self.drawings.title, "Font", self.theme.Font)
@@ -853,9 +861,12 @@ function Window:LayoutTabs()
 		writeProperty(tab.drawings.background, "Size", tab.size)
 		writeProperty(tab.drawings.outline, "Position", tab.position)
 		writeProperty(tab.drawings.outline, "Size", tab.size)
+		writeProperty(tab.drawings.accent, "From", tab.position + Vector2.new(0, TAB_HEIGHT - 1))
+		writeProperty(tab.drawings.accent, "To", tab.position + Vector2.new(tab.size.X, TAB_HEIGHT - 1))
 		writeProperty(tab.drawings.text, "Position", tab.position + Vector2.new(14, 6))
 		writeProperty(tab.drawings.background, "Visible", self.visible)
 		writeProperty(tab.drawings.outline, "Visible", self.visible)
+		writeProperty(tab.drawings.accent, "Visible", self.visible)
 		writeProperty(tab.drawings.text, "Visible", self.visible)
 	end
 
@@ -876,6 +887,7 @@ function Window:UpdateTabVisuals(mousePosition)
 
 		writeProperty(tab.drawings.background, "Color", backgroundColor)
 		writeProperty(tab.drawings.outline, "Color", outlineColor)
+		writeProperty(tab.drawings.accent, "Color", active and self.theme.Accent or hovered and blendAccent(self.theme, self.theme.Accent, 0.18) or self.theme.InnerBorder)
 		writeProperty(tab.drawings.text, "Color", textColor)
 	end
 end
@@ -918,18 +930,21 @@ function Window:RefreshZIndex()
 	local z = self.zBase
 
 	writeProperty(self.drawings.frame, "ZIndex", z)
-	writeProperty(self.drawings.header, "ZIndex", z + 1)
-	writeProperty(self.drawings.accent, "ZIndex", z + 2)
-	writeProperty(self.drawings.title, "ZIndex", z + 3)
-	writeProperty(self.drawings.subtitle, "ZIndex", z + 3)
+	writeProperty(self.drawings.outline, "ZIndex", z + 1)
+	writeProperty(self.drawings.header, "ZIndex", z + 2)
+	writeProperty(self.drawings.innerOutline, "ZIndex", z + 3)
+	writeProperty(self.drawings.accent, "ZIndex", z + 4)
+	writeProperty(self.drawings.title, "ZIndex", z + 5)
+	writeProperty(self.drawings.subtitle, "ZIndex", z + 5)
 
 	for _, tab in ipairs(self.tabs) do
-		writeProperty(tab.drawings.background, "ZIndex", z + 4)
-		writeProperty(tab.drawings.outline, "ZIndex", z + 5)
-		writeProperty(tab.drawings.text, "ZIndex", z + 6)
+		writeProperty(tab.drawings.background, "ZIndex", z + 6)
+		writeProperty(tab.drawings.outline, "ZIndex", z + 7)
+		writeProperty(tab.drawings.accent, "ZIndex", z + 8)
+		writeProperty(tab.drawings.text, "ZIndex", z + 9)
 	end
 
-	local controlZ = z + 7
+	local controlZ = z + 10
 
 	for _, control in ipairs(self.controls) do
 		if control.setZIndex then
@@ -1011,7 +1026,9 @@ function Window:SetTheme(themeOverrides)
 
 	self.theme = mergeTheme(mergedTheme)
 	writeProperty(self.drawings.frame, "Color", self.theme.WindowBackground)
+	writeProperty(self.drawings.outline, "Color", self.theme.Border)
 	writeProperty(self.drawings.header, "Color", self.theme.HeaderBackground)
+	writeProperty(self.drawings.innerOutline, "Color", self.theme.InnerBorder)
 	writeProperty(self.drawings.accent, "Color", self.theme.Accent)
 	writeProperty(self.drawings.title, "Color", self.theme.Text)
 	writeProperty(self.drawings.subtitle, "Color", self.theme.Muted)
@@ -1495,11 +1512,20 @@ local function addSection(window, tab, text)
 
 	control.drawings.text = createDrawing("Text", {
 		Visible = window.visible,
-		Color = window.theme.Text,
+		Color = window.theme.HighlightText,
 		Size = 14,
 		Font = FONT,
 		Outline = false,
 		Text = text,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.marker = createDrawing("Square", {
+		Visible = window.visible,
+		Filled = true,
+		Color = window.theme.Accent,
+		Thickness = 1,
+		Size = Vector2.new(6, 6),
 		Position = Vector2.zero,
 	})
 
@@ -1512,33 +1538,38 @@ local function addSection(window, tab, text)
 	})
 
 	function control:layout()
-		local textWidth = (#self.text * 7) + 12
+		local textWidth = (#self.text * 7) + 24
 		local lineStartX = math.min(self.position.X + textWidth, self.position.X + self.size.X)
 		local lineY = self.position.Y + 10
 
-		writeProperty(self.drawings.text, "Position", self.position)
+		writeProperty(self.drawings.marker, "Position", self.position + Vector2.new(0, 4))
+		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(14, 0))
 		writeProperty(self.drawings.line, "From", Vector2.new(lineStartX, lineY))
 		writeProperty(self.drawings.line, "To", Vector2.new(self.position.X + self.size.X, lineY))
 	end
 
 	function control:applyTheme()
-		writeProperty(self.drawings.text, "Color", self.window.theme.Text)
+		writeProperty(self.drawings.text, "Color", self.window.theme.HighlightText)
+		writeProperty(self.drawings.marker, "Color", self.window.theme.Accent)
 		writeProperty(self.drawings.line, "Color", self.window.theme.SectionLine)
 		writeProperty(self.drawings.text, "Font", self.window.theme.Font)
 		writeProperty(self.drawings.text, "Size", self.window.theme.TextSize + 1)
 	end
 
 	function control:refreshVisibility(shouldShow, alpha)
+		writeProperty(self.drawings.marker, "Visible", shouldShow)
 		writeProperty(self.drawings.text, "Visible", shouldShow)
 		writeProperty(self.drawings.line, "Visible", shouldShow)
 	end
 
 	function control:setZIndex(z)
+		writeProperty(self.drawings.marker, "ZIndex", z)
 		writeProperty(self.drawings.text, "ZIndex", z)
 		writeProperty(self.drawings.line, "ZIndex", z)
 	end
 
 	function control:destroy()
+		destroyDrawing(self.drawings.marker)
 		destroyDrawing(self.drawings.text)
 		destroyDrawing(self.drawings.line)
 	end
@@ -1594,8 +1625,38 @@ local function addSubTab(window, tab, text, expanded)
 		To = Vector2.zero,
 	})
 
+	group.drawings.frame = createDrawing("Square", {
+		Visible = window.visible,
+		Filled = true,
+		Color = window.theme.PanelHeader,
+		Thickness = 1,
+		Size = Vector2.zero,
+		Position = Vector2.zero,
+	})
+
+	group.drawings.outline = createDrawing("Square", {
+		Visible = window.visible,
+		Filled = false,
+		Color = window.theme.Border,
+		Thickness = 1,
+		Size = Vector2.zero,
+		Position = Vector2.zero,
+	})
+
+	group.drawings.marker = createDrawing("Square", {
+		Visible = window.visible,
+		Filled = true,
+		Color = window.theme.Accent,
+		Thickness = 1,
+		Size = Vector2.new(6, 6),
+		Position = Vector2.zero,
+	})
+
 	function group:applyTheme()
-		writeProperty(self.drawings.text, "Color", self.window.theme.Text)
+		writeProperty(self.drawings.frame, "Color", self.window.theme.PanelHeader)
+		writeProperty(self.drawings.outline, "Color", self.window.theme.Border)
+		writeProperty(self.drawings.marker, "Color", self.window.theme.Accent)
+		writeProperty(self.drawings.text, "Color", self.window.theme.HighlightText)
 		writeProperty(self.drawings.arrow, "Color", self.window.theme.SubText)
 		writeProperty(self.drawings.line, "Color", self.window.theme.SectionLine)
 		writeProperty(self.drawings.text, "Font", self.window.theme.Font)
@@ -1606,8 +1667,13 @@ local function addSubTab(window, tab, text, expanded)
 
 	function group:layout()
 		local lineY = self.position.Y + 11
-		writeProperty(self.drawings.arrow, "Position", self.position)
-		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(14, 0))
+		writeProperty(self.drawings.frame, "Position", self.position + Vector2.new(0, -2))
+		writeProperty(self.drawings.frame, "Size", Vector2.new(self.size.X, 22))
+		writeProperty(self.drawings.outline, "Position", self.position + Vector2.new(0, -2))
+		writeProperty(self.drawings.outline, "Size", Vector2.new(self.size.X, 22))
+		writeProperty(self.drawings.marker, "Position", self.position + Vector2.new(10, 5))
+		writeProperty(self.drawings.arrow, "Position", self.position + Vector2.new(self.size.X - 18, 0))
+		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(22, 0))
 		writeProperty(self.drawings.arrow, "Text", self.expanded and "v" or ">")
 		writeProperty(self.drawings.line, "From", Vector2.new(self.position.X + 92, lineY))
 		writeProperty(self.drawings.line, "To", Vector2.new(self.position.X + self.size.X, lineY))
@@ -1647,18 +1713,27 @@ local function addSubTab(window, tab, text, expanded)
 	end
 
 	function group:refreshVisibility(shouldShow, alpha)
+		writeProperty(self.drawings.frame, "Visible", shouldShow)
+		writeProperty(self.drawings.outline, "Visible", shouldShow)
+		writeProperty(self.drawings.marker, "Visible", shouldShow)
 		writeProperty(self.drawings.text, "Visible", shouldShow)
 		writeProperty(self.drawings.arrow, "Visible", shouldShow)
 		writeProperty(self.drawings.line, "Visible", shouldShow)
 	end
 
 	function group:setZIndex(z)
-		writeProperty(self.drawings.text, "ZIndex", z)
-		writeProperty(self.drawings.arrow, "ZIndex", z)
-		writeProperty(self.drawings.line, "ZIndex", z)
+		writeProperty(self.drawings.frame, "ZIndex", z)
+		writeProperty(self.drawings.outline, "ZIndex", z + 1)
+		writeProperty(self.drawings.marker, "ZIndex", z + 2)
+		writeProperty(self.drawings.text, "ZIndex", z + 2)
+		writeProperty(self.drawings.arrow, "ZIndex", z + 2)
+		writeProperty(self.drawings.line, "ZIndex", z + 2)
 	end
 
 	function group:destroy()
+		destroyDrawing(self.drawings.frame)
+		destroyDrawing(self.drawings.outline)
+		destroyDrawing(self.drawings.marker)
 		destroyDrawing(self.drawings.text)
 		destroyDrawing(self.drawings.arrow)
 		destroyDrawing(self.drawings.line)
@@ -4492,6 +4567,13 @@ function Window:AddTab(name)
 				Text = name,
 				Position = Vector2.zero,
 			}),
+			accent = createDrawing("Line", {
+				Visible = self.visible,
+				Color = self.theme.Accent,
+				Thickness = 1,
+				From = Vector2.zero,
+				To = Vector2.zero,
+			}),
 		},
 	}, Tab)
 
@@ -4604,10 +4686,26 @@ function DrawingUI.new(options)
 			Position = Vector2.zero,
 			Size = Vector2.zero,
 		}),
+		outline = createDrawing("Square", {
+			Visible = self.visible,
+			Filled = false,
+			Color = self.theme.Border,
+			Thickness = 1,
+			Position = Vector2.zero,
+			Size = Vector2.zero,
+		}),
 		header = createDrawing("Square", {
 			Visible = self.visible,
 			Filled = true,
 			Color = self.theme.HeaderBackground,
+			Thickness = 1,
+			Position = Vector2.zero,
+			Size = Vector2.zero,
+		}),
+		innerOutline = createDrawing("Square", {
+			Visible = self.visible,
+			Filled = false,
+			Color = self.theme.InnerBorder,
 			Thickness = 1,
 			Position = Vector2.zero,
 			Size = Vector2.zero,
@@ -4659,6 +4757,10 @@ DrawingUI.Themes = {
 		SliderFill = Color3.fromRGB(255, 155, 66),
 		HeaderBackground = Color3.fromRGB(30, 24, 18),
 		WindowBackground = Color3.fromRGB(20, 18, 16),
+		Panel = Color3.fromRGB(24, 19, 17),
+		PanelHeader = Color3.fromRGB(37, 28, 20),
+		InnerBorder = Color3.fromRGB(90, 69, 47),
+		HighlightText = Color3.fromRGB(255, 214, 112),
 		ButtonHover = Color3.fromRGB(54, 42, 31),
 	}),
 	Midnight = mergeTheme({
@@ -4667,6 +4769,32 @@ DrawingUI.Themes = {
 		SliderFill = Color3.fromRGB(102, 187, 255),
 		HeaderBackground = Color3.fromRGB(19, 25, 38),
 		WindowBackground = Color3.fromRGB(14, 18, 27),
+	}),
+	Circuit = mergeTheme({
+		Accent = Color3.fromRGB(196, 104, 255),
+		ToggleEnabled = Color3.fromRGB(196, 104, 255),
+		SliderFill = Color3.fromRGB(196, 104, 255),
+		WindowBackground = Color3.fromRGB(22, 22, 24),
+		HeaderBackground = Color3.fromRGB(30, 28, 34),
+		Border = Color3.fromRGB(160, 110, 214),
+		InnerBorder = Color3.fromRGB(76, 66, 92),
+		Button = Color3.fromRGB(31, 31, 35),
+		ButtonHover = Color3.fromRGB(44, 41, 50),
+		Input = Color3.fromRGB(18, 18, 20),
+		InputHover = Color3.fromRGB(31, 30, 36),
+		InputFocused = Color3.fromRGB(37, 34, 44),
+		Tab = Color3.fromRGB(29, 28, 33),
+		TabHover = Color3.fromRGB(40, 37, 46),
+		TabActive = Color3.fromRGB(54, 42, 66),
+		Panel = Color3.fromRGB(20, 20, 22),
+		PanelHeader = Color3.fromRGB(35, 32, 40),
+		SectionLine = Color3.fromRGB(124, 88, 168),
+		HighlightText = Color3.fromRGB(255, 228, 116),
+		Text = Color3.fromRGB(243, 240, 248),
+		SubText = Color3.fromRGB(194, 184, 208),
+		Muted = Color3.fromRGB(137, 127, 152),
+		Toggle = Color3.fromRGB(57, 49, 67),
+		SliderTrack = Color3.fromRGB(52, 44, 62),
 	}),
 }
 
