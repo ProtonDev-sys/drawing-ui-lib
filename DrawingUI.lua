@@ -6,7 +6,7 @@ local HttpService = game:GetService("HttpService")
 
 local DrawingUI = {}
 DrawingUI.__index = DrawingUI
-local VERSION = "0.10.0"
+local VERSION = "0.10.1"
 
 local DEFAULT_THEME = {
 	WindowBackground = Color3.fromRGB(19, 22, 28),
