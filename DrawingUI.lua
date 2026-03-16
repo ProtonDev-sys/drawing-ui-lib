@@ -6,7 +6,7 @@ local HttpService = game:GetService("HttpService")
 
 local DrawingUI = {}
 DrawingUI.__index = DrawingUI
-local VERSION = "0.10.1"
+local VERSION = "0.10.2"
 
 local DEFAULT_THEME = {
 	WindowBackground = Color3.fromRGB(19, 22, 28),
@@ -564,12 +564,12 @@ end
 function Window:SyncControlVisibility(control)
 	local shouldShow = self:IsControlDisplayed(control)
 
-	for _, drawing in pairs(control.drawings) do
-		writeProperty(drawing, "Visible", shouldShow)
-	end
-
 	if control.refreshVisibility then
 		control:refreshVisibility(shouldShow)
+	else
+		for _, drawing in pairs(control.drawings) do
+			writeProperty(drawing, "Visible", shouldShow)
+		end
 	end
 end
 
@@ -1108,6 +1108,14 @@ local function addLabel(window, tab, text)
 
 	function control:layout()
 		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(0, 3))
+	end
+
+	function control:refreshVisibility(shouldShow)
+		for _, drawingSet in ipairs(self.drawings) do
+			writeProperty(drawingSet.frame, "Visible", shouldShow)
+			writeProperty(drawingSet.outline, "Visible", shouldShow)
+			writeProperty(drawingSet.text, "Visible", shouldShow)
+		end
 	end
 
 	function control:applyTheme()
