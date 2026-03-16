@@ -1,10 +1,11 @@
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local ContextActionService = game:GetService("ContextActionService")
 
 local DrawingUI = {}
 DrawingUI.__index = DrawingUI
-local VERSION = "0.8.0"
+local VERSION = "0.9.0"
 
 local DEFAULT_THEME = {
 	WindowBackground = Color3.fromRGB(19, 22, 28),
@@ -66,6 +67,8 @@ local inputBeganConnection
 local inputEndedConnection
 local activeTextbox
 local listeningKeybind
+local inputBlockBound = false
+local updateInputBlocker
 
 local Window = {}
 Window.__index = Window
@@ -354,12 +357,43 @@ local function clearTextboxFocus(submit)
 		activeTextbox:Blur(submit)
 		activeTextbox = nil
 	end
+
+	updateInputBlocker()
 end
 
 local function clearKeybindListening()
 	if listeningKeybind ~= nil then
 		listeningKeybind:SetListening(false)
 		listeningKeybind = nil
+	end
+
+	updateInputBlocker()
+end
+
+local function shouldBlockGameInput()
+	return activeTextbox ~= nil or listeningKeybind ~= nil
+end
+
+updateInputBlocker = function()
+	local shouldBind = shouldBlockGameInput()
+
+	if shouldBind and not inputBlockBound then
+		ContextActionService:BindActionAtPriority(
+			"DrawingUIBlockInput",
+			function()
+				return Enum.ContextActionResult.Sink
+			end,
+			false,
+			Enum.ContextActionPriority.High.Value,
+			Enum.UserInputType.Keyboard,
+			Enum.UserInputType.MouseButton1,
+			Enum.UserInputType.MouseButton2,
+			Enum.UserInputType.MouseButton3
+		)
+		inputBlockBound = true
+	elseif not shouldBind and inputBlockBound then
+		ContextActionService:UnbindAction("DrawingUIBlockInput")
+		inputBlockBound = false
 	end
 end
 
@@ -397,7 +431,7 @@ local function ensureLoop()
 	end)
 
 	inputBeganConnection = UserInputService.InputBegan:Connect(function(input, processed)
-		if processed then
+		if processed and not shouldBlockGameInput() then
 			return
 		end
 
@@ -467,6 +501,8 @@ local function disconnectLoopIfEmpty()
 		inputEndedConnection:Disconnect()
 		inputEndedConnection = nil
 	end
+
+	updateInputBlocker()
 end
 
 function Window:HasTabs()
@@ -1629,6 +1665,22 @@ local function addDropdown(window, tab, text, options, defaultValue, callback)
 		writeProperty(self.drawings.value, "Text", tostring(nextValue))
 	end
 
+	function control:SetSearchText(nextText)
+		self.searchText = tostring(nextText or "")
+		self:updateFilter()
+		self.window:UpdateLayout()
+	end
+
+	function control:SetOptions(nextOptions, nextValue)
+		self.options = table.clone(nextOptions or {})
+		self.searchText = ""
+		self:rebuildOptions()
+		self:updateFilter()
+		self:SetValue(nextValue or self.options[1] or "Select")
+		self.window:RefreshZIndex()
+		self.window:UpdateLayout()
+	end
+
 	function control:SetOptions(nextOptions, nextValue)
 		for _, drawingSet in ipairs(self.optionDrawings) do
 			destroyDrawing(drawingSet.frame)
@@ -1845,7 +1897,7 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 	local control = makeBaseControl(window, tab, "SearchDropdown", SEARCH_DROPDOWN_CLOSED_HEIGHT)
 	control.text = text
 	control.options = table.clone(options or {})
-	control.filteredOptions = table.clone(control.options)
+	control.filteredIndices = {}
 	control.value = defaultValue or control.options[1] or "Select"
 	control.searchText = ""
 	control.callback = callback or function() end
@@ -1942,7 +1994,7 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 
 		self.optionDrawings = {}
 
-		for _, option in ipairs(self.filteredOptions) do
+		for _ = 1, #self.options do
 			table.insert(self.optionDrawings, {
 				frame = createDrawing("Square", {
 					Visible = false,
@@ -1966,7 +2018,7 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 					Size = self.window.theme.SmallTextSize,
 					Font = self.window.theme.Font,
 					Outline = true,
-					Text = tostring(option),
+					Text = "",
 					Position = Vector2.zero,
 				}),
 			})
@@ -1974,22 +2026,19 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 	end
 
 	function control:updateFilter()
-		self.filteredOptions = {}
+		self.filteredIndices = {}
 		local needle = string.lower(self.searchText)
 
-		for _, option in ipairs(self.options) do
+		for index, option in ipairs(self.options) do
 			local textValue = tostring(option)
 			if needle == "" or string.find(string.lower(textValue), needle, 1, true) then
-				table.insert(self.filteredOptions, option)
+				table.insert(self.filteredIndices, index)
 			end
 		end
-
-		self:rebuildOptions()
-		self.window:RefreshZIndex()
 	end
 
 	function control:GetHeight()
-		local optionHeight = round((#self.filteredOptions * DROPDOWN_OPTION_HEIGHT) * self.openAlpha)
+		local optionHeight = round((#self.filteredIndices * DROPDOWN_OPTION_HEIGHT) * self.openAlpha)
 		return SEARCH_DROPDOWN_CLOSED_HEIGHT + round(INPUT_HEIGHT * self.openAlpha) + optionHeight
 	end
 
@@ -2009,6 +2058,8 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 			self.focused = false
 			self.cursorVisible = false
 		end
+
+		updateInputBlocker()
 	end
 
 	function control:Blur()
@@ -2022,8 +2073,8 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 
 	function control:HandleKeyboardInput(input)
 		if input.KeyCode == Enum.KeyCode.Return then
-			if #self.filteredOptions > 0 then
-				self:SetValue(self.filteredOptions[1])
+			if #self.filteredIndices > 0 then
+				self:SetValue(self.options[self.filteredIndices[1]])
 				self.callback(self.value)
 			end
 			self:SetOpen(false)
@@ -2034,6 +2085,7 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 		elseif input.KeyCode == Enum.KeyCode.Backspace then
 			self.searchText = string.sub(self.searchText, 1, math.max(0, #self.searchText - 1))
 			self:updateFilter()
+			self.window:UpdateLayout()
 			return
 		end
 
@@ -2045,6 +2097,7 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 
 		self.searchText = self.searchText .. character
 		self:updateFilter()
+		self.window:UpdateLayout()
 	end
 
 	function control:applyTheme()
@@ -2083,7 +2136,7 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 	function control:getOptionIndex(point)
 		local optionStart = self.position + Vector2.new(0, 16 + INPUT_HEIGHT + INPUT_HEIGHT)
 
-		for index = 1, #self.filteredOptions do
+		for index = 1, #self.filteredIndices do
 			local rowPosition = optionStart + Vector2.new(0, (index - 1) * DROPDOWN_OPTION_HEIGHT)
 
 			if pointInRect(point, rowPosition, Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT)) then
@@ -2097,7 +2150,7 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 	function control:layout()
 		local basePosition, baseSize = self:getBaseRect()
 		local searchPosition, searchSize = self:getSearchRect()
-		local visibleCount = round(#self.filteredOptions * self.openAlpha)
+		local visibleCount = round(#self.filteredIndices * self.openAlpha)
 		local searchDisplay = self.searchText
 
 		if self.focused and self.cursorVisible then
@@ -2129,8 +2182,9 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 		writeProperty(self.drawings.searchOutline, "Visible", searchVisible)
 		writeProperty(self.drawings.searchText, "Visible", searchVisible)
 
-		for index, option in ipairs(self.filteredOptions) do
+		for index, optionIndex in ipairs(self.filteredIndices) do
 			local drawingSet = self.optionDrawings[index]
+			local option = self.options[optionIndex]
 			local rowPosition = searchPosition + Vector2.new(0, INPUT_HEIGHT + ((index - 1) * DROPDOWN_OPTION_HEIGHT))
 			local isVisible = self.window:IsControlDisplayed(self) and index <= visibleCount and self.openAlpha > 0.02
 
@@ -2143,6 +2197,13 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 			writeProperty(drawingSet.frame, "Visible", isVisible)
 			writeProperty(drawingSet.outline, "Visible", isVisible)
 			writeProperty(drawingSet.text, "Visible", isVisible)
+		end
+
+		for index = #self.filteredIndices + 1, #self.optionDrawings do
+			local drawingSet = self.optionDrawings[index]
+			writeProperty(drawingSet.frame, "Visible", false)
+			writeProperty(drawingSet.outline, "Visible", false)
+			writeProperty(drawingSet.text, "Visible", false)
 		end
 	end
 
@@ -2157,7 +2218,7 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 		writeProperty(self.drawings.searchText, "Visible", searchVisible)
 
 		for index, drawingSet in ipairs(self.optionDrawings) do
-			local rowVisible = shouldShow and self.openAlpha > 0.02 and (index <= round(#self.filteredOptions * self.openAlpha))
+			local rowVisible = shouldShow and self.openAlpha > 0.02 and (index <= round(#self.filteredIndices * self.openAlpha))
 			writeProperty(drawingSet.frame, "Visible", rowVisible)
 			writeProperty(drawingSet.outline, "Visible", rowVisible)
 			writeProperty(drawingSet.text, "Visible", rowVisible)
@@ -2193,13 +2254,14 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 			self.focused = true
 			self.cursorVisible = true
 			self.lastBlink = os.clock()
+			updateInputBlocker()
 			return
 		end
 
 		local optionIndex = self:getOptionIndex(point)
 
 		if optionIndex ~= nil then
-			self:SetValue(self.filteredOptions[optionIndex])
+			self:SetValue(self.options[self.filteredIndices[optionIndex]])
 			self.callback(self.value)
 			self:SetOpen(false)
 		end
@@ -2232,7 +2294,7 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 
 		for index, drawingSet in ipairs(self.optionDrawings) do
 			local hoveredOption = ownsHover and self:getOptionIndex(mousePosition) == index
-			local selected = self.filteredOptions[index] == self.value
+			local selected = self.filteredIndices[index] ~= nil and self.options[self.filteredIndices[index]] == self.value
 			local rowColor = selected and self.window.theme.TabActive or hoveredOption and self.window.theme.InputHover or self.window.theme.Input
 			writeProperty(drawingSet.frame, "Color", rowColor)
 		end
@@ -2264,6 +2326,7 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 		end
 	end
 
+	control:rebuildOptions()
 	control:updateFilter()
 	control:applyTheme()
 	return addControl(window, tab, control)
@@ -2368,6 +2431,7 @@ local function addTextbox(window, tab, text, placeholder, callback)
 		self.focused = true
 		self.cursorVisible = true
 		self.lastBlink = os.clock()
+		updateInputBlocker()
 		self:layout()
 	end
 
@@ -2375,6 +2439,7 @@ local function addTextbox(window, tab, text, placeholder, callback)
 		self.focused = false
 		self.cursorVisible = false
 		self:layout()
+		updateInputBlocker()
 
 		if submit then
 			self.callback(self.text)
@@ -2534,18 +2599,18 @@ local function addColorPicker(window, tab, text, defaultColor, callback)
 		Position = Vector2.zero,
 	})
 
-	for index = 1, 64 do
+	for index = 1, 96 do
 		control.hueCells[index] = createDrawing("Square", {
 			Visible = window.visible,
 			Filled = true,
-			Color = Color3.fromHSV((index - 1) / 24, 1, 1),
+			Color = Color3.fromHSV((index - 1) / 96, 1, 1),
 			Thickness = 0,
 			Size = Vector2.zero,
 			Position = Vector2.zero,
 		})
 	end
 
-	for index = 1, 400 do
+	for index = 1, 900 do
 		control.svCells[index] = createDrawing("Square", {
 			Visible = window.visible,
 			Filled = true,
@@ -2571,6 +2636,12 @@ local function addColorPicker(window, tab, text, defaultColor, callback)
 		self.color = Color3.fromHSV(self.hue, self.sat, self.val)
 		writeProperty(self.drawings.preview, "Color", self.color)
 		writeProperty(self.drawings.hex, "Text", string.format("#%02X%02X%02X", round(self.color.R * 255), round(self.color.G * 255), round(self.color.B * 255)))
+	end
+
+	function control:SetColor(nextColor)
+		self.color = nextColor
+		self.hue, self.sat, self.val = nextColor:ToHSV()
+		self:layout()
 	end
 
 	function control:applyTheme()
@@ -2618,14 +2689,14 @@ local function addColorPicker(window, tab, text, defaultColor, callback)
 
 	function control:updateSvBox()
 		local boxPosition, boxSize = self:getAreaRect()
-		local cellSize = boxSize / 20
+		local cellSize = boxSize / 30
 
-		for row = 0, 19 do
-			for column = 0, 19 do
-				local index = (row * 20) + column + 1
+		for row = 0, 29 do
+			for column = 0, 29 do
+				local index = (row * 30) + column + 1
 				local cell = self.svCells[index]
-				local sat = column / 19
-				local val = 1 - (row / 19)
+				local sat = column / 29
+				local val = 1 - (row / 29)
 
 				writeProperty(cell, "Position", boxPosition + Vector2.new(column * cellSize, row * cellSize))
 				writeProperty(cell, "Size", Vector2.new(cellSize + 1, cellSize + 1))
@@ -2943,6 +3014,18 @@ local function addMultiDropdown(window, tab, text, options, defaultValues, callb
 		self.callback(table.clone(self.values))
 	end
 
+	function control:SetValues(nextValues)
+		self.values = {}
+		self.selected = {}
+
+		for _, option in ipairs(nextValues or {}) do
+			self.selected[option] = true
+			table.insert(self.values, option)
+		end
+
+		self:layout()
+	end
+
 	function control:layout()
 		local basePosition = self.position + Vector2.new(0, 16)
 		local baseSize = Vector2.new(self.size.X, INPUT_HEIGHT)
@@ -3155,6 +3238,12 @@ local function addKeybind(window, tab, text, defaultKey, callback, changedCallba
 
 	function control:SetListening(isListening)
 		self.listening = isListening
+		updateInputBlocker()
+		self:layout()
+	end
+
+	function control:SetBinding(nextBinding)
+		self.binding = nextBinding
 		self:layout()
 	end
 
