@@ -204,21 +204,22 @@ local function clearOverlays()
 	fovCircle:Remove()
 end
 
+local function hideAllOverlayEntries()
+	for _, entry in pairs(overlayEntries) do
+		hideOverlayEntry(entry)
+	end
+end
+
+local function shouldProcessEsp()
+	return state.espEnabled and #state.flags > 0
+end
+
 local function iterTargets()
 	local targets = {}
 
 	for _, player in ipairs(Players:GetPlayers()) do
 		if player ~= LocalPlayer and player.Character ~= nil then
 			targets[player.Character] = player.Name
-		end
-	end
-
-	for _, descendant in ipairs(Workspace:GetDescendants()) do
-		if descendant:IsA("Humanoid") then
-			local model = descendant.Parent
-			if model ~= nil and model:IsA("Model") and model ~= LocalPlayer.Character and targets[model] == nil then
-				targets[model] = model.Name
-			end
 		end
 	end
 
@@ -510,17 +511,21 @@ table.insert(overlayConnections, RunService.RenderStepped:Connect(function()
 	updateFovCircle(mousePosition)
 
 	if camera ~= nil then
-		for target, displayName in pairs(iterTargets()) do
-			seenTargets[target] = true
-			updateOverlayEntry(target, displayName, camera)
+		if shouldProcessEsp() then
+			for target, displayName in pairs(iterTargets()) do
+				seenTargets[target] = true
+				updateOverlayEntry(target, displayName, camera)
+			end
 		end
 
 		updateAim(camera, mousePosition)
 	end
 
-	for target, entry in pairs(overlayEntries) do
-		if not seenTargets[target] then
-			hideOverlayEntry(entry)
+	if shouldProcessEsp() then
+		for target, entry in pairs(overlayEntries) do
+			if not seenTargets[target] then
+				hideOverlayEntry(entry)
+			end
 		end
 	end
 end))
@@ -579,10 +584,18 @@ visualsTab:AddSection("Overlay")
 
 visualsTab:AddToggle("Enable ESP", state.espEnabled, function(value)
 	state.espEnabled = value
+
+	if not shouldProcessEsp() then
+		hideAllOverlayEntries()
+	end
 end)
 
 visualsTab:AddMultiDropdown("ESP Flags", { "Box", "Corner Box", "Name", "Health", "Distance", "Skeletons" }, state.flags, function(values)
 	state.flags = values
+
+	if not shouldProcessEsp() then
+		hideAllOverlayEntries()
+	end
 end)
 
 visualsTab:AddColorPicker("ESP Color", state.espColor, function(color)
