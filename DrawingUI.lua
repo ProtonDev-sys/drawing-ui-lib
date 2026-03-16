@@ -2137,6 +2137,20 @@ local function addColorPicker(window, tab, text, defaultColor, callback)
 		writeProperty(self.drawings.svMarker, "Color", self.window.theme.Text)
 	end
 
+	function control:refreshVisibility(shouldShow)
+		for _, drawing in pairs(self.drawings) do
+			writeProperty(drawing, "Visible", shouldShow)
+		end
+
+		for _, cell in ipairs(self.hueCells) do
+			writeProperty(cell, "Visible", shouldShow)
+		end
+
+		for _, cell in ipairs(self.svCells) do
+			writeProperty(cell, "Visible", shouldShow)
+		end
+	end
+
 	function control:updateHueStrip()
 		local huePosition, hueWidth, hueHeight = self:getHueRect()
 		local cellHeight = hueHeight / #self.hueCells
@@ -2248,7 +2262,6 @@ local function addColorPicker(window, tab, text, defaultColor, callback)
 			self.callback(self.color)
 		end
 
-		local hovered = ownsHover and self:hitTest(mousePosition)
 		writeProperty(self.drawings.hueMarker, "Color", self.dragMode == "hue" and self.window.theme.Accent or self.window.theme.Text)
 		writeProperty(self.drawings.svMarker, "Color", self.dragMode == "sv" and self.window.theme.Accent or self.window.theme.Text)
 	end
