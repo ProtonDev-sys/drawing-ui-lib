@@ -273,6 +273,67 @@ local function makeBindingFromInput(input)
 	return nil
 end
 
+local function serializeInputBinding(binding)
+	if binding == nil then
+		return nil
+	end
+
+	if binding.kind == "Keyboard" then
+		if typeof(binding.code) ~= "EnumItem" then
+			return nil
+		end
+
+		return {
+			kind = "Keyboard",
+			code = binding.code.Name,
+		}
+	elseif binding.kind == "MouseButton1" or binding.kind == "MouseButton2" or binding.kind == "MouseButton3" then
+		return {
+			kind = binding.kind,
+		}
+	end
+
+	return nil
+end
+
+local function deserializeInputBinding(value)
+	if type(value) ~= "table" or type(value.kind) ~= "string" then
+		return nil
+	end
+
+	if value.kind == "Keyboard" then
+		if typeof(value.code) == "EnumItem" then
+			return {
+				kind = "Keyboard",
+				code = value.code,
+			}
+		end
+
+		if type(value.code) ~= "string" then
+			return nil
+		end
+
+		local ok, keyCode = pcall(function()
+			return Enum.KeyCode[value.code]
+		end)
+
+		if not ok or keyCode == nil then
+			return nil
+		end
+
+		return {
+			kind = "Keyboard",
+			code = keyCode,
+		}
+	elseif value.kind == "MouseButton1" or value.kind == "MouseButton2" or value.kind == "MouseButton3" then
+		return {
+			kind = value.kind,
+		}
+	end
+
+	return nil
+end
+
 local function bindingMatchesInput(binding, input)
 	if binding == nil then
 		return false
@@ -463,7 +524,7 @@ local function shouldBlockGameInput()
 end
 
 updateInputBlocker = function()
-	local shouldBind = true
+	local shouldBind = #windows > 0
 
 	if shouldBind and not inputBlockBound then
 		ContextActionService:BindActionAtPriority(
@@ -984,7 +1045,10 @@ function Window:EnsureConfigFolder()
 
 	local folder = self:GetConfigFolder()
 	if not isfolder(folder) then
-		makefolder(folder)
+		local ok = pcall(makefolder, folder)
+		if not ok then
+			return false
+		end
 	end
 
 	return true
@@ -1016,7 +1080,13 @@ function Window:ListConfigs()
 	end
 
 	local names = {}
-	for _, path in ipairs(listfiles(self:GetConfigFolder())) do
+	local ok, files = pcall(listfiles, self:GetConfigFolder())
+
+	if not ok or type(files) ~= "table" then
+		return {}
+	end
+
+	for _, path in ipairs(files) do
 		local name = path:match("([^\\/]+)%.json$")
 		if name then
 			table.insert(names, name)
@@ -1034,7 +1104,18 @@ function Window:SaveConfig(name)
 
 	local safeName = sanitizeFileName(name)
 	local path = self:GetConfigFolder() .. "/" .. safeName .. ".json"
-	writefile(path, HttpService:JSONEncode(self:BuildConfig()))
+	local encodedOk, encoded = pcall(HttpService.JSONEncode, HttpService, self:BuildConfig())
+
+	if not encodedOk then
+		return false, "encode failed"
+	end
+
+	local writeOk = pcall(writefile, path, encoded)
+
+	if not writeOk then
+		return false, "write failed"
+	end
+
 	return true, safeName
 end
 
@@ -1050,7 +1131,18 @@ function Window:LoadConfig(name, fireCallbacks)
 		return false, "missing file"
 	end
 
-	local decoded = HttpService:JSONDecode(readfile(path))
+	local readOk, contents = pcall(readfile, path)
+
+	if not readOk then
+		return false, "read failed"
+	end
+
+	local decodedOk, decoded = pcall(HttpService.JSONDecode, HttpService, contents)
+
+	if not decodedOk or type(decoded) ~= "table" then
+		return false, "invalid json"
+	end
+
 	self:ApplyConfig(decoded, fireCallbacks)
 	return true, safeName
 end
@@ -1071,7 +1163,12 @@ function Window:DeleteConfig(name)
 		return false, "missing file"
 	end
 
-	delfile(path)
+	local deleteOk = pcall(delfile, path)
+
+	if not deleteOk then
+		return false, "delete failed"
+	end
+
 	return true, safeName
 end
 
@@ -1229,6 +1326,16 @@ function Window:Step(mousePosition)
 end
 
 function Window:Destroy()
+	if activeTextbox ~= nil and activeTextbox.window == self then
+		clearTextboxFocus(false)
+	end
+
+	if listeningKeybind ~= nil and listeningKeybind.window == self then
+		clearKeybindListening()
+	end
+
+	self:CloseDropdowns(nil)
+
 	for _, control in ipairs(self.controls) do
 		if control.destroy then
 			control:destroy()
@@ -2388,6 +2495,10 @@ function addDropdown(window, tab, text, options, defaultValue, callback)
 		return LABELED_INPUT_HEIGHT + round((#self.options * DROPDOWN_OPTION_HEIGHT) * self.openAlpha)
 	end
 
+	function control:getVisibleOptionRowCount()
+		return round(#self.options * self.openAlpha)
+	end
+
 	function control:SetOpen(isOpen)
 		self.open = isOpen and #self.options > 0
 
@@ -2528,8 +2639,9 @@ function addDropdown(window, tab, text, options, defaultValue, callback)
 
 	function control:getOptionIndex(point)
 		local basePosition = self.position + Vector2.new(0, 16 + INPUT_HEIGHT)
+		local visibleCount = self:getVisibleOptionRowCount()
 
-		for index = 1, #self.options do
+		for index = 1, visibleCount do
 			local rowPosition = basePosition + Vector2.new(0, (index - 1) * DROPDOWN_OPTION_HEIGHT)
 
 			if pointInRect(point, rowPosition, Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT)) then
@@ -2751,6 +2863,10 @@ function addSearchDropdown(window, tab, text, options, defaultValue, maxSizeOrCa
 
 	function control:getVisibleOptionCount()
 		return math.min(#self.filteredIndices, self:getVisibleOptionLimit())
+	end
+
+	function control:getRenderedOptionCount()
+		return round(self:getVisibleOptionCount() * self.openAlpha)
 	end
 
 	function control:getMaxScrollOffset()
@@ -3026,8 +3142,9 @@ function addSearchDropdown(window, tab, text, options, defaultValue, maxSizeOrCa
 
 	function control:getOptionIndex(point)
 		local optionStart = self.position + Vector2.new(0, 16 + INPUT_HEIGHT + INPUT_HEIGHT)
+		local renderedCount = self:getRenderedOptionCount()
 
-		for visibleRow = 1, self:getVisibleOptionCount() do
+		for visibleRow = 1, renderedCount do
 			local rowPosition = optionStart + Vector2.new(0, (visibleRow - 1) * DROPDOWN_OPTION_HEIGHT)
 
 			if pointInRect(point, rowPosition, Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT)) then
@@ -3874,6 +3991,10 @@ function addMultiDropdown(window, tab, text, options, defaultValues, callback)
 		return LABELED_INPUT_HEIGHT + round((#self.options * DROPDOWN_OPTION_HEIGHT) * self.openAlpha)
 	end
 
+	function control:getVisibleOptionRowCount()
+		return round(#self.options * self.openAlpha)
+	end
+
 	function control:getDisplayText()
 		if #self.values == 0 then
 			return "None"
@@ -3924,8 +4045,9 @@ function addMultiDropdown(window, tab, text, options, defaultValues, callback)
 
 	function control:getOptionIndex(point)
 		local basePosition = self.position + Vector2.new(0, 16 + INPUT_HEIGHT)
+		local visibleCount = self:getVisibleOptionRowCount()
 
-		for index = 1, #self.options do
+		for index = 1, visibleCount do
 			local rowPosition = basePosition + Vector2.new(0, (index - 1) * DROPDOWN_OPTION_HEIGHT)
 
 			if pointInRect(point, rowPosition, Vector2.new(self.size.X, DROPDOWN_OPTION_HEIGHT)) then
@@ -4206,11 +4328,16 @@ function addKeybind(window, tab, text, defaultKey, callback, changedCallback)
 	end
 
 	function control:GetConfigValue()
-		return self.binding
+		return serializeInputBinding(self.binding)
 	end
 
 	function control:ApplyConfigValue(nextBinding, fireCallback)
-		self:SetBinding(nextBinding)
+		local resolvedBinding = deserializeInputBinding(nextBinding)
+
+		if nextBinding == nil or resolvedBinding ~= nil then
+			self:SetBinding(resolvedBinding)
+		end
+
 		if fireCallback ~= false then
 			self.changedCallback(self.binding)
 		end
@@ -4515,6 +4642,7 @@ function DrawingUI.new(options)
 	table.insert(windows, self)
 	ensureLoop()
 	bringWindowToFront(self)
+	updateInputBlocker()
 	self:UpdateLayout()
 
 	return self

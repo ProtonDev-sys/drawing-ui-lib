@@ -49,16 +49,32 @@ local state = {
 	},
 	configName = "showcase",
 	selectedConfig = "",
+	flagLookup = {},
 }
 
 local overlayEntries = {}
 local overlayConnections = {}
 local cachedTargets = {}
+local cachedTargetList = {}
 local aimHolding = false
 local fovCircle = Drawing.new("Circle")
 local CORNER_LINE_COUNT = 8
 local TARGET_REFRESH_INTERVAL = 0.3
+local ESP_MAX_TARGET_UPDATES_PER_FRAME = 8
 local lastTargetRefresh = 0
+local espUpdateCursor = 1
+local visibilityRaycastParams = RaycastParams.new()
+local visibilityFilterCharacter = nil
+
+visibilityRaycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+
+local function rebuildFlagLookup(values)
+	table.clear(state.flagLookup)
+
+	for _, value in ipairs(values or state.flags) do
+		state.flagLookup[value] = true
+	end
+end
 
 local function round(value)
 	return math.floor(value + 0.5)
@@ -85,13 +101,7 @@ local function bindingMatchesInput(binding, input)
 end
 
 local function hasFlag(flag)
-	for _, value in ipairs(state.flags) do
-		if value == flag then
-			return true
-		end
-	end
-
-	return false
+	return state.flagLookup[flag] == true
 end
 
 local function createOverlayEntry()
@@ -221,6 +231,47 @@ local function shouldTrackTargets()
 	return state.aimEnabled or shouldProcessEsp()
 end
 
+local function buildTargetData(player)
+	local character = player.Character
+
+	if character == nil then
+		return nil
+	end
+
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	local rootPart = character:FindFirstChild("HumanoidRootPart")
+
+	if humanoid == nil or rootPart == nil then
+		return nil
+	end
+
+	local targetData = {
+		character = character,
+		displayName = player.Name,
+		humanoid = humanoid,
+		rootPart = rootPart,
+		head = character:FindFirstChild("Head"),
+		aimParts = {
+			Head = character:FindFirstChild("Head"),
+			UpperTorso = character:FindFirstChild("UpperTorso"),
+			LowerTorso = character:FindFirstChild("LowerTorso"),
+			HumanoidRootPart = rootPart,
+		},
+		skeletonParts = {},
+	}
+
+	for index, segment in ipairs(SKELETON_SEGMENTS) do
+		local fromPart = character:FindFirstChild(segment[1])
+		local toPart = character:FindFirstChild(segment[2])
+
+		if fromPart ~= nil and toPart ~= nil then
+			targetData.skeletonParts[index] = { fromPart, toPart }
+		end
+	end
+
+	return targetData
+end
+
 local function refreshTargetCache(force)
 	local now = os.clock()
 
@@ -229,15 +280,23 @@ local function refreshTargetCache(force)
 	end
 
 	local targets = {}
+	local targetList = {}
 
 	for _, player in ipairs(Players:GetPlayers()) do
-		if player ~= LocalPlayer and player.Character ~= nil then
-			targets[player.Character] = player.Name
+		if player ~= LocalPlayer then
+			local targetData = buildTargetData(player)
+
+			if targetData ~= nil then
+				targets[targetData.character] = targetData
+				table.insert(targetList, targetData)
+			end
 		end
 	end
 
 	cachedTargets = targets
+	cachedTargetList = targetList
 	lastTargetRefresh = now
+	espUpdateCursor = math.clamp(espUpdateCursor, 1, math.max(1, #cachedTargetList))
 	return cachedTargets
 end
 
@@ -249,37 +308,46 @@ local function getTrackedTargets()
 	return refreshTargetCache(false)
 end
 
-local function getCharacterBounds(model, camera)
-	local minX, minY, maxX, maxY
-
-	for _, descendant in ipairs(model:GetDescendants()) do
-		if descendant:IsA("BasePart") and descendant.Transparency < 1 then
-			local halfSize = descendant.Size * 0.5
-			local cframe = descendant.CFrame
-
-			for x = -1, 1, 2 do
-				for y = -1, 1, 2 do
-					for z = -1, 1, 2 do
-						local worldPoint = cframe:PointToWorldSpace(Vector3.new(halfSize.X * x, halfSize.Y * y, halfSize.Z * z))
-						local screenPoint, onScreen = camera:WorldToViewportPoint(worldPoint)
-
-						if onScreen and screenPoint.Z > 0 then
-							minX = minX and math.min(minX, screenPoint.X) or screenPoint.X
-							minY = minY and math.min(minY, screenPoint.Y) or screenPoint.Y
-							maxX = maxX and math.max(maxX, screenPoint.X) or screenPoint.X
-							maxY = maxY and math.max(maxY, screenPoint.Y) or screenPoint.Y
-						end
-					end
-				end
-			end
-		end
+local function getTrackedTargetList()
+	if not shouldTrackTargets() then
+		return cachedTargetList
 	end
 
-	if minX == nil then
+	refreshTargetCache(false)
+	return cachedTargetList
+end
+
+local function getCharacterBounds(targetData, camera)
+	local humanoid = targetData.humanoid
+	local rootPart = targetData.rootPart
+
+	if humanoid == nil or rootPart == nil or humanoid.Parent == nil or rootPart.Parent == nil then
 		return nil
 	end
 
-	return minX, minY, maxX, maxY
+	local head = targetData.head
+	local rootPosition = rootPart.Position
+	local headPosition = head ~= nil and head.Parent ~= nil and head.Position or (rootPosition + Vector3.new(0, 1.6, 0))
+	local topOffset = math.max(2.6, (headPosition.Y - rootPosition.Y) + 0.75)
+	local bottomOffset = math.max(2.8, humanoid.HipHeight + (rootPart.Size.Y * 0.5) + 0.75)
+	local topScreen, topVisible = camera:WorldToViewportPoint(rootPosition + Vector3.new(0, topOffset, 0))
+	local bottomScreen, bottomVisible = camera:WorldToViewportPoint(rootPosition - Vector3.new(0, bottomOffset, 0))
+
+	if topScreen.Z <= 0 or bottomScreen.Z <= 0 or (not topVisible and not bottomVisible) then
+		return nil
+	end
+
+	local height = math.abs(bottomScreen.Y - topScreen.Y)
+
+	if height < 2 then
+		return nil
+	end
+
+	local width = math.max(6, height * 0.55)
+	local centerX = (topScreen.X + bottomScreen.X) * 0.5
+	local minY = math.min(topScreen.Y, bottomScreen.Y)
+	local maxY = math.max(topScreen.Y, bottomScreen.Y)
+	return centerX - (width * 0.5), minY, centerX + (width * 0.5), maxY
 end
 
 local function setSkeletonVisible(entry, isVisible)
@@ -292,7 +360,7 @@ local function setSkeletonVisible(entry, isVisible)
 	end
 end
 
-local function updateSkeleton(entry, model, camera, isVisible)
+local function updateSkeleton(entry, targetData, camera, isVisible)
 	setSkeletonVisible(entry, false)
 
 	if not isVisible then
@@ -301,11 +369,17 @@ local function updateSkeleton(entry, model, camera, isVisible)
 
 	local lineIndex = 1
 
-	for _, segment in ipairs(SKELETON_SEGMENTS) do
-		local fromPart = model:FindFirstChild(segment[1])
-		local toPart = model:FindFirstChild(segment[2])
+	for index = 1, #SKELETON_SEGMENTS do
+		local segmentParts = targetData.skeletonParts[index]
 
-		if fromPart ~= nil and toPart ~= nil and lineIndex <= #entry.skeleton then
+		if segmentParts == nil then
+			continue
+		end
+
+		local fromPart = segmentParts[1]
+		local toPart = segmentParts[2]
+
+		if fromPart ~= nil and toPart ~= nil and fromPart.Parent ~= nil and toPart.Parent ~= nil and lineIndex <= #entry.skeleton then
 			local fromScreen, fromVisible = camera:WorldToViewportPoint(fromPart.Position)
 			local toScreen, toVisible = camera:WorldToViewportPoint(toPart.Position)
 
@@ -352,7 +426,8 @@ local function drawCornerBox(entry, minX, minY, maxX, maxY, isVisible)
 	end
 end
 
-local function updateOverlayEntry(target, displayName, camera)
+local function updateOverlayEntry(targetData, camera, cameraPosition)
+	local target = targetData.character
 	local entry = getOverlayEntry(target)
 
 	if not state.espEnabled then
@@ -360,15 +435,15 @@ local function updateOverlayEntry(target, displayName, camera)
 		return
 	end
 
-	local humanoid = target:FindFirstChildOfClass("Humanoid")
-	local rootPart = target:FindFirstChild("HumanoidRootPart")
+	local humanoid = targetData.humanoid
+	local rootPart = targetData.rootPart
 
-	if humanoid == nil or humanoid.Health <= 0 or rootPart == nil then
+	if humanoid == nil or rootPart == nil or humanoid.Parent == nil or rootPart.Parent == nil or humanoid.Health <= 0 then
 		hideOverlayEntry(entry)
 		return
 	end
 
-	local minX, minY, maxX, maxY = getCharacterBounds(target, camera)
+	local minX, minY, maxX, maxY = getCharacterBounds(targetData, camera)
 
 	if minX == nil then
 		hideOverlayEntry(entry)
@@ -385,7 +460,7 @@ local function updateOverlayEntry(target, displayName, camera)
 	local nextTextY = minY - 14
 
 	if hasFlag("Name") then
-		entry.name.Text = displayName
+		entry.name.Text = targetData.displayName
 		entry.name.Position = Vector2.new(centerX, nextTextY)
 		entry.name.Visible = true
 		nextTextY -= 14
@@ -403,7 +478,7 @@ local function updateOverlayEntry(target, displayName, camera)
 	end
 
 	if hasFlag("Distance") then
-		local distance = round((camera.CFrame.Position - rootPart.Position).Magnitude)
+		local distance = round((cameraPosition - rootPart.Position).Magnitude)
 		entry.distance.Text = tostring(distance) .. "m"
 		entry.distance.Position = Vector2.new(centerX, nextTextY)
 		entry.distance.Visible = true
@@ -411,56 +486,68 @@ local function updateOverlayEntry(target, displayName, camera)
 		entry.distance.Visible = false
 	end
 
-	updateSkeleton(entry, target, camera, hasFlag("Skeletons"))
+	updateSkeleton(entry, targetData, camera, hasFlag("Skeletons"))
 end
 
-local function getAimPart(target)
+local function getAimPart(targetData)
 	if state.targetPart == "Head" then
-		return target:FindFirstChild("Head")
+		return targetData.aimParts.Head or targetData.rootPart
 	end
 
-	return target:FindFirstChild(state.targetPart) or target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Head")
+	return targetData.aimParts[state.targetPart] or targetData.rootPart or targetData.aimParts.Head
 end
 
-local function isTargetVisible(camera, target, aimPart)
+local function updateVisibilityRaycastFilter()
+	local character = LocalPlayer.Character
+
+	if visibilityFilterCharacter == character then
+		return
+	end
+
+	visibilityFilterCharacter = character
+	visibilityRaycastParams.FilterDescendantsInstances = character ~= nil and { character } or {}
+end
+
+local function isTargetVisible(camera, targetData, aimPart)
 	if not state.visibleCheck then
 		return true
 	end
 
-	local raycastParams = RaycastParams.new()
-	raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-	raycastParams.FilterDescendantsInstances = { LocalPlayer.Character }
+	updateVisibilityRaycastFilter()
 
 	local origin = camera.CFrame.Position
 	local direction = aimPart.Position - origin
-	local result = Workspace:Raycast(origin, direction, raycastParams)
+	local result = Workspace:Raycast(origin, direction, visibilityRaycastParams)
 
 	if result == nil then
 		return true
 	end
 
-	return result.Instance:IsDescendantOf(target)
+	return result.Instance:IsDescendantOf(targetData.character)
 end
 
 local function getBestAimTarget(camera, mousePosition)
-	local bestDelta
+	local targetList = getTrackedTargetList()
+	local bestDistanceSquared
 	local bestPosition
+	local fovSquared = state.fov * state.fov
 
-	for target in pairs(getTrackedTargets()) do
-		local humanoid = target:FindFirstChildOfClass("Humanoid")
-		local aimPart = getAimPart(target)
+	for index = 1, #targetList do
+		local targetData = targetList[index]
+		local humanoid = targetData.humanoid
+		local aimPart = getAimPart(targetData)
 
-		if humanoid ~= nil and humanoid.Health > 0 and aimPart ~= nil and isTargetVisible(camera, target, aimPart) then
+		if humanoid ~= nil and humanoid.Parent ~= nil and humanoid.Health > 0 and aimPart ~= nil and aimPart.Parent ~= nil then
 			local screenPoint, onScreen = camera:WorldToViewportPoint(aimPart.Position)
 
 			if onScreen and screenPoint.Z > 0 then
-				local position2d = Vector2.new(screenPoint.X, screenPoint.Y)
-				local delta = position2d - mousePosition
-				local distance = delta.Magnitude
+				local deltaX = screenPoint.X - mousePosition.X
+				local deltaY = screenPoint.Y - mousePosition.Y
+				local distanceSquared = (deltaX * deltaX) + (deltaY * deltaY)
 
-				if distance <= state.fov and (bestDelta == nil or distance < bestDelta) then
-					bestDelta = distance
-					bestPosition = position2d
+				if distanceSquared <= fovSquared and isTargetVisible(camera, targetData, aimPart) and (bestDistanceSquared == nil or distanceSquared < bestDistanceSquared) then
+					bestDistanceSquared = distanceSquared
+					bestPosition = Vector2.new(screenPoint.X, screenPoint.Y)
 				end
 			end
 		end
@@ -468,6 +555,8 @@ local function getBestAimTarget(camera, mousePosition)
 
 	return bestPosition
 end
+
+rebuildFlagLookup()
 
 local function updateFovCircle(mousePosition)
 	fovCircle.Visible = state.drawFovCircle and state.aimEnabled
@@ -510,6 +599,36 @@ local function updateAim(camera, mousePosition)
 	end
 end
 
+local function updateEsp(camera)
+	local targets = getTrackedTargets()
+	local targetList = getTrackedTargetList()
+	local targetCount = #targetList
+	local cameraPosition = camera.CFrame.Position
+
+	if targetCount == 0 then
+		for _, entry in pairs(overlayEntries) do
+			hideOverlayEntry(entry)
+		end
+
+		return
+	end
+
+	local updatesThisFrame = math.min(targetCount, ESP_MAX_TARGET_UPDATES_PER_FRAME)
+
+	for offset = 0, updatesThisFrame - 1 do
+		local index = ((espUpdateCursor + offset - 1) % targetCount) + 1
+		updateOverlayEntry(targetList[index], camera, cameraPosition)
+	end
+
+	espUpdateCursor = ((espUpdateCursor + updatesThisFrame - 1) % targetCount) + 1
+
+	for target, entry in pairs(overlayEntries) do
+		if targets[target] == nil then
+			hideOverlayEntry(entry)
+		end
+	end
+end
+
 table.insert(overlayConnections, UserInputService.InputBegan:Connect(function(input, processed)
 	if processed then
 		return
@@ -529,28 +648,15 @@ end))
 table.insert(overlayConnections, RunService.RenderStepped:Connect(function()
 	local camera = Workspace.CurrentCamera
 	local mousePosition = UserInputService:GetMouseLocation()
-	local seenTargets = {}
-	local targets = getTrackedTargets()
 
 	updateFovCircle(mousePosition)
 
 	if camera ~= nil then
 		if shouldProcessEsp() then
-			for target, displayName in pairs(targets) do
-				seenTargets[target] = true
-				updateOverlayEntry(target, displayName, camera)
-			end
+			updateEsp(camera)
 		end
 
 		updateAim(camera, mousePosition)
-	end
-
-	if shouldProcessEsp() then
-		for target, entry in pairs(overlayEntries) do
-			if not seenTargets[target] then
-				hideOverlayEntry(entry)
-			end
-		end
 	end
 end))
 
@@ -616,6 +722,7 @@ end)
 
 visualsTab:AddMultiDropdown("ESP Flags", { "Box", "Corner Box", "Name", "Health", "Distance", "Skeletons" }, state.flags, function(values)
 	state.flags = values
+	rebuildFlagLookup(values)
 
 	if not shouldProcessEsp() then
 		hideAllOverlayEntries()
