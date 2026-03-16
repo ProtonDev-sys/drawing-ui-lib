@@ -123,6 +123,7 @@ Notes:
 - `window:AddLabel(text)`
 - `window:AddParagraph(title, text)`
 - `window:AddButton(text, callback)`
+- `window:AddButtonRow(buttons)`
 - `window:AddToggle(text, initialValue, callback)`
 - `window:AddSlider(text, min, max, initialValue, callback)`
 - `window:AddDropdown(text, options, defaultValue, callback)`
@@ -132,6 +133,7 @@ Notes:
 - `window:AddTextbox(text, placeholder, callback)`
 - `window:AddKeybind(text, defaultKey, callback, changedCallback?)`
 - `window:AddTab(name)`
+- `window:AddSubTab(text, expanded?)`
 - `window:SetActiveTab(nameOrTab)`
 - `window:SetTheme(themeOverrides)`
 - `window:SetTitle(text)`
@@ -155,6 +157,7 @@ Notes:
 - `tab:AddLabel(text)`
 - `tab:AddParagraph(title, text)`
 - `tab:AddButton(text, callback)`
+- `tab:AddButtonRow(buttons)`
 - `tab:AddToggle(text, initialValue, callback)`
 - `tab:AddSlider(text, min, max, initialValue, callback)`
 - `tab:AddDropdown(text, options, defaultValue, callback)`
@@ -163,6 +166,7 @@ Notes:
 - `tab:AddColorPicker(text, defaultColor, callback)`
 - `tab:AddTextbox(text, placeholder, callback)`
 - `tab:AddKeybind(text, defaultKey, callback, changedCallback?)`
+- `tab:AddSubTab(text, expanded?)`
 - `tab:Select()`
 
 ## Callback behavior
@@ -194,12 +198,13 @@ Most constructor calls return a control object, which is useful if your menu upd
 Common mutators exposed by the current implementation include:
 
 - Labels, paragraphs, buttons, and textboxes: `control:SetText(text)`
+- Buttons and toggles: `control:SetActivationBinding(binding)`
 - Toggles and sliders: `control:SetValue(value)`
 - Dropdowns: `control:SetValue(value)`, `control:SetOptions(options, defaultValue?)`, `control:SetOpen(boolean)`
 - Searchable dropdowns: `control:SetValue(value)`, `control:SetOptions(options, defaultValue?)`, `control:SetSearchText(text)`, `control:SetOpen(boolean)`
 - Multi-dropdowns: `control:SetValues(values)`, `control:SetOpen(boolean)`
 - Color pickers: `control:SetColor(color3)`
-- Keybinds: `control:SetListening(boolean)`, `control:SetBinding(binding)`
+- Keybinds: `control:SetListening(boolean)`, `control:SetBinding(binding)`, `control:SetAllowMouseInputs(boolean)`
 
 The primary supported surface is still the `window:*` and `tab:*` API above. Treat lower-level control mutators as convenience methods tied to the current implementation.
 

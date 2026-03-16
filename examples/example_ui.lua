@@ -112,21 +112,22 @@ local flagsDropdown = visualsTab:AddMultiDropdown("ESP Flags", { "Box", "Name", 
 end)
 
 configTab:AddSection("Configuration")
+local profileSubTab = configTab:AddSubTab("Profile", true)
+local storageSubTab = configTab:AddSubTab("Config Files", true)
+local profileLabel = profileSubTab:AddLabel("Profile: " .. state.profileName)
+local bindLabel = profileSubTab:AddLabel("Menu Bind: " .. formatBinding(state.menuBind))
+local configStatusLabel = storageSubTab:AddLabel("Config Status: Ready")
 
-local profileLabel = configTab:AddLabel("Profile: " .. state.profileName)
-local bindLabel = configTab:AddLabel("Menu Bind: " .. formatBinding(state.menuBind))
-local configStatusLabel = configTab:AddLabel("Config Status: Ready")
-
-local profileTextbox = configTab:AddTextbox("Profile Name", "Type a profile name...", function(value)
+local profileTextbox = profileSubTab:AddTextbox("Profile Name", "Type a profile name...", function(value)
 	state.profileName = value ~= "" and value or "Legit"
 	profileLabel:SetText("Profile: " .. state.profileName)
 end)
 
-local clanTextbox = configTab:AddTextbox("Clan Tag", "Optional clan tag...", function(value)
+local clanTextbox = profileSubTab:AddTextbox("Clan Tag", "Optional clan tag...", function(value)
 	state.clanTag = value ~= "" and value or "ORBIT"
 end)
 
-local themeDropdown = configTab:AddDropdown("Theme Preset", { "Amber", "Midnight", "Default" }, "Amber", function(value)
+local themeDropdown = profileSubTab:AddDropdown("Theme Preset", { "Amber", "Midnight", "Default" }, "Amber", function(value)
 	state.themePreset = value
 	if value == "Midnight" then
 		window:SetTheme(DrawingUI.Themes.Midnight)
@@ -137,18 +138,19 @@ local themeDropdown = configTab:AddDropdown("Theme Preset", { "Amber", "Midnight
 	end
 end)
 
-local menuBindControl = configTab:AddKeybind("Menu Bind", state.menuBind, function()
+local menuBindControl = profileSubTab:AddKeybind("Menu Bind", state.menuBind, function()
 	window:SetVisible(not window.visible)
 end, function(binding)
 	state.menuBind = binding
 	bindLabel:SetText("Menu Bind: " .. formatBinding(binding))
 end)
+menuBindControl:SetAllowMouseInputs(true)
 
-local configNameTextbox = configTab:AddTextbox("Config Name", "Type config name...", function(value)
+local configNameTextbox = storageSubTab:AddTextbox("Config Name", "Type config name...", function(value)
 	state.selectedConfig = value
 end)
 
-local configSelector = configTab:AddSearchDropdown("Stored Configs", window:ListConfigs(), nil, function(value)
+local configSelector = storageSubTab:AddSearchDropdown("Stored Configs", window:ListConfigs(), nil, function(value)
 	state.selectedConfig = value
 	configNameTextbox:SetText(value)
 end)
@@ -187,7 +189,10 @@ refreshConfigList = function(selectedName)
 	end
 end
 
-configTab:AddButton("Create Config", function()
+storageSubTab:AddButtonRow({
+	{
+		text = "Create",
+		callback = function()
 	local name = state.selectedConfig ~= "" and state.selectedConfig or state.profileName
 	local ok, result = window:SaveConfig(name)
 	configStatusLabel:SetText(ok and ("Config Status: Saved " .. result) or ("Config Status: " .. result))
@@ -196,41 +201,55 @@ configTab:AddButton("Create Config", function()
 		state.selectedConfig = result
 		refreshConfigList(result)
 	end
-end)
+		end,
+	},
+	{
+		text = "Load",
+		callback = function()
+			if state.selectedConfig == "" then
+				configStatusLabel:SetText("Config Status: Nothing selected")
+				return
+			end
 
-configTab:AddButton("Load Config", function()
-	if state.selectedConfig == "" then
-		configStatusLabel:SetText("Config Status: Nothing selected")
-		return
-	end
+			local ok, result = window:LoadConfig(state.selectedConfig, true)
+			configStatusLabel:SetText(ok and ("Config Status: Loaded " .. result) or ("Config Status: " .. result))
+		end,
+	},
+	{
+		text = "Delete",
+		callback = function()
+			if state.selectedConfig == "" then
+				configStatusLabel:SetText("Config Status: Nothing selected")
+				return
+			end
 
-	local ok, result = window:LoadConfig(state.selectedConfig, true)
-	configStatusLabel:SetText(ok and ("Config Status: Loaded " .. result) or ("Config Status: " .. result))
-end)
+			local ok, result = window:DeleteConfig(state.selectedConfig)
+			configStatusLabel:SetText(ok and ("Config Status: Deleted " .. result) or ("Config Status: " .. result))
 
-configTab:AddButton("Delete Config", function()
-	if state.selectedConfig == "" then
-		configStatusLabel:SetText("Config Status: Nothing selected")
-		return
-	end
-
-	local ok, result = window:DeleteConfig(state.selectedConfig)
-	configStatusLabel:SetText(ok and ("Config Status: Deleted " .. result) or ("Config Status: " .. result))
-
-	if ok then
-		state.selectedConfig = ""
-		refreshConfigList("")
-	end
-end)
+			if ok then
+				state.selectedConfig = ""
+				refreshConfigList("")
+			end
+		end,
+	},
+})
 
 miscTab:AddSection("Actions")
 accentPicker = miscTab:AddColorPicker("Accent Color", state.accentColor, function(color)
 	applyAccent(color)
 end)
 
-miscTab:AddButton("Unload UI", function()
+local unloadButton = miscTab:AddButton("Unload UI", function()
 	DrawingUI.ClearAll()
 end)
+unloadButton:SetActivationBinding({
+	kind = "Keyboard",
+	code = Enum.KeyCode.End,
+})
+boxesToggle:SetActivationBinding({
+	kind = "Keyboard",
+	code = Enum.KeyCode.B,
+})
 
 refreshConfigList()
 window:SetActiveTab("Combat")

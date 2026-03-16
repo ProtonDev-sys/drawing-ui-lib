@@ -309,6 +309,7 @@ local function makeBaseControl(window, tab, kind, height)
 	return {
 		window = window,
 		tab = tab,
+		parentGroup = nil,
 		kind = kind,
 		height = height,
 		visible = true,
@@ -446,6 +447,8 @@ local function handleBoundInput(input)
 		for _, control in ipairs(window.controls) do
 			if control.kind == "Keybind" and bindingMatchesInput(control.binding, input) then
 				control.callback(control.binding)
+			elseif control.activationBinding ~= nil and bindingMatchesInput(control.activationBinding, input) and control.TriggerActivation then
+				control:TriggerActivation()
 			end
 		end
 	end
@@ -554,7 +557,8 @@ function Window:IsTabActive(tab)
 end
 
 function Window:IsControlDisplayed(control)
-	return self.visible and control.visible and self:IsTabActive(control.tab)
+	local groupVisible = control.parentGroup == nil or control.parentGroup.expanded
+	return self.visible and control.visible and self:IsTabActive(control.tab) and groupVisible
 end
 
 function Window:SyncControlVisibility(control)
@@ -589,7 +593,7 @@ function Window:GetActiveControls()
 	local list = {}
 
 	for _, control in ipairs(self.controls) do
-		if self:IsTabActive(control.tab) then
+		if self:IsTabActive(control.tab) and (control.parentGroup == nil or control.parentGroup.expanded) then
 			table.insert(list, control)
 		end
 	end
@@ -1248,11 +1252,158 @@ local function addSection(window, tab, text)
 	return addControl(window, tab, control)
 end
 
+local function addSubTab(window, tab, text, expanded)
+	local group = makeBaseControl(window, tab, "SubTab", SECTION_HEIGHT + 2)
+	group.text = text
+	group.expanded = expanded ~= false
+	group.children = {}
+	group.configKey = nil
+
+	group.drawings.text = createDrawing("Text", {
+		Visible = window.visible,
+		Color = window.theme.Text,
+		Size = window.theme.TextSize,
+		Font = window.theme.Font,
+		Outline = true,
+		Text = text,
+		Position = Vector2.zero,
+	})
+
+	group.drawings.arrow = createDrawing("Text", {
+		Visible = window.visible,
+		Color = window.theme.SubText,
+		Size = window.theme.SmallTextSize,
+		Font = window.theme.Font,
+		Outline = true,
+		Text = expanded ~= false and "v" or ">",
+		Position = Vector2.zero,
+	})
+
+	group.drawings.line = createDrawing("Line", {
+		Visible = window.visible,
+		Color = window.theme.SectionLine,
+		Thickness = 1,
+		From = Vector2.zero,
+		To = Vector2.zero,
+	})
+
+	function group:applyTheme()
+		writeProperty(self.drawings.text, "Color", self.window.theme.Text)
+		writeProperty(self.drawings.arrow, "Color", self.window.theme.SubText)
+		writeProperty(self.drawings.line, "Color", self.window.theme.SectionLine)
+		writeProperty(self.drawings.text, "Font", self.window.theme.Font)
+		writeProperty(self.drawings.arrow, "Font", self.window.theme.Font)
+		writeProperty(self.drawings.text, "Size", self.window.theme.TextSize)
+		writeProperty(self.drawings.arrow, "Size", self.window.theme.SmallTextSize)
+	end
+
+	function group:layout()
+		local lineY = self.position.Y + 11
+		writeProperty(self.drawings.arrow, "Position", self.position)
+		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(14, 0))
+		writeProperty(self.drawings.arrow, "Text", self.expanded and "v" or ">")
+		writeProperty(self.drawings.line, "From", Vector2.new(self.position.X + 92, lineY))
+		writeProperty(self.drawings.line, "To", Vector2.new(self.position.X + self.size.X, lineY))
+	end
+
+	function group:hitTest(point)
+		return pointInRect(point, self.position, self.size)
+	end
+
+	function group:onMouseDown(point)
+		if self:hitTest(point) then
+			self.pressing = true
+		end
+	end
+
+	function group:onMouseUp(point)
+		if self.pressing and self:hitTest(point) then
+			self.expanded = not self.expanded
+			self.window:UpdateLayout()
+		end
+		self.pressing = false
+	end
+
+	function group:setZIndex(z)
+		writeProperty(self.drawings.text, "ZIndex", z)
+		writeProperty(self.drawings.arrow, "ZIndex", z)
+		writeProperty(self.drawings.line, "ZIndex", z)
+	end
+
+	function group:destroy()
+		destroyDrawing(self.drawings.text)
+		destroyDrawing(self.drawings.arrow)
+		destroyDrawing(self.drawings.line)
+	end
+
+	function group:addChild(control)
+		control.parentGroup = self
+		table.insert(self.children, control)
+		return control
+	end
+
+	function group:AddSection(label)
+		return self:addChild(addSection(self.window, self.tab, label))
+	end
+
+	function group:AddLabel(label)
+		return self:addChild(addLabel(self.window, self.tab, label))
+	end
+
+	function group:AddParagraph(titleText, bodyText)
+		return self:addChild(addParagraph(self.window, self.tab, titleText, bodyText))
+	end
+
+	function group:AddButton(label, callback)
+		return self:addChild(addButton(self.window, self.tab, label, callback))
+	end
+
+	function group:AddButtonRow(buttons)
+		return self:addChild(addButtonRow(self.window, self.tab, buttons))
+	end
+
+	function group:AddToggle(label, initialValue, callback)
+		return self:addChild(addToggle(self.window, self.tab, label, initialValue, callback))
+	end
+
+	function group:AddSlider(label, minimum, maximum, initialValue, callback)
+		return self:addChild(addSlider(self.window, self.tab, label, minimum, maximum, initialValue, callback))
+	end
+
+	function group:AddDropdown(label, options, defaultValue, callback)
+		return self:addChild(addDropdown(self.window, self.tab, label, options, defaultValue, callback))
+	end
+
+	function group:AddSearchDropdown(label, options, defaultValue, callback)
+		return self:addChild(addSearchDropdown(self.window, self.tab, label, options, defaultValue, callback))
+	end
+
+	function group:AddMultiDropdown(label, options, defaultValues, callback)
+		return self:addChild(addMultiDropdown(self.window, self.tab, label, options, defaultValues, callback))
+	end
+
+	function group:AddColorPicker(label, defaultColor, callback)
+		return self:addChild(addColorPicker(self.window, self.tab, label, defaultColor, callback))
+	end
+
+	function group:AddTextbox(label, placeholder, callback)
+		return self:addChild(addTextbox(self.window, self.tab, label, placeholder, callback))
+	end
+
+	function group:AddKeybind(label, defaultKey, callback, changedCallback)
+		return self:addChild(addKeybind(self.window, self.tab, label, defaultKey, callback, changedCallback))
+	end
+
+	group:applyTheme()
+	return addControl(window, tab, group)
+end
+
 local function addButton(window, tab, text, callback)
 	local control = makeBaseControl(window, tab, "Button", BUTTON_HEIGHT)
 	control.text = text
 	control.callback = callback or function() end
 	control.blocksWindowDrag = true
+	control.activationBinding = nil
 
 	control.drawings.frame = createDrawing("Square", {
 		Visible = window.visible,
@@ -1322,6 +1473,10 @@ local function addButton(window, tab, text, callback)
 		end
 	end
 
+	function control:TriggerActivation()
+		self.callback()
+	end
+
 	function control:onStep(mousePosition, ownsHover)
 		self.hovered = ownsHover and self:hitTest(mousePosition)
 		writeProperty(self.drawings.frame, "Color", self.hovered and self.window.theme.ButtonHover or self.window.theme.Button)
@@ -1332,10 +1487,152 @@ local function addButton(window, tab, text, callback)
 		writeProperty(self.drawings.text, "Text", nextText)
 	end
 
+	function control:SetActivationBinding(binding)
+		self.activationBinding = binding
+	end
+
 	function control:destroy()
 		destroyDrawing(self.drawings.frame)
 		destroyDrawing(self.drawings.outline)
 		destroyDrawing(self.drawings.text)
+	end
+
+	control:applyTheme()
+	return addControl(window, tab, control)
+end
+
+local function addButtonRow(window, tab, buttons)
+	local control = makeBaseControl(window, tab, "ButtonRow", BUTTON_HEIGHT)
+	control.buttons = buttons or {}
+	control.drawings = {}
+	control.hitIndex = nil
+
+	for index, definition in ipairs(control.buttons) do
+		control.drawings[index] = {
+			frame = createDrawing("Square", {
+				Visible = window.visible,
+				Filled = true,
+				Color = window.theme.Button,
+				Thickness = 1,
+				Size = Vector2.zero,
+				Position = Vector2.zero,
+			}),
+			outline = createDrawing("Square", {
+				Visible = window.visible,
+				Filled = false,
+				Color = window.theme.Border,
+				Thickness = 1,
+				Size = Vector2.zero,
+				Position = Vector2.zero,
+			}),
+			text = createDrawing("Text", {
+				Visible = window.visible,
+				Color = window.theme.Text,
+				Size = window.theme.TextSize,
+				Font = window.theme.Font,
+				Outline = true,
+				Text = definition.text or ("Button " .. index),
+				Position = Vector2.zero,
+			}),
+		}
+	end
+
+	function control:applyTheme()
+		for _, drawingSet in ipairs(self.drawings) do
+			writeProperty(drawingSet.outline, "Color", self.window.theme.Border)
+			writeProperty(drawingSet.text, "Color", self.window.theme.Text)
+			writeProperty(drawingSet.text, "Font", self.window.theme.Font)
+			writeProperty(drawingSet.text, "Size", self.window.theme.TextSize)
+		end
+	end
+
+	function control:getButtonRect(index)
+		local count = math.max(1, #self.buttons)
+		local gap = 8
+		local width = math.floor((self.size.X - ((count - 1) * gap)) / count)
+		local x = self.position.X + ((index - 1) * (width + gap))
+		return Vector2.new(x, self.position.Y), Vector2.new(width, self.size.Y)
+	end
+
+	function control:layout()
+		for index, definition in ipairs(self.buttons) do
+			local buttonPosition, buttonSize = self:getButtonRect(index)
+			local drawingSet = self.drawings[index]
+
+			writeProperty(drawingSet.frame, "Position", buttonPosition)
+			writeProperty(drawingSet.frame, "Size", buttonSize)
+			writeProperty(drawingSet.outline, "Position", buttonPosition)
+			writeProperty(drawingSet.outline, "Size", buttonSize)
+			writeProperty(drawingSet.text, "Position", buttonPosition + Vector2.new(12, 6))
+			writeProperty(drawingSet.text, "Text", definition.text or ("Button " .. index))
+		end
+	end
+
+	function control:refreshVisibility(shouldShow)
+		for _, drawingSet in ipairs(self.drawings) do
+			writeProperty(drawingSet.frame, "Visible", shouldShow)
+			writeProperty(drawingSet.outline, "Visible", shouldShow)
+			writeProperty(drawingSet.text, "Visible", shouldShow)
+		end
+	end
+
+	function control:hitTest(point)
+		for index = 1, #self.buttons do
+			local buttonPosition, buttonSize = self:getButtonRect(index)
+			if pointInRect(point, buttonPosition, buttonSize) then
+				self.hitIndex = index
+				return true
+			end
+		end
+
+		self.hitIndex = nil
+		return false
+	end
+
+	function control:onMouseDown(point)
+		self:hitTest(point)
+		self.pressing = self.hitIndex ~= nil
+	end
+
+	function control:onMouseUp(point)
+		if not self.pressing then
+			return
+		end
+
+		self.pressing = false
+
+		if not self:hitTest(point) or self.hitIndex == nil then
+			return
+		end
+
+		local definition = self.buttons[self.hitIndex]
+		if definition and definition.callback then
+			definition.callback()
+		end
+	end
+
+	function control:onStep(mousePosition, ownsHover)
+		for index, drawingSet in ipairs(self.drawings) do
+			local buttonPosition, buttonSize = self:getButtonRect(index)
+			local hovered = ownsHover and pointInRect(mousePosition, buttonPosition, buttonSize)
+			writeProperty(drawingSet.frame, "Color", hovered and self.window.theme.ButtonHover or self.window.theme.Button)
+		end
+	end
+
+	function control:setZIndex(z)
+		for index, drawingSet in ipairs(self.drawings) do
+			writeProperty(drawingSet.frame, "ZIndex", z + index)
+			writeProperty(drawingSet.outline, "ZIndex", z + index + 1)
+			writeProperty(drawingSet.text, "ZIndex", z + index + 2)
+		end
+	end
+
+	function control:destroy()
+		for _, drawingSet in ipairs(self.drawings) do
+			destroyDrawing(drawingSet.frame)
+			destroyDrawing(drawingSet.outline)
+			destroyDrawing(drawingSet.text)
+		end
 	end
 
 	control:applyTheme()
@@ -1350,6 +1647,7 @@ local function addToggle(window, tab, text, initialValue, callback)
 	control.callback = callback or function() end
 	control.toggleAlpha = control.value and 1 or 0
 	control.blocksWindowDrag = true
+	control.activationBinding = nil
 
 	control.drawings.text = createDrawing("Text", {
 		Visible = window.visible,
@@ -1486,6 +1784,12 @@ local function addToggle(window, tab, text, initialValue, callback)
 		self.callback(self.value)
 	end
 
+	function control:TriggerActivation()
+		self.value = not self.value
+		self:layout()
+		self.callback(self.value)
+	end
+
 	function control:onStep(mousePosition, ownsHover)
 		self.hovered = ownsHover and self:hitTest(mousePosition)
 		writeProperty(self.drawings.knob, "Color", self.hovered and self.window.theme.Text or Color3.fromRGB(245, 247, 250))
@@ -1514,6 +1818,10 @@ local function addToggle(window, tab, text, initialValue, callback)
 		if fireCallback ~= false then
 			self.callback(self.value)
 		end
+	end
+
+	function control:SetActivationBinding(binding)
+		self.activationBinding = binding
 	end
 
 	function control:destroy()
@@ -3407,6 +3715,7 @@ local function addKeybind(window, tab, text, defaultKey, callback, changedCallba
 	control.changedCallback = changedCallback or function() end
 	control.listening = false
 	control.blocksWindowDrag = true
+	control.allowMouseInputs = false
 
 	control.drawings.label = createDrawing("Text", {
 		Visible = window.visible,
@@ -3482,6 +3791,10 @@ local function addKeybind(window, tab, text, defaultKey, callback, changedCallba
 		self:layout()
 	end
 
+	function control:SetAllowMouseInputs(allowMouse)
+		self.allowMouseInputs = allowMouse == true
+	end
+
 	function control:GetConfigValue()
 		return self.binding
 	end
@@ -3500,6 +3813,10 @@ local function addKeybind(window, tab, text, defaultKey, callback, changedCallba
 			local nextBinding = makeBindingFromInput(input)
 
 			if nextBinding == nil then
+				return
+			end
+
+			if nextBinding.kind ~= "Keyboard" and not self.allowMouseInputs then
 				return
 			end
 
@@ -3557,8 +3874,16 @@ function Tab:AddSection(text)
 	return addSection(self.window, self, text)
 end
 
+function Tab:AddSubTab(text, expanded)
+	return addSubTab(self.window, self, text, expanded)
+end
+
 function Tab:AddButton(text, callback)
 	return addButton(self.window, self, text, callback)
+end
+
+function Tab:AddButtonRow(buttons)
+	return addButtonRow(self.window, self, buttons)
 end
 
 function Tab:AddToggle(text, initialValue, callback)
@@ -3657,8 +3982,16 @@ function Window:AddSection(text)
 	return addSection(self, nil, text)
 end
 
+function Window:AddSubTab(text, expanded)
+	return addSubTab(self, nil, text, expanded)
+end
+
 function Window:AddButton(text, callback)
 	return addButton(self, nil, text, callback)
+end
+
+function Window:AddButtonRow(buttons)
+	return addButtonRow(self, nil, buttons)
 end
 
 function Window:AddToggle(text, initialValue, callback)
