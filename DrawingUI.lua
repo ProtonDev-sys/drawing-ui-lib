@@ -6,7 +6,7 @@ local HttpService = game:GetService("HttpService")
 
 local DrawingUI = {}
 DrawingUI.__index = DrawingUI
-local VERSION = "0.10.4"
+local VERSION = "0.10.5"
 
 local DEFAULT_THEME = {
 	WindowBackground = Color3.fromRGB(19, 22, 28),
@@ -580,19 +580,7 @@ function Window:IsTabActive(tab)
 end
 
 function Window:IsControlDisplayed(control)
-	local groupVisible = true
-	local currentGroup = control.parentGroup
-
-	while currentGroup ~= nil do
-		if not currentGroup.expanded then
-			groupVisible = false
-			break
-		end
-
-		currentGroup = currentGroup.parentGroup
-	end
-
-	return self.visible and control.visible and self:IsTabActive(control.tab) and groupVisible
+	return self.visible and control.visible and self:IsTabActive(control.tab) and self:GetControlVisibilityAlpha(control) > 0.02
 end
 
 function Window:GetControlIndent(control)
@@ -607,11 +595,24 @@ function Window:GetControlIndent(control)
 	return indent
 end
 
+function Window:GetControlVisibilityAlpha(control)
+	local alpha = 1
+	local currentGroup = control.parentGroup
+
+	while currentGroup ~= nil do
+		alpha = math.min(alpha, currentGroup.expandAlpha or (currentGroup.expanded and 1 or 0))
+		currentGroup = currentGroup.parentGroup
+	end
+
+	return alpha
+end
+
 function Window:SyncControlVisibility(control)
-	local shouldShow = self:IsControlDisplayed(control)
+	local alpha = self:GetControlVisibilityAlpha(control)
+	local shouldShow = self.visible and control.visible and self:IsTabActive(control.tab) and alpha > 0.02
 
 	if control.refreshVisibility then
-		control:refreshVisibility(shouldShow)
+		control:refreshVisibility(shouldShow, alpha)
 	else
 		for _, drawing in pairs(control.drawings) do
 			writeProperty(drawing, "Visible", shouldShow)
@@ -1171,6 +1172,11 @@ local function addLabel(window, tab, text)
 		writeProperty(self.drawings.text, "Size", self.window.theme.TextSize)
 	end
 
+	function control:refreshVisibility(shouldShow, alpha)
+		writeProperty(self.drawings.text, "Visible", shouldShow)
+		writeProperty(self.drawings.text, "Transparency", shouldShow and (1 - alpha) or 1)
+	end
+
 	function control:setZIndex(z)
 		writeProperty(self.drawings.text, "ZIndex", z)
 	end
@@ -1235,6 +1241,13 @@ local function addParagraph(window, tab, title, text)
 		writeProperty(self.drawings.body, "Size", self.window.theme.SmallTextSize)
 	end
 
+	function control:refreshVisibility(shouldShow, alpha)
+		writeProperty(self.drawings.title, "Visible", shouldShow)
+		writeProperty(self.drawings.body, "Visible", shouldShow)
+		writeProperty(self.drawings.title, "Transparency", shouldShow and (1 - alpha) or 1)
+		writeProperty(self.drawings.body, "Transparency", shouldShow and (1 - alpha) or 1)
+	end
+
 	function control:setZIndex(z)
 		writeProperty(self.drawings.title, "ZIndex", z)
 		writeProperty(self.drawings.body, "ZIndex", z)
@@ -1293,6 +1306,13 @@ local function addSection(window, tab, text)
 		writeProperty(self.drawings.text, "Size", self.window.theme.TextSize + 1)
 	end
 
+	function control:refreshVisibility(shouldShow, alpha)
+		writeProperty(self.drawings.text, "Visible", shouldShow)
+		writeProperty(self.drawings.line, "Visible", shouldShow)
+		writeProperty(self.drawings.text, "Transparency", shouldShow and (1 - alpha) or 1)
+		writeProperty(self.drawings.line, "Transparency", shouldShow and (1 - alpha) or 1)
+	end
+
 	function control:setZIndex(z)
 		writeProperty(self.drawings.text, "ZIndex", z)
 		writeProperty(self.drawings.line, "ZIndex", z)
@@ -1322,6 +1342,7 @@ local function addSubTab(window, tab, text, expanded)
 	local group = makeBaseControl(window, tab, "SubTab", SECTION_HEIGHT + 2)
 	group.text = text
 	group.expanded = expanded ~= false
+	group.expandAlpha = group.expanded and 1 or 0
 	group.children = {}
 	group.configKey = nil
 
@@ -1385,9 +1406,31 @@ local function addSubTab(window, tab, text, expanded)
 	function group:onMouseUp(point)
 		if self.pressing and self:hitTest(point) then
 			self.expanded = not self.expanded
-			self.window:UpdateLayout()
 		end
 		self.pressing = false
+	end
+
+	function group:onStep()
+		local target = self.expanded and 1 or 0
+		local nextAlpha = lerp(self.expandAlpha, target, 0.25)
+
+		if math.abs(nextAlpha - self.expandAlpha) > 0.001 then
+			self.expandAlpha = nextAlpha
+			self.window:SyncAllControlVisibility()
+			return false
+		end
+
+		self.expandAlpha = target
+		return false
+	end
+
+	function group:refreshVisibility(shouldShow, alpha)
+		writeProperty(self.drawings.text, "Visible", shouldShow)
+		writeProperty(self.drawings.arrow, "Visible", shouldShow)
+		writeProperty(self.drawings.line, "Visible", shouldShow)
+		writeProperty(self.drawings.text, "Transparency", shouldShow and 0 or 1)
+		writeProperty(self.drawings.arrow, "Transparency", shouldShow and 0 or 1)
+		writeProperty(self.drawings.line, "Transparency", shouldShow and 0 or 1)
 	end
 
 	function group:setZIndex(z)
