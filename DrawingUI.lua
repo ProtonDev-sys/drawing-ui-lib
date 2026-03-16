@@ -1,5 +1,6 @@
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local DrawingUI = {}
 DrawingUI.__index = DrawingUI
@@ -14,7 +15,10 @@ local DEFAULT_THEME = {
 	SubText = Color3.fromRGB(176, 182, 192),
 	Button = Color3.fromRGB(31, 36, 45),
 	ButtonHover = Color3.fromRGB(39, 46, 58),
-	Toggle = Color3.fromRGB(34, 39, 49),
+	Tab = Color3.fromRGB(24, 29, 38),
+	TabHover = Color3.fromRGB(33, 39, 50),
+	TabActive = Color3.fromRGB(36, 44, 56),
+	Toggle = Color3.fromRGB(48, 54, 67),
 	ToggleEnabled = Color3.fromRGB(63, 161, 255),
 	SliderTrack = Color3.fromRGB(45, 50, 62),
 	SliderFill = Color3.fromRGB(63, 161, 255),
@@ -24,24 +28,35 @@ local DEFAULT_THEME = {
 local DEFAULT_WINDOW = {
 	Title = "Drawing UI",
 	Position = Vector2.new(200, 160),
-	Size = Vector2.new(420, 360),
+	Size = Vector2.new(470, 360),
 	Visible = true,
 	Theme = {},
 }
 
 local FONT = 2
 local HEADER_HEIGHT = 32
+local TAB_HEIGHT = 24
+local TAB_GAP = 6
 local PADDING = 12
-local CONTENT_TOP = HEADER_HEIGHT + 10
-local ROW_HEIGHT = 26
+local CONTENT_GAP = 10
+local ROW_HEIGHT = 24
 local ROW_GAP = 8
-local SECTION_HEIGHT = 22
-local SLIDER_HEIGHT = 36
+local BUTTON_HEIGHT = 28
+local TOGGLE_HEIGHT = 24
+local SECTION_HEIGHT = 18
+local SLIDER_HEIGHT = 38
+local WINDOW_MARGIN = 8
 
 local windows = {}
 local frameConnection
 local inputBeganConnection
 local inputEndedConnection
+
+local Window = {}
+Window.__index = Window
+
+local Tab = {}
+Tab.__index = Tab
 
 local function clamp(value, minimum, maximum)
 	return math.max(minimum, math.min(maximum, value))
@@ -49,6 +64,10 @@ end
 
 local function lerp(a, b, alpha)
 	return a + (b - a) * alpha
+end
+
+local function round(value)
+	return math.floor(value + 0.5)
 end
 
 local function mergeTheme(overrides)
@@ -63,6 +82,16 @@ local function mergeTheme(overrides)
 	end
 
 	return theme
+end
+
+local function getViewportSize()
+	local camera = Workspace.CurrentCamera
+
+	if camera then
+		return camera.ViewportSize
+	end
+
+	return Vector2.new(1280, 720)
 end
 
 local function writeProperty(drawing, property, value)
@@ -106,9 +135,10 @@ local function getMousePosition()
 	return UserInputService:GetMouseLocation()
 end
 
-local function makeBaseControl(window, kind, height)
+local function makeBaseControl(window, tab, kind, height)
 	return {
 		window = window,
+		tab = tab,
 		kind = kind,
 		height = height,
 		visible = true,
@@ -120,35 +150,21 @@ local function makeBaseControl(window, kind, height)
 	}
 end
 
-local function addControl(window, control)
+local function addControl(window, tab, control)
 	table.insert(window.controls, control)
+
+	if tab ~= nil then
+		table.insert(tab.controls, control)
+	end
+
 	window:UpdateLayout()
 	window:RefreshZIndex()
+
 	return control
 end
 
-local function styleControlVisibility(control, isVisible)
-	control.visible = isVisible
-
-	for _, drawing in pairs(control.drawings) do
-		writeProperty(drawing, "Visible", isVisible and control.window.visible)
-	end
-
-	if control.refreshVisibility then
-		control:refreshVisibility()
-	end
-end
-
-local function setWindowVisible(window, isVisible)
-	window.visible = isVisible
-
-	for _, drawing in pairs(window.drawings) do
-		writeProperty(drawing, "Visible", isVisible)
-	end
-
-	for _, control in ipairs(window.controls) do
-		styleControlVisibility(control, control.visible)
-	end
+local function getTabWidth(name)
+	return clamp(24 + (#name * 7), 66, 140)
 end
 
 local function bringWindowToFront(window)
@@ -164,7 +180,7 @@ local function bringWindowToFront(window)
 	local baseZ = 100
 
 	for index, candidate in ipairs(windows) do
-		candidate.zBase = baseZ + (index * 20)
+		candidate.zBase = baseZ + (index * 24)
 		candidate:RefreshZIndex()
 	end
 end
@@ -195,11 +211,7 @@ local function ensureLoop()
 	end)
 
 	inputBeganConnection = UserInputService.InputBegan:Connect(function(input, processed)
-		if processed then
-			return
-		end
-
-		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+		if processed or input.UserInputType ~= Enum.UserInputType.MouseButton1 then
 			return
 		end
 
@@ -248,26 +260,88 @@ local function disconnectLoopIfEmpty()
 	end
 end
 
-local Window = {}
-Window.__index = Window
+function Window:HasTabs()
+	return #self.tabs > 0
+end
 
-function Window:RefreshZIndex()
-	local z = self.zBase
+function Window:IsTabActive(tab)
+	if tab == nil then
+		return not self:HasTabs()
+	end
 
-	writeProperty(self.drawings.shadow, "ZIndex", z)
-	writeProperty(self.drawings.frame, "ZIndex", z + 1)
-	writeProperty(self.drawings.header, "ZIndex", z + 2)
-	writeProperty(self.drawings.accent, "ZIndex", z + 3)
-	writeProperty(self.drawings.title, "ZIndex", z + 4)
-	writeProperty(self.drawings.subtitle, "ZIndex", z + 4)
+	return self.activeTab == tab
+end
 
-	local controlZ = z + 5
+function Window:IsControlDisplayed(control)
+	return self.visible and control.visible and self:IsTabActive(control.tab)
+end
+
+function Window:SyncControlVisibility(control)
+	local shouldShow = self:IsControlDisplayed(control)
+
+	for _, drawing in pairs(control.drawings) do
+		writeProperty(drawing, "Visible", shouldShow)
+	end
+
+	if control.refreshVisibility then
+		control:refreshVisibility(shouldShow)
+	end
+end
+
+function Window:SyncAllControlVisibility()
+	for _, control in ipairs(self.controls) do
+		self:SyncControlVisibility(control)
+	end
+end
+
+function Window:ClampToViewport()
+	local viewport = getViewportSize()
+	local maxWidth = math.max(280, viewport.X - (WINDOW_MARGIN * 2))
+	local maxHeight = math.max(220, viewport.Y - (WINDOW_MARGIN * 2))
+	local width = clamp(self.size.X, self.minimumSize.X, maxWidth)
+	local height = clamp(self.size.Y, self.minimumSize.Y, maxHeight)
+	local maxX = viewport.X - width - WINDOW_MARGIN
+	local maxY = viewport.Y - height - WINDOW_MARGIN
+
+	self.size = Vector2.new(width, height)
+	self.position = Vector2.new(
+		clamp(self.position.X, WINDOW_MARGIN, math.max(WINDOW_MARGIN, maxX)),
+		clamp(self.position.Y, WINDOW_MARGIN, math.max(WINDOW_MARGIN, maxY))
+	)
+end
+
+function Window:GetActiveControls()
+	local list = {}
 
 	for _, control in ipairs(self.controls) do
-		if control.setZIndex then
-			control:setZIndex(controlZ)
+		if self:IsTabActive(control.tab) then
+			table.insert(list, control)
 		end
 	end
+
+	return list
+end
+
+function Window:GetRequiredHeight()
+	local height = HEADER_HEIGHT + CONTENT_GAP + PADDING
+
+	if self:HasTabs() then
+		height += TAB_HEIGHT + CONTENT_GAP
+	end
+
+	local activeControls = self:GetActiveControls()
+
+	for index, control in ipairs(activeControls) do
+		if control.visible then
+			height += control.height
+
+			if index < #activeControls then
+				height += ROW_GAP
+			end
+		end
+	end
+
+	return math.max(self.minimumSize.Y, height)
 end
 
 function Window:UpdateChrome()
@@ -283,29 +357,116 @@ function Window:UpdateChrome()
 	writeProperty(self.drawings.accent, "From", position + Vector2.new(0, HEADER_HEIGHT))
 	writeProperty(self.drawings.accent, "To", position + Vector2.new(size.X, HEADER_HEIGHT))
 	writeProperty(self.drawings.title, "Position", position + Vector2.new(PADDING, 7))
-	writeProperty(self.drawings.subtitle, "Position", position + Vector2.new(size.X - PADDING - 80, 9))
+	writeProperty(self.drawings.subtitle, "Position", position + Vector2.new(size.X - 100, 9))
+end
+
+function Window:LayoutTabs()
+	local y = self.position.Y + HEADER_HEIGHT + CONTENT_GAP
+	local nextTabX = self.position.X + PADDING
+
+	for _, tab in ipairs(self.tabs) do
+		local width = getTabWidth(tab.name)
+		tab.position = Vector2.new(nextTabX, y)
+		tab.size = Vector2.new(width, TAB_HEIGHT)
+		nextTabX += width + TAB_GAP
+
+		writeProperty(tab.drawings.background, "Position", tab.position)
+		writeProperty(tab.drawings.background, "Size", tab.size)
+		writeProperty(tab.drawings.outline, "Position", tab.position)
+		writeProperty(tab.drawings.outline, "Size", tab.size)
+		writeProperty(tab.drawings.text, "Position", tab.position + Vector2.new(10, 5))
+		writeProperty(tab.drawings.background, "Visible", self.visible)
+		writeProperty(tab.drawings.outline, "Visible", self.visible)
+		writeProperty(tab.drawings.text, "Visible", self.visible)
+	end
+
+	if self:HasTabs() then
+		return y + TAB_HEIGHT + CONTENT_GAP
+	end
+
+	return self.position.Y + HEADER_HEIGHT + CONTENT_GAP
+end
+
+function Window:UpdateTabVisuals(mousePosition)
+	for _, tab in ipairs(self.tabs) do
+		local hovered = self.visible and pointInRect(mousePosition, tab.position, tab.size)
+		local active = self.activeTab == tab
+		local backgroundColor = active and self.theme.TabActive or hovered and self.theme.TabHover or self.theme.Tab
+		local outlineColor = active and self.theme.Accent or self.theme.Border
+		local textColor = active and self.theme.Text or hovered and self.theme.Text or self.theme.SubText
+
+		writeProperty(tab.drawings.background, "Color", backgroundColor)
+		writeProperty(tab.drawings.outline, "Color", outlineColor)
+		writeProperty(tab.drawings.text, "Color", textColor)
+	end
 end
 
 function Window:UpdateLayout()
+	self.size = Vector2.new(self.size.X, self:GetRequiredHeight())
+	self:ClampToViewport()
 	self:UpdateChrome()
 
-	local y = self.position.Y + CONTENT_TOP
+	local y = self:LayoutTabs()
 	local contentWidth = self.size.X - (PADDING * 2)
 
 	for _, control in ipairs(self.controls) do
-		control.position = Vector2.new(self.position.X + PADDING, y)
-		control.size = Vector2.new(contentWidth, control.height)
+		if self:IsTabActive(control.tab) then
+			control.position = Vector2.new(self.position.X + PADDING, y)
+			control.size = Vector2.new(contentWidth, control.height)
 
-		if control.layout then
-			control:layout()
+			if control.layout then
+				control:layout()
+			end
+
+			if control.visible then
+				y += control.height + ROW_GAP
+			end
 		end
+	end
 
-		y += control.height + ROW_GAP
+	self:SyncAllControlVisibility()
+	self:UpdateTabVisuals(getMousePosition())
+end
+
+function Window:RefreshZIndex()
+	local z = self.zBase
+
+	writeProperty(self.drawings.shadow, "ZIndex", z)
+	writeProperty(self.drawings.frame, "ZIndex", z + 1)
+	writeProperty(self.drawings.header, "ZIndex", z + 2)
+	writeProperty(self.drawings.accent, "ZIndex", z + 3)
+	writeProperty(self.drawings.title, "ZIndex", z + 4)
+	writeProperty(self.drawings.subtitle, "ZIndex", z + 4)
+
+	for _, tab in ipairs(self.tabs) do
+		writeProperty(tab.drawings.background, "ZIndex", z + 5)
+		writeProperty(tab.drawings.outline, "ZIndex", z + 6)
+		writeProperty(tab.drawings.text, "ZIndex", z + 7)
+	end
+
+	local controlZ = z + 8
+
+	for _, control in ipairs(self.controls) do
+		if control.setZIndex then
+			control:setZIndex(controlZ)
+		end
 	end
 end
 
 function Window:SetVisible(isVisible)
-	setWindowVisible(self, isVisible)
+	self.visible = isVisible
+
+	for _, drawing in pairs(self.drawings) do
+		writeProperty(drawing, "Visible", isVisible)
+	end
+
+	for _, tab in ipairs(self.tabs) do
+		for _, drawing in pairs(tab.drawings) do
+			writeProperty(drawing, "Visible", isVisible)
+		end
+	end
+
+	self:SyncAllControlVisibility()
 end
 
 function Window:SetTitle(text)
@@ -314,6 +475,7 @@ function Window:SetTitle(text)
 end
 
 function Window:SetSubtitle(text)
+	self.subtitle = text
 	writeProperty(self.drawings.subtitle, "Text", text)
 end
 
@@ -323,6 +485,7 @@ function Window:SetPosition(position)
 end
 
 function Window:SetSize(size)
+	self.minimumSize = size
 	self.size = size
 	self:UpdateLayout()
 end
@@ -331,9 +494,21 @@ function Window:IsPointInHeader(point)
 	return pointInRect(point, self.position, Vector2.new(self.size.X, HEADER_HEIGHT))
 end
 
+function Window:GetTabAt(point)
+	for _, tab in ipairs(self.tabs) do
+		if pointInRect(point, tab.position, tab.size) then
+			return tab
+		end
+	end
+
+	return nil
+end
+
 function Window:GetControlAt(point)
-	for _, control in ipairs(self.controls) do
-		if control.visible and control.hitTest and control:hitTest(point) then
+	for index = #self.controls, 1, -1 do
+		local control = self.controls[index]
+
+		if self:IsControlDisplayed(control) and control.hitTest and control:hitTest(point) then
 			return control
 		end
 	end
@@ -341,10 +516,32 @@ function Window:GetControlAt(point)
 	return nil
 end
 
+function Window:SetActiveTab(nameOrTab)
+	if typeof(nameOrTab) == "table" then
+		self.activeTab = nameOrTab
+	else
+		for _, tab in ipairs(self.tabs) do
+			if tab.name == nameOrTab then
+				self.activeTab = tab
+				break
+			end
+		end
+	end
+
+	self:UpdateLayout()
+end
+
 function Window:HandleMouseDown(point)
 	if self:IsPointInHeader(point) then
 		self.dragging = true
 		self.dragOffset = point - self.position
+		return
+	end
+
+	local tab = self:GetTabAt(point)
+
+	if tab ~= nil then
+		self:SetActiveTab(tab)
 		return
 	end
 
@@ -372,14 +569,17 @@ function Window:Step(mousePosition)
 
 	if self.dragging then
 		self.position = mousePosition - self.dragOffset
+		self:ClampToViewport()
 		self:UpdateLayout()
 	end
+
+	self:UpdateTabVisuals(mousePosition)
 
 	local topWindow = topWindowAt(mousePosition)
 	local ownsHover = topWindow == self
 
 	for _, control in ipairs(self.controls) do
-		if control.onStep then
+		if self:IsControlDisplayed(control) and control.onStep then
 			control:onStep(mousePosition, ownsHover)
 		end
 	end
@@ -389,6 +589,12 @@ function Window:Destroy()
 	for _, control in ipairs(self.controls) do
 		if control.destroy then
 			control:destroy()
+		end
+	end
+
+	for _, tab in ipairs(self.tabs) do
+		for _, drawing in pairs(tab.drawings) do
+			destroyDrawing(drawing)
 		end
 	end
 
@@ -404,12 +610,13 @@ function Window:Destroy()
 	end
 
 	self.controls = {}
+	self.tabs = {}
 
 	disconnectLoopIfEmpty()
 end
 
-local function addLabel(window, text)
-	local control = makeBaseControl(window, "Label", ROW_HEIGHT)
+local function addLabel(window, tab, text)
+	local control = makeBaseControl(window, tab, "Label", ROW_HEIGHT)
 	control.text = text
 
 	control.drawings.text = createDrawing("Text", {
@@ -423,7 +630,7 @@ local function addLabel(window, text)
 	})
 
 	function control:layout()
-		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(0, 4))
+		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(0, 3))
 	end
 
 	function control:setZIndex(z)
@@ -439,11 +646,11 @@ local function addLabel(window, text)
 		destroyDrawing(self.drawings.text)
 	end
 
-	return addControl(window, control)
+	return addControl(window, tab, control)
 end
 
-local function addSection(window, text)
-	local control = makeBaseControl(window, "Section", SECTION_HEIGHT)
+local function addSection(window, tab, text)
+	local control = makeBaseControl(window, tab, "Section", SECTION_HEIGHT)
 	control.text = text
 
 	control.drawings.text = createDrawing("Text", {
@@ -465,12 +672,12 @@ local function addSection(window, text)
 	})
 
 	function control:layout()
-		local textPosition = self.position + Vector2.new(0, 1)
-		local textWidth = (#self.text * 6) + 16
-		local lineY = self.position.Y + 12
+		local textWidth = (#self.text * 7) + 12
+		local lineStartX = math.min(self.position.X + textWidth, self.position.X + self.size.X)
+		local lineY = self.position.Y + 10
 
-		writeProperty(self.drawings.text, "Position", textPosition)
-		writeProperty(self.drawings.line, "From", Vector2.new(self.position.X + textWidth, lineY))
+		writeProperty(self.drawings.text, "Position", self.position)
+		writeProperty(self.drawings.line, "From", Vector2.new(lineStartX, lineY))
 		writeProperty(self.drawings.line, "To", Vector2.new(self.position.X + self.size.X, lineY))
 	end
 
@@ -484,11 +691,11 @@ local function addSection(window, text)
 		destroyDrawing(self.drawings.line)
 	end
 
-	return addControl(window, control)
+	return addControl(window, tab, control)
 end
 
-local function addButton(window, text, callback)
-	local control = makeBaseControl(window, "Button", ROW_HEIGHT)
+local function addButton(window, tab, text, callback)
+	local control = makeBaseControl(window, tab, "Button", BUTTON_HEIGHT)
 	control.text = text
 	control.callback = callback or function() end
 
@@ -525,7 +732,7 @@ local function addButton(window, text, callback)
 		writeProperty(self.drawings.frame, "Size", self.size)
 		writeProperty(self.drawings.outline, "Position", self.position)
 		writeProperty(self.drawings.outline, "Size", self.size)
-		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(10, 4))
+		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(10, 5))
 	end
 
 	function control:setZIndex(z)
@@ -555,9 +762,7 @@ local function addButton(window, text, callback)
 
 	function control:onStep(mousePosition, ownsHover)
 		self.hovered = ownsHover and self:hitTest(mousePosition)
-
-		local color = self.hovered and self.window.theme.ButtonHover or self.window.theme.Button
-		writeProperty(self.drawings.frame, "Color", color)
+		writeProperty(self.drawings.frame, "Color", self.hovered and self.window.theme.ButtonHover or self.window.theme.Button)
 	end
 
 	function control:SetText(nextText)
@@ -571,41 +776,14 @@ local function addButton(window, text, callback)
 		destroyDrawing(self.drawings.text)
 	end
 
-	return addControl(window, control)
+	return addControl(window, tab, control)
 end
 
-local function addToggle(window, text, initialValue, callback)
-	local control = makeBaseControl(window, "Toggle", ROW_HEIGHT)
+local function addToggle(window, tab, text, initialValue, callback)
+	local control = makeBaseControl(window, tab, "Toggle", TOGGLE_HEIGHT)
 	control.text = text
 	control.value = initialValue == true
 	control.callback = callback or function() end
-
-	control.drawings.box = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = true,
-		Color = window.theme.Toggle,
-		Thickness = 1,
-		Size = Vector2.new(18, 18),
-		Position = Vector2.zero,
-	})
-
-	control.drawings.mark = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = true,
-		Color = window.theme.ToggleEnabled,
-		Thickness = 1,
-		Size = Vector2.new(10, 10),
-		Position = Vector2.zero,
-	})
-
-	control.drawings.outline = createDrawing("Square", {
-		Visible = window.visible,
-		Filled = false,
-		Color = window.theme.Border,
-		Thickness = 1,
-		Size = Vector2.new(18, 18),
-		Position = Vector2.zero,
-	})
 
 	control.drawings.text = createDrawing("Text", {
 		Visible = window.visible,
@@ -617,32 +795,94 @@ local function addToggle(window, text, initialValue, callback)
 		Position = Vector2.zero,
 	})
 
+	control.drawings.state = createDrawing("Text", {
+		Visible = window.visible,
+		Color = window.theme.SubText,
+		Size = 12,
+		Font = FONT,
+		Outline = true,
+		Text = "OFF",
+		Position = Vector2.zero,
+	})
+
+	control.drawings.trackLeft = createDrawing("Circle", {
+		Visible = window.visible,
+		Filled = true,
+		Color = window.theme.Toggle,
+		Thickness = 1,
+		NumSides = 20,
+		Radius = 8,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.trackRight = createDrawing("Circle", {
+		Visible = window.visible,
+		Filled = true,
+		Color = window.theme.Toggle,
+		Thickness = 1,
+		NumSides = 20,
+		Radius = 8,
+		Position = Vector2.zero,
+	})
+
+	control.drawings.trackCenter = createDrawing("Square", {
+		Visible = window.visible,
+		Filled = true,
+		Color = window.theme.Toggle,
+		Thickness = 1,
+		Size = Vector2.new(18, 16),
+		Position = Vector2.zero,
+	})
+
+	control.drawings.knob = createDrawing("Circle", {
+		Visible = window.visible,
+		Filled = true,
+		Color = Color3.fromRGB(245, 247, 250),
+		Thickness = 1,
+		NumSides = 20,
+		Radius = 6,
+		Position = Vector2.zero,
+	})
+
 	function control:applyValue()
-		writeProperty(self.drawings.mark, "Visible", self.value and self.window.visible and self.visible)
-		writeProperty(self.drawings.box, "Color", self.value and self.window.theme.ToggleEnabled or self.window.theme.Toggle)
+		local activeColor = self.value and self.window.theme.ToggleEnabled or self.window.theme.Toggle
+
+		writeProperty(self.drawings.trackLeft, "Color", activeColor)
+		writeProperty(self.drawings.trackRight, "Color", activeColor)
+		writeProperty(self.drawings.trackCenter, "Color", activeColor)
+		writeProperty(self.drawings.state, "Text", self.value and "ON" or "OFF")
+		writeProperty(self.drawings.state, "Color", self.value and self.window.theme.Accent or self.window.theme.SubText)
 	end
 
-	function control:refreshVisibility()
-		writeProperty(self.drawings.box, "Visible", self.visible and self.window.visible)
-		writeProperty(self.drawings.outline, "Visible", self.visible and self.window.visible)
-		writeProperty(self.drawings.text, "Visible", self.visible and self.window.visible)
-		self:applyValue()
+	function control:refreshVisibility(shouldShow)
+		for _, drawing in pairs(self.drawings) do
+			writeProperty(drawing, "Visible", shouldShow)
+		end
 	end
 
 	function control:layout()
-		local boxPosition = self.position + Vector2.new(0, 4)
+		local switchWidth = 34
+		local switchPosition = self.position + Vector2.new(self.size.X - switchWidth, 4)
+		local knobX = self.value and switchPosition.X + 26 or switchPosition.X + 8
 
-		writeProperty(self.drawings.box, "Position", boxPosition)
-		writeProperty(self.drawings.outline, "Position", boxPosition)
-		writeProperty(self.drawings.mark, "Position", boxPosition + Vector2.new(4, 4))
-		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(28, 4))
+		writeProperty(self.drawings.text, "Position", self.position + Vector2.new(0, 3))
+		writeProperty(self.drawings.state, "Position", self.position + Vector2.new(self.size.X - 72, 4))
+		writeProperty(self.drawings.trackLeft, "Position", switchPosition + Vector2.new(8, 8))
+		writeProperty(self.drawings.trackRight, "Position", switchPosition + Vector2.new(switchWidth - 8, 8))
+		writeProperty(self.drawings.trackCenter, "Position", switchPosition + Vector2.new(8, 0))
+		writeProperty(self.drawings.trackCenter, "Size", Vector2.new(switchWidth - 16, 16))
+		writeProperty(self.drawings.knob, "Position", Vector2.new(knobX, switchPosition.Y + 8))
+
+		self:applyValue()
 	end
 
 	function control:setZIndex(z)
-		writeProperty(self.drawings.box, "ZIndex", z)
-		writeProperty(self.drawings.mark, "ZIndex", z + 1)
-		writeProperty(self.drawings.outline, "ZIndex", z + 2)
-		writeProperty(self.drawings.text, "ZIndex", z + 3)
+		writeProperty(self.drawings.text, "ZIndex", z)
+		writeProperty(self.drawings.state, "ZIndex", z)
+		writeProperty(self.drawings.trackLeft, "ZIndex", z + 1)
+		writeProperty(self.drawings.trackRight, "ZIndex", z + 1)
+		writeProperty(self.drawings.trackCenter, "ZIndex", z + 1)
+		writeProperty(self.drawings.knob, "ZIndex", z + 2)
 	end
 
 	function control:hitTest(point)
@@ -667,18 +907,18 @@ local function addToggle(window, text, initialValue, callback)
 		end
 
 		self.value = not self.value
-		self:applyValue()
+		self:layout()
 		self.callback(self.value)
 	end
 
 	function control:onStep(mousePosition, ownsHover)
 		self.hovered = ownsHover and self:hitTest(mousePosition)
-		writeProperty(self.drawings.outline, "Color", self.hovered and self.window.theme.Accent or self.window.theme.Border)
+		writeProperty(self.drawings.knob, "Color", self.hovered and self.window.theme.Text or Color3.fromRGB(245, 247, 250))
 	end
 
 	function control:SetValue(nextValue)
 		self.value = nextValue == true
-		self:applyValue()
+		self:layout()
 	end
 
 	function control:destroy()
@@ -687,12 +927,11 @@ local function addToggle(window, text, initialValue, callback)
 		end
 	end
 
-	control:applyValue()
-	return addControl(window, control)
+	return addControl(window, tab, control)
 end
 
-local function addSlider(window, text, minimum, maximum, initialValue, callback)
-	local control = makeBaseControl(window, "Slider", SLIDER_HEIGHT)
+local function addSlider(window, tab, text, minimum, maximum, initialValue, callback)
+	local control = makeBaseControl(window, tab, "Slider", SLIDER_HEIGHT)
 	control.text = text
 	control.minimum = minimum
 	control.maximum = maximum
@@ -713,7 +952,7 @@ local function addSlider(window, text, minimum, maximum, initialValue, callback)
 	control.drawings.value = createDrawing("Text", {
 		Visible = window.visible,
 		Color = window.theme.SubText,
-		Size = 13,
+		Size = 12,
 		Font = FONT,
 		Outline = true,
 		Text = tostring(control.value),
@@ -762,7 +1001,7 @@ local function addSlider(window, text, minimum, maximum, initialValue, callback)
 		local barPosition = self.position + Vector2.new(0, 24)
 		local barWidth = self.size.X
 		local alpha = self:getAlpha()
-		local fillWidth = math.floor(barWidth * alpha)
+		local fillWidth = clamp(round(barWidth * alpha), 0, barWidth)
 
 		writeProperty(self.drawings.track, "Position", barPosition)
 		writeProperty(self.drawings.track, "Size", Vector2.new(barWidth, 6))
@@ -773,8 +1012,7 @@ local function addSlider(window, text, minimum, maximum, initialValue, callback)
 	end
 
 	function control:setFromMouse(mousePosition)
-		local startX = self.position.X
-		local alpha = clamp((mousePosition.X - startX) / self.size.X, 0, 1)
+		local alpha = clamp((mousePosition.X - self.position.X) / self.size.X, 0, 1)
 		local nextValue = lerp(self.minimum, self.maximum, alpha)
 
 		if math.abs(nextValue - self.value) < 0.001 then
@@ -788,7 +1026,7 @@ local function addSlider(window, text, minimum, maximum, initialValue, callback)
 
 	function control:layout()
 		writeProperty(self.drawings.label, "Position", self.position)
-		writeProperty(self.drawings.value, "Position", self.position + Vector2.new(self.size.X - 44, 0))
+		writeProperty(self.drawings.value, "Position", self.position + Vector2.new(self.size.X - 52, 1))
 		self:updateVisuals()
 	end
 
@@ -821,8 +1059,7 @@ local function addSlider(window, text, minimum, maximum, initialValue, callback)
 		end
 
 		local hovered = ownsHover and self:hitTest(mousePosition)
-		local knobColor = (hovered or self.dragging) and self.window.theme.Accent or self.window.theme.Text
-		writeProperty(self.drawings.knob, "Color", knobColor)
+		writeProperty(self.drawings.knob, "Color", (hovered or self.dragging) and self.window.theme.Accent or self.window.theme.Text)
 	end
 
 	function control:SetValue(nextValue)
@@ -836,27 +1073,99 @@ local function addSlider(window, text, minimum, maximum, initialValue, callback)
 		end
 	end
 
-	return addControl(window, control)
+	return addControl(window, tab, control)
+end
+
+function Tab:AddLabel(text)
+	return addLabel(self.window, self, text)
+end
+
+function Tab:AddSection(text)
+	return addSection(self.window, self, text)
+end
+
+function Tab:AddButton(text, callback)
+	return addButton(self.window, self, text, callback)
+end
+
+function Tab:AddToggle(text, initialValue, callback)
+	return addToggle(self.window, self, text, initialValue, callback)
+end
+
+function Tab:AddSlider(text, minimum, maximum, initialValue, callback)
+	return addSlider(self.window, self, text, minimum, maximum, initialValue, callback)
+end
+
+function Tab:Select()
+	self.window:SetActiveTab(self)
+end
+
+function Window:AddTab(name)
+	local tab = setmetatable({
+		window = self,
+		name = name,
+		controls = {},
+		position = Vector2.zero,
+		size = Vector2.zero,
+		drawings = {
+			background = createDrawing("Square", {
+				Visible = self.visible,
+				Filled = true,
+				Color = self.theme.Tab,
+				Thickness = 1,
+				Position = Vector2.zero,
+				Size = Vector2.zero,
+			}),
+			outline = createDrawing("Square", {
+				Visible = self.visible,
+				Filled = false,
+				Color = self.theme.Border,
+				Thickness = 1,
+				Position = Vector2.zero,
+				Size = Vector2.zero,
+			}),
+			text = createDrawing("Text", {
+				Visible = self.visible,
+				Color = self.theme.SubText,
+				Size = 13,
+				Font = FONT,
+				Outline = true,
+				Text = name,
+				Position = Vector2.zero,
+			}),
+		},
+	}, Tab)
+
+	table.insert(self.tabs, tab)
+
+	if self.activeTab == nil then
+		self.activeTab = tab
+	end
+
+	self:UpdateLayout()
+	self:RefreshZIndex()
+
+	return tab
 end
 
 function Window:AddLabel(text)
-	return addLabel(self, text)
+	return addLabel(self, nil, text)
 end
 
 function Window:AddSection(text)
-	return addSection(self, text)
+	return addSection(self, nil, text)
 end
 
 function Window:AddButton(text, callback)
-	return addButton(self, text, callback)
+	return addButton(self, nil, text, callback)
 end
 
 function Window:AddToggle(text, initialValue, callback)
-	return addToggle(self, text, initialValue, callback)
+	return addToggle(self, nil, text, initialValue, callback)
 end
 
 function Window:AddSlider(text, minimum, maximum, initialValue, callback)
-	return addSlider(self, text, minimum, maximum, initialValue, callback)
+	return addSlider(self, nil, text, minimum, maximum, initialValue, callback)
 end
 
 function DrawingUI.new(options)
@@ -872,14 +1181,18 @@ function DrawingUI.new(options)
 
 	local self = setmetatable({}, Window)
 	self.title = config.Title
+	self.subtitle = "drag me"
 	self.position = config.Position
 	self.size = config.Size
+	self.minimumSize = config.Size
 	self.visible = config.Visible
 	self.theme = mergeTheme(config.Theme)
 	self.controls = {}
+	self.tabs = {}
+	self.activeTab = nil
 	self.dragging = false
 	self.dragOffset = Vector2.zero
-	self.zBase = 100 + (#windows * 20)
+	self.zBase = 100 + (#windows * 24)
 
 	self.drawings = {
 		shadow = createDrawing("Square", {
@@ -929,7 +1242,7 @@ function DrawingUI.new(options)
 			Size = 12,
 			Font = FONT,
 			Outline = true,
-			Text = "drag me",
+			Text = self.subtitle,
 			Position = Vector2.zero,
 		}),
 	}

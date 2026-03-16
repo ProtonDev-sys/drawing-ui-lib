@@ -17,10 +17,12 @@ local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Pro
 ## Included
 
 - Draggable window container
+- Viewport clamping so the window stays on-screen while dragging
+- Tabs
 - Labels
 - Section headers
 - Buttons
-- Toggles
+- Switch-style toggles
 - Sliders
 - Window mutators for title, subtitle, position, size, and visibility
 - Full drawing cleanup through `:Destroy()` and `DrawingUI.ClearAll()`
@@ -37,6 +39,8 @@ See `examples/example_ui.lua`.
 - `window:AddButton(text, callback)`
 - `window:AddToggle(text, initialValue, callback)`
 - `window:AddSlider(text, min, max, initialValue, callback)`
+- `window:AddTab(name)`
+- `window:SetActiveTab(nameOrTab)`
 - `window:SetTitle(text)`
 - `window:SetSubtitle(text)`
 - `window:SetPosition(Vector2)`
@@ -44,6 +48,15 @@ See `examples/example_ui.lua`.
 - `window:SetVisible(boolean)`
 - `window:Destroy()`
 
+## Tab API
+
+- `tab:AddSection(text)`
+- `tab:AddLabel(text)`
+- `tab:AddButton(text, callback)`
+- `tab:AddToggle(text, initialValue, callback)`
+- `tab:AddSlider(text, min, max, initialValue, callback)`
+- `tab:Select()`
+
 ## Note
 
-`game:HttpGet(rawgithuburl)` will not be able to fetch this file while the repository is private unless you use some authenticated mirror or make the repo public.
+The example uses the public raw GitHub URL for `DrawingUI.lua`, so updates only take effect after pushing changes to `main`.

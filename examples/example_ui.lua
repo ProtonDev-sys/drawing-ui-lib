@@ -3,6 +3,8 @@ local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Pro
 local state = {
 	enabled = false,
 	showFov = true,
+	showBoxes = false,
+	showNames = true,
 	fov = 140,
 	smoothness = 0.2,
 	status = "Idle",
@@ -15,7 +17,7 @@ end
 local window = DrawingUI.CreateWindow({
 	Title = "Example Hub",
 	Position = Vector2.new(140, 90),
-	Size = Vector2.new(460, 420),
+	Size = Vector2.new(470, 320),
 	Theme = {
 		Accent = Color3.fromRGB(255, 155, 66),
 		ToggleEnabled = Color3.fromRGB(255, 155, 66),
@@ -26,51 +28,67 @@ local window = DrawingUI.CreateWindow({
 	},
 })
 
-window:SetSubtitle("example menu")
+window:SetSubtitle("tabbed example")
 
-window:AddSection("Aim Assist")
+local combatTab = window:AddTab("Combat")
+local visualsTab = window:AddTab("Visuals")
+local miscTab = window:AddTab("Misc")
 
-local enabledLabel = window:AddLabel("Enabled: false")
-local fovLabel = window:AddLabel("FOV Radius: " .. tostring(state.fov))
-local smoothnessLabel = window:AddLabel("Smoothness: " .. formatNumber(state.smoothness))
+combatTab:AddSection("Aim Assist")
 
-window:AddToggle("Master Toggle", state.enabled, function(value)
+local enabledLabel = combatTab:AddLabel("Enabled: false")
+local fovLabel = combatTab:AddLabel("FOV Radius: " .. tostring(state.fov))
+local smoothnessLabel = combatTab:AddLabel("Smoothness: " .. formatNumber(state.smoothness))
+
+combatTab:AddToggle("Master Toggle", state.enabled, function(value)
 	state.enabled = value
 	enabledLabel:SetText("Enabled: " .. tostring(value))
 	window:SetTitle(value and "Example Hub [ON]" or "Example Hub [OFF]")
 end)
 
-window:AddToggle("Draw FOV Circle", state.showFov, function(value)
-	state.showFov = value
-	window:SetSubtitle(value and "fov visible" or "fov hidden")
-end)
-
-window:AddSlider("FOV Radius", 40, 400, state.fov, function(value)
+combatTab:AddSlider("FOV Radius", 40, 400, state.fov, function(value)
 	state.fov = math.floor(value + 0.5)
 	fovLabel:SetText("FOV Radius: " .. tostring(state.fov))
 end)
 
-window:AddSlider("Smoothness", 0.05, 1, state.smoothness, function(value)
+combatTab:AddSlider("Smoothness", 0.05, 1, state.smoothness, function(value)
 	state.smoothness = value
 	smoothnessLabel:SetText("Smoothness: " .. formatNumber(value))
 end)
 
-window:AddSection("Actions")
+visualsTab:AddSection("ESP")
 
-local statusLabel = window:AddLabel("Status: " .. state.status)
+local visualsLabel = visualsTab:AddLabel("Draw helpers for targets")
 
-window:AddButton("Inject Config", function()
+visualsTab:AddToggle("Draw FOV Circle", state.showFov, function(value)
+	state.showFov = value
+	visualsLabel:SetText(value and "Draw helpers for targets" or "Circle overlay disabled")
+end)
+
+visualsTab:AddToggle("Boxes", state.showBoxes, function(value)
+	state.showBoxes = value
+end)
+
+visualsTab:AddToggle("Names", state.showNames, function(value)
+	state.showNames = value
+end)
+
+miscTab:AddSection("Actions")
+
+local statusLabel = miscTab:AddLabel("Status: " .. state.status)
+
+miscTab:AddButton("Inject Config", function()
 	state.status = "Loaded preset at " .. os.date("%X")
 	statusLabel:SetText("Status: " .. state.status)
 end)
 
-window:AddButton("Move Window", function()
+miscTab:AddButton("Move Window", function()
 	window:SetPosition(Vector2.new(220, 120))
 	state.status = "Window moved"
 	statusLabel:SetText("Status: " .. state.status)
 end)
 
-window:AddButton("Hide For 3 Seconds", function()
+miscTab:AddButton("Hide For 3 Seconds", function()
 	state.status = "Temporarily hidden"
 	statusLabel:SetText("Status: " .. state.status)
 	window:SetVisible(false)
@@ -82,6 +100,8 @@ window:AddButton("Hide For 3 Seconds", function()
 	end)
 end)
 
-window:AddButton("Unload UI", function()
+miscTab:AddButton("Unload UI", function()
 	DrawingUI.ClearAll()
 end)
+
+window:SetActiveTab("Combat")
