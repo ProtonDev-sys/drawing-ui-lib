@@ -41,7 +41,7 @@ If your environment does not expose the Drawing API, this library will not run.
 ### Remote loadstring
 
 ```lua
-local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.9.0"))()
+local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.10.0"))()
 ```
 
 ### Local usage
@@ -51,7 +51,7 @@ If you ship the file yourself, load `DrawingUI.lua` however your environment exp
 ## Quick start
 
 ```lua
-local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.9.0"))()
+local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.10.0"))()
 
 local window = DrawingUI.CreateWindow({
 	Title = "Example Hub",
@@ -139,6 +139,14 @@ Notes:
 - `window:SetPosition(Vector2)`
 - `window:SetSize(Vector2)`
 - `window:SetVisible(boolean)`
+- `window:GetConfigId()`
+- `window:GetConfigFolder()`
+- `window:BuildConfig()`
+- `window:ApplyConfig(config, fireCallbacks?)`
+- `window:ListConfigs()`
+- `window:SaveConfig(name)`
+- `window:LoadConfig(name, fireCallbacks?)`
+- `window:DeleteConfig(name)`
 - `window:Destroy()`
 
 ### Tab API
@@ -188,9 +196,10 @@ Common mutators exposed by the current implementation include:
 - Labels, paragraphs, buttons, and textboxes: `control:SetText(text)`
 - Toggles and sliders: `control:SetValue(value)`
 - Dropdowns: `control:SetValue(value)`, `control:SetOptions(options, defaultValue?)`, `control:SetOpen(boolean)`
-- Searchable dropdowns: `control:SetValue(value)`, `control:SetOpen(boolean)`
-- Multi-dropdowns: `control:SetOpen(boolean)`
-- Keybinds: `control:SetListening(boolean)`
+- Searchable dropdowns: `control:SetValue(value)`, `control:SetOptions(options, defaultValue?)`, `control:SetSearchText(text)`, `control:SetOpen(boolean)`
+- Multi-dropdowns: `control:SetValues(values)`, `control:SetOpen(boolean)`
+- Color pickers: `control:SetColor(color3)`
+- Keybinds: `control:SetListening(boolean)`, `control:SetBinding(binding)`
 
 The primary supported surface is still the `window:*` and `tab:*` API above. Treat lower-level control mutators as convenience methods tied to the current implementation.
 
@@ -240,6 +249,8 @@ Useful theme keys include:
 - `SmallTextSize`
 
 `DrawingUI.CreateTheme(overrides)` returns a merged theme table if you want to define reusable presets.
+
+`CreateWindow` also accepts `DragAnywhere = false` if you want classic titlebar-only dragging, plus `ConfigId` and `ConfigRoot` if you want the built-in config API to save somewhere specific.
 
 ## Cleanup
 

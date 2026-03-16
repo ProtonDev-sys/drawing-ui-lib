@@ -2,10 +2,11 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local ContextActionService = game:GetService("ContextActionService")
+local HttpService = game:GetService("HttpService")
 
 local DrawingUI = {}
 DrawingUI.__index = DrawingUI
-local VERSION = "0.9.0"
+local VERSION = "0.10.0"
 
 local DEFAULT_THEME = {
 	WindowBackground = Color3.fromRGB(19, 22, 28),
@@ -290,6 +291,20 @@ local function wrapText(text, maxCharacters)
 	return table.concat(lines, "\n"), #lines
 end
 
+local function sanitizeFileName(name)
+	local cleaned = tostring(name or "default"):gsub("[<>:\"/\\|%?%*]", "_")
+	cleaned = cleaned:gsub("%s+", "_")
+	return cleaned ~= "" and cleaned or "default"
+end
+
+local function hasFilesystem()
+	return typeof(writefile) == "function"
+		and typeof(readfile) == "function"
+		and typeof(listfiles) == "function"
+		and typeof(isfolder) == "function"
+		and typeof(makefolder) == "function"
+end
+
 local function makeBaseControl(window, tab, kind, height)
 	return {
 		window = window,
@@ -375,13 +390,32 @@ local function shouldBlockGameInput()
 end
 
 updateInputBlocker = function()
-	local shouldBind = shouldBlockGameInput()
+	local shouldBind = true
 
 	if shouldBind and not inputBlockBound then
 		ContextActionService:BindActionAtPriority(
 			"DrawingUIBlockInput",
-			function()
-				return Enum.ContextActionResult.Sink
+			function(_, inputState, inputObject)
+				if inputState ~= Enum.UserInputState.Begin then
+					return Enum.ContextActionResult.Pass
+				end
+
+				local mousePosition = getMousePosition()
+				local overWindow = topWindowAt(mousePosition) ~= nil
+				local keyboardFocused = shouldBlockGameInput()
+
+				if keyboardFocused then
+					return Enum.ContextActionResult.Sink
+				end
+
+				if inputObject.UserInputType == Enum.UserInputType.MouseButton1
+					or inputObject.UserInputType == Enum.UserInputType.MouseButton2
+					or inputObject.UserInputType == Enum.UserInputType.MouseButton3
+				then
+					return overWindow and Enum.ContextActionResult.Sink or Enum.ContextActionResult.Pass
+				end
+
+				return Enum.ContextActionResult.Pass
 			end,
 			false,
 			Enum.ContextActionPriority.High.Value,
@@ -431,7 +465,10 @@ local function ensureLoop()
 	end)
 
 	inputBeganConnection = UserInputService.InputBegan:Connect(function(input, processed)
-		if processed and not shouldBlockGameInput() then
+		local mousePosition = getMousePosition()
+		local overWindow = topWindowAt(mousePosition) ~= nil
+
+		if processed and not shouldBlockGameInput() and not overWindow then
 			return
 		end
 
@@ -456,7 +493,6 @@ local function ensureLoop()
 			return
 		end
 
-		local mousePosition = getMousePosition()
 		local window = topWindowAt(mousePosition)
 
 		if window == nil then
@@ -545,14 +581,8 @@ function Window:ClampToViewport()
 	local maxHeight = math.max(220, viewport.Y - (WINDOW_MARGIN * 2))
 	local width = clamp(self.size.X, self.minimumSize.X, maxWidth)
 	local height = clamp(self.size.Y, self.minimumSize.Y, maxHeight)
-	local maxX = viewport.X - width - WINDOW_MARGIN
-	local maxY = viewport.Y - height - WINDOW_MARGIN
 
 	self.size = Vector2.new(width, height)
-	self.position = Vector2.new(
-		clamp(self.position.X, WINDOW_MARGIN, math.max(WINDOW_MARGIN, maxX)),
-		clamp(self.position.Y, WINDOW_MARGIN, math.max(WINDOW_MARGIN, maxY))
-	)
 end
 
 function Window:GetActiveControls()
@@ -789,6 +819,112 @@ function Window:SetTheme(themeOverrides)
 	end
 
 	self:UpdateLayout()
+end
+
+function Window:GetConfigId()
+	return sanitizeFileName(self.configId or self.title)
+end
+
+function Window:GetConfigFolder()
+	return (self.configRoot or "drawing-ui-lib-configs") .. "/" .. self:GetConfigId()
+end
+
+function Window:EnsureConfigFolder()
+	if not hasFilesystem() then
+		return false
+	end
+
+	local folder = self:GetConfigFolder()
+	if not isfolder(folder) then
+		makefolder(folder)
+	end
+
+	return true
+end
+
+function Window:BuildConfig()
+	local data = {}
+
+	for _, control in ipairs(self.controls) do
+		if control.configKey ~= nil and control.GetConfigValue then
+			data[control.configKey] = control:GetConfigValue()
+		end
+	end
+
+	return data
+end
+
+function Window:ApplyConfig(config, fireCallbacks)
+	for _, control in ipairs(self.controls) do
+		if control.configKey ~= nil and control.ApplyConfigValue and config[control.configKey] ~= nil then
+			control:ApplyConfigValue(config[control.configKey], fireCallbacks)
+		end
+	end
+end
+
+function Window:ListConfigs()
+	if not self:EnsureConfigFolder() then
+		return {}
+	end
+
+	local names = {}
+	for _, path in ipairs(listfiles(self:GetConfigFolder())) do
+		local name = path:match("([^\\/]+)%.json$")
+		if name then
+			table.insert(names, name)
+		end
+	end
+
+	table.sort(names)
+	return names
+end
+
+function Window:SaveConfig(name)
+	if not self:EnsureConfigFolder() then
+		return false, "filesystem unavailable"
+	end
+
+	local safeName = sanitizeFileName(name)
+	local path = self:GetConfigFolder() .. "/" .. safeName .. ".json"
+	writefile(path, HttpService:JSONEncode(self:BuildConfig()))
+	return true, safeName
+end
+
+function Window:LoadConfig(name, fireCallbacks)
+	if not self:EnsureConfigFolder() then
+		return false, "filesystem unavailable"
+	end
+
+	local safeName = sanitizeFileName(name)
+	local path = self:GetConfigFolder() .. "/" .. safeName .. ".json"
+
+	if typeof(isfile) ~= "function" or not isfile(path) then
+		return false, "missing file"
+	end
+
+	local decoded = HttpService:JSONDecode(readfile(path))
+	self:ApplyConfig(decoded, fireCallbacks)
+	return true, safeName
+end
+
+function Window:DeleteConfig(name)
+	if not self:EnsureConfigFolder() then
+		return false, "filesystem unavailable"
+	end
+
+	local safeName = sanitizeFileName(name)
+	local path = self:GetConfigFolder() .. "/" .. safeName .. ".json"
+
+	if typeof(delfile) ~= "function" then
+		return false, "delete unavailable"
+	end
+
+	if typeof(isfile) == "function" and not isfile(path) then
+		return false, "missing file"
+	end
+
+	delfile(path)
+	return true, safeName
 end
 
 function Window:IsPointInHeader(point)
@@ -1209,6 +1345,7 @@ end
 local function addToggle(window, tab, text, initialValue, callback)
 	local control = makeBaseControl(window, tab, "Toggle", TOGGLE_HEIGHT)
 	control.text = text
+	control.configKey = text
 	control.value = initialValue == true
 	control.callback = callback or function() end
 	control.toggleAlpha = control.value and 1 or 0
@@ -1368,6 +1505,17 @@ local function addToggle(window, tab, text, initialValue, callback)
 		self:layout()
 	end
 
+	function control:GetConfigValue()
+		return self.value
+	end
+
+	function control:ApplyConfigValue(nextValue, fireCallback)
+		self:SetValue(nextValue == true)
+		if fireCallback ~= false then
+			self.callback(self.value)
+		end
+	end
+
 	function control:destroy()
 		for _, drawing in pairs(self.drawings) do
 			destroyDrawing(drawing)
@@ -1381,6 +1529,7 @@ end
 local function addSlider(window, tab, text, minimum, maximum, initialValue, callback)
 	local control = makeBaseControl(window, tab, "Slider", SLIDER_HEIGHT)
 	control.text = text
+	control.configKey = text
 	control.minimum = minimum
 	control.maximum = maximum
 	control.value = clamp(initialValue or minimum, minimum, maximum)
@@ -1547,6 +1696,17 @@ local function addSlider(window, tab, text, minimum, maximum, initialValue, call
 		self:updateVisuals()
 	end
 
+	function control:GetConfigValue()
+		return self.value
+	end
+
+	function control:ApplyConfigValue(nextValue, fireCallback)
+		self:SetValue(nextValue)
+		if fireCallback ~= false then
+			self.callback(self.value)
+		end
+	end
+
 	function control:destroy()
 		for _, drawing in pairs(self.drawings) do
 			destroyDrawing(drawing)
@@ -1560,6 +1720,7 @@ end
 local function addDropdown(window, tab, text, options, defaultValue, callback)
 	local control = makeBaseControl(window, tab, "Dropdown", LABELED_INPUT_HEIGHT)
 	control.text = text
+	control.configKey = text
 	control.options = table.clone(options or {})
 	control.value = defaultValue or control.options[1] or "Select"
 	control.callback = callback or function() end
@@ -1663,6 +1824,17 @@ local function addDropdown(window, tab, text, options, defaultValue, callback)
 	function control:SetValue(nextValue)
 		self.value = nextValue
 		writeProperty(self.drawings.value, "Text", tostring(nextValue))
+	end
+
+	function control:GetConfigValue()
+		return self.value
+	end
+
+	function control:ApplyConfigValue(nextValue, fireCallback)
+		self:SetValue(nextValue)
+		if fireCallback ~= false then
+			self.callback(self.value)
+		end
 	end
 
 	function control:SetSearchText(nextText)
@@ -1896,6 +2068,7 @@ end
 local function addSearchDropdown(window, tab, text, options, defaultValue, callback)
 	local control = makeBaseControl(window, tab, "SearchDropdown", SEARCH_DROPDOWN_CLOSED_HEIGHT)
 	control.text = text
+	control.configKey = text
 	control.options = table.clone(options or {})
 	control.filteredIndices = {}
 	control.value = defaultValue or control.options[1] or "Select"
@@ -2057,18 +2230,36 @@ local function addSearchDropdown(window, tab, text, options, defaultValue, callb
 			end
 			self.focused = false
 			self.cursorVisible = false
+			self.searchText = ""
+			self:updateFilter()
 		end
 
 		updateInputBlocker()
 	end
 
 	function control:Blur()
+		self.searchText = ""
+		self:updateFilter()
 		self:SetOpen(false)
 	end
 
 	function control:SetValue(nextValue)
 		self.value = nextValue
 		writeProperty(self.drawings.value, "Text", tostring(nextValue))
+	end
+
+	function control:GetConfigValue()
+		return self.value
+	end
+
+	function control:ApplyConfigValue(nextValue, fireCallback)
+		self.searchText = ""
+		self:updateFilter()
+		self:SetValue(nextValue)
+		self.window:UpdateLayout()
+		if fireCallback ~= false then
+			self.callback(self.value)
+		end
 	end
 
 	function control:HandleKeyboardInput(input)
@@ -2336,6 +2527,7 @@ local function addTextbox(window, tab, text, placeholder, callback)
 	local control = makeBaseControl(window, tab, "Textbox", LABELED_INPUT_HEIGHT)
 	control.text = ""
 	control.title = text
+	control.configKey = text
 	control.placeholder = placeholder or "Enter text..."
 	control.callback = callback or function() end
 	control.focused = false
@@ -2474,6 +2666,17 @@ local function addTextbox(window, tab, text, placeholder, callback)
 		self:layout()
 	end
 
+	function control:GetConfigValue()
+		return self.text
+	end
+
+	function control:ApplyConfigValue(nextValue, fireCallback)
+		self:SetText(nextValue)
+		if fireCallback ~= false then
+			self.callback(self.text)
+		end
+	end
+
 	function control:onStep(mousePosition, ownsHover)
 		self.hovered = ownsHover and self:hitTest(mousePosition)
 		if os.clock() - self.lastBlink >= 0.5 then
@@ -2509,6 +2712,7 @@ end
 local function addColorPicker(window, tab, text, defaultColor, callback)
 	local control = makeBaseControl(window, tab, "ColorPicker", 148)
 	control.text = text
+	control.configKey = text
 	control.callback = callback or function() end
 	control.color = defaultColor or Color3.fromRGB(255, 255, 255)
 	control.hue = 0
@@ -2642,6 +2846,24 @@ local function addColorPicker(window, tab, text, defaultColor, callback)
 		self.color = nextColor
 		self.hue, self.sat, self.val = nextColor:ToHSV()
 		self:layout()
+	end
+
+	function control:GetConfigValue()
+		return {
+			r = self.color.R,
+			g = self.color.G,
+			b = self.color.B,
+		}
+	end
+
+	function control:ApplyConfigValue(nextValue, fireCallback)
+		if type(nextValue) == "table" and nextValue.r and nextValue.g and nextValue.b then
+			self:SetColor(Color3.new(nextValue.r, nextValue.g, nextValue.b))
+		end
+
+		if fireCallback ~= false then
+			self.callback(self.color)
+		end
 	end
 
 	function control:applyTheme()
@@ -2828,6 +3050,7 @@ end
 local function addMultiDropdown(window, tab, text, options, defaultValues, callback)
 	local control = makeBaseControl(window, tab, "MultiDropdown", LABELED_INPUT_HEIGHT)
 	control.text = text
+	control.configKey = text
 	control.options = table.clone(options or {})
 	control.values = {}
 	control.selected = {}
@@ -3026,6 +3249,17 @@ local function addMultiDropdown(window, tab, text, options, defaultValues, callb
 		self:layout()
 	end
 
+	function control:GetConfigValue()
+		return table.clone(self.values)
+	end
+
+	function control:ApplyConfigValue(nextValues, fireCallback)
+		self:SetValues(nextValues or {})
+		if fireCallback ~= false then
+			self.callback(table.clone(self.values))
+		end
+	end
+
 	function control:layout()
 		local basePosition = self.position + Vector2.new(0, 16)
 		local baseSize = Vector2.new(self.size.X, INPUT_HEIGHT)
@@ -3164,6 +3398,7 @@ end
 local function addKeybind(window, tab, text, defaultKey, callback, changedCallback)
 	local control = makeBaseControl(window, tab, "Keybind", LABELED_INPUT_HEIGHT)
 	control.text = text
+	control.configKey = text
 	control.binding = typeof(defaultKey) == "EnumItem" and {
 		kind = "Keyboard",
 		code = defaultKey,
@@ -3245,6 +3480,17 @@ local function addKeybind(window, tab, text, defaultKey, callback, changedCallba
 	function control:SetBinding(nextBinding)
 		self.binding = nextBinding
 		self:layout()
+	end
+
+	function control:GetConfigValue()
+		return self.binding
+	end
+
+	function control:ApplyConfigValue(nextBinding, fireCallback)
+		self:SetBinding(nextBinding)
+		if fireCallback ~= false then
+			self.changedCallback(self.binding)
+		end
 	end
 
 	function control:CaptureInput(input)
@@ -3466,6 +3712,8 @@ function DrawingUI.new(options)
 	self.minimumSize = config.Size
 	self.visible = config.Visible
 	self.dragAnywhere = config.DragAnywhere ~= false
+	self.configId = config.ConfigId
+	self.configRoot = config.ConfigRoot
 	self.theme = mergeTheme(config.Theme)
 	self.controls = {}
 	self.tabs = {}

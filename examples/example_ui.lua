@@ -1,5 +1,4 @@
-local HttpService = game:GetService("HttpService")
-local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.9.0"))()
+local DrawingUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/ProtonDev-sys/drawing-ui-lib/main/DrawingUI.lua?v=0.10.0"))()
 
 local state = {
 	enabled = false,
@@ -23,46 +22,6 @@ local state = {
 	status = "Idle",
 }
 
-local CONFIG_FOLDER = "drawing-ui-lib-configs"
-
-local function hasFilesystem()
-	return typeof(writefile) == "function"
-		and typeof(readfile) == "function"
-		and typeof(listfiles) == "function"
-		and typeof(isfolder) == "function"
-		and typeof(makefolder) == "function"
-end
-
-local function ensureConfigFolder()
-	if not hasFilesystem() then
-		return false
-	end
-
-	if not isfolder(CONFIG_FOLDER) then
-		makefolder(CONFIG_FOLDER)
-	end
-
-	return true
-end
-
-local function getConfigNames()
-	if not ensureConfigFolder() then
-		return {}
-	end
-
-	local results = {}
-
-	for _, path in ipairs(listfiles(CONFIG_FOLDER)) do
-		local name = path:match("([^\\/]+)%.json$")
-		if name then
-			table.insert(results, name)
-		end
-	end
-
-	table.sort(results)
-	return results
-end
-
 local function formatNumber(value)
 	return string.format("%.2f", value)
 end
@@ -83,6 +42,7 @@ local window = DrawingUI.CreateWindow({
 	Title = "Example Hub v" .. (DrawingUI.Version or "dev"),
 	Position = Vector2.new(140, 90),
 	Size = Vector2.new(510, 350),
+	ConfigId = "example-hub",
 	Theme = DrawingUI.Themes.Amber,
 })
 
@@ -95,7 +55,6 @@ local miscTab = window:AddTab("Misc")
 local applyThemePreset
 local applyAccent
 local refreshConfigList
-local applyConfig
 
 combatTab:AddSection("Aim Assist")
 combatTab:AddParagraph("Overview", "Tabs, buttons, sliders, dropdowns, textboxes, keybinds and theme-driven colors are all exposed by the library.")
@@ -189,7 +148,7 @@ local configNameTextbox = configTab:AddTextbox("Config Name", "Type config name.
 	state.selectedConfig = value
 end)
 
-local configSelector = configTab:AddSearchDropdown("Stored Configs", getConfigNames(), nil, function(value)
+local configSelector = configTab:AddSearchDropdown("Stored Configs", window:ListConfigs(), nil, function(value)
 	state.selectedConfig = value
 	configNameTextbox:SetText(value)
 end)
@@ -218,7 +177,7 @@ end
 local accentPicker
 
 refreshConfigList = function(selectedName)
-	local names = getConfigNames()
+	local names = window:ListConfigs()
 	configSelector:SetOptions(names, selectedName or state.selectedConfig or names[1] or "No configs")
 
 	if #names == 0 then
@@ -228,114 +187,39 @@ refreshConfigList = function(selectedName)
 	end
 end
 
-local function collectConfig()
-	return {
-		enabled = state.enabled,
-		showFov = state.showFov,
-		showBoxes = state.showBoxes,
-		showNames = state.showNames,
-		flags = state.flags,
-		fov = state.fov,
-		smoothness = state.smoothness,
-		targetPart = state.targetPart,
-		searchTarget = state.searchTarget,
-		profileName = state.profileName,
-		clanTag = state.clanTag,
-		menuBind = state.menuBind,
-		themePreset = state.themePreset,
-		accentColor = {
-			r = state.accentColor.R,
-			g = state.accentColor.G,
-			b = state.accentColor.B,
-		},
-	}
-end
-
-applyConfig = function(config)
-	state.enabled = config.enabled == true
-	state.showFov = config.showFov ~= false
-	state.showBoxes = config.showBoxes == true
-	state.showNames = config.showNames ~= false
-	state.flags = config.flags or {}
-	state.fov = config.fov or 140
-	state.smoothness = config.smoothness or 0.2
-	state.targetPart = config.targetPart or "Head"
-	state.searchTarget = config.searchTarget or state.targetPart
-	state.profileName = config.profileName or "Legit"
-	state.clanTag = config.clanTag or "ORBIT"
-	state.menuBind = config.menuBind or state.menuBind
-	applyThemePreset(config.themePreset or "Amber")
-
-	if config.accentColor then
-		applyAccent(Color3.new(config.accentColor.r, config.accentColor.g, config.accentColor.b))
-	end
-
-	masterToggle:SetValue(state.enabled)
-	fovToggle:SetValue(state.showFov)
-	boxesToggle:SetValue(state.showBoxes)
-	namesToggle:SetValue(state.showNames)
-	fovSlider:SetValue(state.fov)
-	smoothnessSlider:SetValue(state.smoothness)
-	targetDropdown:SetValue(state.targetPart)
-	searchTargetDropdown:SetValue(state.searchTarget)
-	flagsDropdown:SetValues(state.flags)
-	profileTextbox:SetText(state.profileName)
-	clanTextbox:SetText(state.clanTag)
-	themeDropdown:SetValue(state.themePreset)
-	menuBindControl:SetBinding(state.menuBind)
-	accentPicker:SetColor(state.accentColor)
-	enabledLabel:SetText("Enabled: " .. tostring(state.enabled))
-	fovLabel:SetText("FOV Radius: " .. tostring(state.fov))
-	smoothnessLabel:SetText("Smoothness: " .. formatNumber(state.smoothness))
-	profileLabel:SetText("Profile: " .. state.profileName)
-	bindLabel:SetText("Menu Bind: " .. formatBinding(state.menuBind))
-	window:SetTitle(state.enabled and ("Example Hub v" .. (DrawingUI.Version or "dev") .. " [ON]") or ("Example Hub v" .. (DrawingUI.Version or "dev")))
-end
-
 configTab:AddButton("Create Config", function()
-	if not ensureConfigFolder() then
-		configStatusLabel:SetText("Config Status: Filesystem unavailable")
-		return
-	end
-
 	local name = state.selectedConfig ~= "" and state.selectedConfig or state.profileName
-	local path = CONFIG_FOLDER .. "/" .. name .. ".json"
-	writefile(path, HttpService:JSONEncode(collectConfig()))
-	configStatusLabel:SetText("Config Status: Saved " .. name)
-	refreshConfigList(name)
+	local ok, result = window:SaveConfig(name)
+	configStatusLabel:SetText(ok and ("Config Status: Saved " .. result) or ("Config Status: " .. result))
+
+	if ok then
+		state.selectedConfig = result
+		refreshConfigList(result)
+	end
 end)
 
 configTab:AddButton("Load Config", function()
-	if not ensureConfigFolder() or state.selectedConfig == "" then
+	if state.selectedConfig == "" then
 		configStatusLabel:SetText("Config Status: Nothing selected")
 		return
 	end
 
-	local path = CONFIG_FOLDER .. "/" .. state.selectedConfig .. ".json"
-	if typeof(isfile) ~= "function" or not isfile(path) then
-		configStatusLabel:SetText("Config Status: Missing file")
-		return
-	end
-
-	local decoded = HttpService:JSONDecode(readfile(path))
-	applyConfig(decoded)
-	configStatusLabel:SetText("Config Status: Loaded " .. state.selectedConfig)
+	local ok, result = window:LoadConfig(state.selectedConfig, true)
+	configStatusLabel:SetText(ok and ("Config Status: Loaded " .. result) or ("Config Status: " .. result))
 end)
 
 configTab:AddButton("Delete Config", function()
-	if not ensureConfigFolder() or state.selectedConfig == "" then
+	if state.selectedConfig == "" then
 		configStatusLabel:SetText("Config Status: Nothing selected")
 		return
 	end
 
-	local path = CONFIG_FOLDER .. "/" .. state.selectedConfig .. ".json"
-	if typeof(delfile) == "function" and (typeof(isfile) ~= "function" or isfile(path)) then
-		delfile(path)
-		configStatusLabel:SetText("Config Status: Deleted " .. state.selectedConfig)
+	local ok, result = window:DeleteConfig(state.selectedConfig)
+	configStatusLabel:SetText(ok and ("Config Status: Deleted " .. result) or ("Config Status: " .. result))
+
+	if ok then
 		state.selectedConfig = ""
 		refreshConfigList("")
-	else
-		configStatusLabel:SetText("Config Status: Delete unavailable")
 	end
 end)
 
