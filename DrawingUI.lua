@@ -34,9 +34,9 @@ local DEFAULT_THEME = {
 	SliderFill = Color3.fromRGB(78, 176, 255),
 	SectionLine = Color3.fromRGB(52, 58, 71),
 	Font = 0,
-	TitleSize = 17,
-	TextSize = 15,
-	SmallTextSize = 13,
+	TitleSize = 18,
+	TextSize = 14,
+	SmallTextSize = 12,
 }
 
 local DEFAULT_WINDOW = {
@@ -1391,7 +1391,7 @@ local function addLabel(window, tab, text)
 		Color = window.theme.SubText,
 		Size = 13,
 		Font = FONT,
-		Outline = true,
+		Outline = false,
 		Text = text,
 		Position = Vector2.zero,
 	})
@@ -1446,7 +1446,7 @@ local function addParagraph(window, tab, title, text)
 		Color = window.theme.Text,
 		Size = window.theme.TextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = title,
 		Position = Vector2.zero,
 	})
@@ -1456,7 +1456,7 @@ local function addParagraph(window, tab, title, text)
 		Color = window.theme.SubText,
 		Size = window.theme.SmallTextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = text,
 		Position = Vector2.zero,
 	})
@@ -1976,7 +1976,7 @@ function addButtonRow(window, tab, buttons)
 				Color = window.theme.Text,
 				Size = window.theme.TextSize,
 				Font = window.theme.Font,
-				Outline = true,
+				Outline = false,
 				Text = definition.text or ("Button " .. index),
 				Position = Vector2.zero,
 			}),
@@ -2102,7 +2102,7 @@ function addToggle(window, tab, text, initialValue, callback)
 		Color = window.theme.Text,
 		Size = 13,
 		Font = FONT,
-		Outline = true,
+		Outline = false,
 		Text = text,
 		Position = Vector2.zero,
 	})
@@ -2112,7 +2112,7 @@ function addToggle(window, tab, text, initialValue, callback)
 		Color = window.theme.SubText,
 		Size = 12,
 		Font = FONT,
-		Outline = true,
+		Outline = false,
 		Text = "OFF",
 		Position = Vector2.zero,
 	})
@@ -2299,7 +2299,7 @@ function addSlider(window, tab, text, minimum, maximum, initialValue, callback)
 		Color = window.theme.Text,
 		Size = 13,
 		Font = FONT,
-		Outline = true,
+		Outline = false,
 		Text = text,
 		Position = Vector2.zero,
 	})
@@ -2309,7 +2309,7 @@ function addSlider(window, tab, text, minimum, maximum, initialValue, callback)
 		Color = window.theme.SubText,
 		Size = 12,
 		Font = FONT,
-		Outline = true,
+		Outline = false,
 		Text = tostring(control.value),
 		Position = Vector2.zero,
 	})
@@ -2491,7 +2491,7 @@ function addDropdown(window, tab, text, options, defaultValue, callback)
 		Color = window.theme.Text,
 		Size = window.theme.TextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = text,
 		Position = Vector2.zero,
 	})
@@ -2519,7 +2519,7 @@ function addDropdown(window, tab, text, options, defaultValue, callback)
 		Color = window.theme.SubText,
 		Size = window.theme.SmallTextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = tostring(control.value),
 		Position = Vector2.zero,
 	})
@@ -2529,7 +2529,7 @@ function addDropdown(window, tab, text, options, defaultValue, callback)
 		Color = window.theme.SubText,
 		Size = window.theme.SmallTextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = "v",
 		Position = Vector2.zero,
 	})
@@ -2559,7 +2559,7 @@ function addDropdown(window, tab, text, options, defaultValue, callback)
 				Color = window.theme.Text,
 				Size = window.theme.SmallTextSize,
 				Font = window.theme.Font,
-				Outline = true,
+				Outline = false,
 				Text = tostring(option),
 				Position = Vector2.zero,
 			}),
@@ -2631,7 +2631,7 @@ function addDropdown(window, tab, text, options, defaultValue, callback)
 					Color = self.window.theme.Text,
 					Size = self.window.theme.SmallTextSize,
 					Font = self.window.theme.Font,
-					Outline = true,
+					Outline = false,
 					Text = tostring(option),
 					Position = Vector2.zero,
 				}),
@@ -2857,7 +2857,7 @@ function addSearchDropdown(window, tab, text, options, defaultValue, maxSizeOrCa
 		Color = window.theme.Text,
 		Size = window.theme.TextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = text,
 		Position = Vector2.zero,
 	})
@@ -2885,7 +2885,7 @@ function addSearchDropdown(window, tab, text, options, defaultValue, maxSizeOrCa
 		Color = window.theme.SubText,
 		Size = window.theme.SmallTextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = tostring(control.value),
 		Position = Vector2.zero,
 	})
@@ -2895,7 +2895,7 @@ function addSearchDropdown(window, tab, text, options, defaultValue, maxSizeOrCa
 		Color = window.theme.SubText,
 		Size = window.theme.SmallTextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = "v",
 		Position = Vector2.zero,
 	})
@@ -2923,7 +2923,7 @@ function addSearchDropdown(window, tab, text, options, defaultValue, maxSizeOrCa
 		Color = window.theme.SubText,
 		Size = window.theme.SmallTextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = "",
 		Position = Vector2.zero,
 	})
@@ -3042,7 +3042,7 @@ function addSearchDropdown(window, tab, text, options, defaultValue, maxSizeOrCa
 					Color = self.window.theme.Text,
 					Size = self.window.theme.SmallTextSize,
 					Font = self.window.theme.Font,
-					Outline = true,
+					Outline = false,
 					Text = "",
 					Position = Vector2.zero,
 				}),
@@ -3449,7 +3449,7 @@ function addTextbox(window, tab, text, placeholder, callback)
 		Color = window.theme.Text,
 		Size = window.theme.TextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = text,
 		Position = Vector2.zero,
 	})
@@ -3477,7 +3477,7 @@ function addTextbox(window, tab, text, placeholder, callback)
 		Color = window.theme.SubText,
 		Size = window.theme.SmallTextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = control.placeholder,
 		Position = Vector2.zero,
 	})
@@ -3641,7 +3641,7 @@ function addColorPicker(window, tab, text, defaultColor, callback)
 		Color = window.theme.Text,
 		Size = window.theme.TextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = text,
 		Position = Vector2.zero,
 	})
@@ -3669,7 +3669,7 @@ function addColorPicker(window, tab, text, defaultColor, callback)
 		Color = window.theme.SubText,
 		Size = window.theme.SmallTextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = "#FFFFFF",
 		Position = Vector2.zero,
 	})
@@ -3978,7 +3978,7 @@ function addMultiDropdown(window, tab, text, options, defaultValues, callback)
 		Color = window.theme.Text,
 		Size = window.theme.TextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = text,
 		Position = Vector2.zero,
 	})
@@ -4006,7 +4006,7 @@ function addMultiDropdown(window, tab, text, options, defaultValues, callback)
 		Color = window.theme.SubText,
 		Size = window.theme.SmallTextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = "None",
 		Position = Vector2.zero,
 	})
@@ -4016,7 +4016,7 @@ function addMultiDropdown(window, tab, text, options, defaultValues, callback)
 		Color = window.theme.SubText,
 		Size = window.theme.SmallTextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = "v",
 		Position = Vector2.zero,
 	})
@@ -4046,7 +4046,7 @@ function addMultiDropdown(window, tab, text, options, defaultValues, callback)
 				Color = window.theme.Accent,
 				Size = window.theme.SmallTextSize,
 				Font = window.theme.Font,
-				Outline = true,
+				Outline = false,
 				Text = "+",
 				Position = Vector2.zero,
 			}),
@@ -4055,7 +4055,7 @@ function addMultiDropdown(window, tab, text, options, defaultValues, callback)
 				Color = window.theme.Text,
 				Size = window.theme.SmallTextSize,
 				Font = window.theme.Font,
-				Outline = true,
+				Outline = false,
 				Text = tostring(option),
 				Position = Vector2.zero,
 			}),
@@ -4329,7 +4329,7 @@ function addKeybind(window, tab, text, defaultKey, callback, changedCallback)
 		Color = window.theme.Text,
 		Size = window.theme.TextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = text,
 		Position = Vector2.zero,
 	})
@@ -4357,7 +4357,7 @@ function addKeybind(window, tab, text, defaultKey, callback, changedCallback)
 		Color = window.theme.SubText,
 		Size = window.theme.SmallTextSize,
 		Font = window.theme.Font,
-		Outline = true,
+		Outline = false,
 		Text = formatInputBinding(control.binding),
 		Position = Vector2.zero,
 	})
