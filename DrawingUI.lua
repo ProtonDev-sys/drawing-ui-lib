@@ -6,7 +6,7 @@ local HttpService = game:GetService("HttpService")
 
 local DrawingUI = {}
 DrawingUI.__index = DrawingUI
-local VERSION = "0.10.2"
+local VERSION = "0.10.3"
 
 local DEFAULT_THEME = {
 	WindowBackground = Color3.fromRGB(19, 22, 28),
@@ -557,8 +557,31 @@ function Window:IsTabActive(tab)
 end
 
 function Window:IsControlDisplayed(control)
-	local groupVisible = control.parentGroup == nil or control.parentGroup.expanded
+	local groupVisible = true
+	local currentGroup = control.parentGroup
+
+	while currentGroup ~= nil do
+		if not currentGroup.expanded then
+			groupVisible = false
+			break
+		end
+
+		currentGroup = currentGroup.parentGroup
+	end
+
 	return self.visible and control.visible and self:IsTabActive(control.tab) and groupVisible
+end
+
+function Window:GetControlIndent(control)
+	local indent = 0
+	local currentGroup = control.parentGroup
+
+	while currentGroup ~= nil do
+		indent += 12
+		currentGroup = currentGroup.parentGroup
+	end
+
+	return indent
 end
 
 function Window:SyncControlVisibility(control)
@@ -593,7 +616,7 @@ function Window:GetActiveControls()
 	local list = {}
 
 	for _, control in ipairs(self.controls) do
-		if self:IsTabActive(control.tab) and (control.parentGroup == nil or control.parentGroup.expanded) then
+		if self:IsTabActive(control.tab) and self:IsControlDisplayed(control) then
 			table.insert(list, control)
 		end
 	end
@@ -693,9 +716,10 @@ function Window:UpdateLayout()
 	local contentWidth = self.size.X - (PADDING * 2)
 
 	for _, control in ipairs(self.controls) do
-		if self:IsTabActive(control.tab) then
-			control.position = Vector2.new(self.position.X + PADDING, y)
-			control.size = Vector2.new(contentWidth, control.GetHeight and control:GetHeight() or control.height)
+		local indent = self:GetControlIndent(control)
+		if self:IsControlDisplayed(control) then
+			control.position = Vector2.new(self.position.X + PADDING + indent, y)
+			control.size = Vector2.new(contentWidth - indent, control.GetHeight and control:GetHeight() or control.height)
 
 			if control.layout then
 				control:layout()
